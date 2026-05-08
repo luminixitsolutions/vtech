@@ -1,0 +1,266 @@
+[14-Apr-2023 06:43:15 UTC] PHP Parse error:  syntax error, unexpected variable "$Phone" in /home2/dmitg/public_html/vtech/admin/ajax_files/ajax_issues.php on line 11
+[14-Apr-2023 06:43:21 UTC] PHP Parse error:  syntax error, unexpected variable "$Phone" in /home2/dmitg/public_html/vtech/admin/ajax_files/ajax_issues.php on line 11
+[14-Apr-2023 06:43:24 UTC] PHP Parse error:  syntax error, unexpected variable "$Phone" in /home2/dmitg/public_html/vtech/admin/ajax_files/ajax_issues.php on line 11
+[14-Apr-2023 06:43:47 UTC] PHP Parse error:  syntax error, unexpected variable "$Phone" in /home2/dmitg/public_html/vtech/admin/ajax_files/ajax_issues.php on line 11
+[14-Apr-2023 06:45:28 UTC] PHP Parse error:  syntax error, unexpected variable "$Phone" in /home2/dmitg/public_html/vtech/admin/ajax_files/ajax_issues.php on line 11
+[14-Apr-2023 06:47:12 UTC] PHP Parse error:  syntax error, unexpected variable "$Phone" in /home2/dmitg/public_html/vtech/admin/ajax_files/ajax_issues.php on line 11
+[14-Apr-2023 06:48:57 UTC] PHP Parse error:  syntax error, unexpected variable "$Phone" in /home2/dmitg/public_html/vtech/admin/ajax_files/ajax_issues.php on line 11
+[14-Apr-2023 06:49:00 UTC] PHP Parse error:  syntax error, unexpected variable "$Phone" in /home2/dmitg/public_html/vtech/admin/ajax_files/ajax_issues.php on line 11
+[14-Apr-2023 06:49:48 UTC] PHP Parse error:  syntax error, unexpected variable "$Phone" in /home2/dmitg/public_html/vtech/admin/ajax_files/ajax_issues.php on line 11
+[14-Apr-2023 06:50:02 UTC] PHP Parse error:  syntax error, unexpected variable "$Phone" in /home2/dmitg/public_html/vtech/admin/ajax_files/ajax_issues.php on line 11
+[14-Apr-2023 06:51:21 UTC] PHP Parse error:  syntax error, unexpected variable "$Phone" in /home2/dmitg/public_html/vtech/admin/ajax_files/ajax_issues.php on line 11
+[14-Apr-2023 06:56:53 UTC] PHP Parse error:  syntax error, unexpected variable "$Phone" in /home2/dmitg/public_html/vtech/admin/ajax_files/ajax_issues.php on line 11
+[02-May-2023 18:00:53 UTC] PHP Warning:  include_once(../config.php): Failed to open stream: No such file or directory in /home2/dmitg/public_html/vtech/mobapp/dealer/ajax_files/ajax_dropdown.php on line 3
+[02-May-2023 18:00:53 UTC] PHP Warning:  include_once(): Failed opening '../config.php' for inclusion (include_path='.:/opt/cpanel/ea-php80/root/usr/share/pear') in /home2/dmitg/public_html/vtech/mobapp/dealer/ajax_files/ajax_dropdown.php on line 3
+[02-May-2023 18:00:53 UTC] PHP Warning:  Undefined variable $conn in /home2/dmitg/public_html/vtech/mobapp/dealer/ajax_files/ajax_dropdown.php on line 22
+[02-May-2023 18:00:53 UTC] PHP Fatal error:  Uncaught Error: Call to a member function query() on null in /home2/dmitg/public_html/vtech/mobapp/dealer/ajax_files/ajax_dropdown.php:22
+Stack trace:
+#0 {main}
+  thrown in /home2/dmitg/public_html/vtech/mobapp/dealer/ajax_files/ajax_dropdown.php on line 22
+[02-May-2023 18:01:07 UTC] PHP Warning:  include_once(../config.php): Failed to open stream: No such file or directory in /home2/dmitg/public_html/vtech/mobapp/dealer/ajax_files/ajax_product_specification.php on line 3
+[02-May-2023 18:01:07 UTC] PHP Warning:  include_once(): Failed opening '../config.php' for inclusion (include_path='.:/opt/cpanel/ea-php80/root/usr/share/pear') in /home2/dmitg/public_html/vtech/mobapp/dealer/ajax_files/ajax_product_specification.php on line 3
+[02-May-2023 18:01:07 UTC] PHP Warning:  Undefined array key "AcDc" in /home2/dmitg/public_html/vtech/mobapp/dealer/ajax_files/ajax_product_specification.php on line 89
+[02-May-2023 18:01:07 UTC] PHP Warning:  Undefined variable $conn in /home2/dmitg/public_html/vtech/mobapp/dealer/ajax_files/ajax_product_specification.php on line 97
+[02-May-2023 18:01:07 UTC] PHP Fatal error:  Uncaught Error: Call to a member function query() on null in /home2/dmitg/public_html/vtech/mobapp/dealer/ajax_files/ajax_product_specification.php:97
+Stack trace:
+#0 {main}
+  thrown in /home2/dmitg/public_html/vtech/mobapp/dealer/ajax_files/ajax_product_specification.php on line 97
+[02-May-2023 18:01:08 UTC] PHP Warning:  include_once(../config.php): Failed to open stream: No such file or directory in /home2/dmitg/public_html/vtech/mobapp/dealer/ajax_files/ajax_product_specification.php on line 3
+[02-May-2023 18:01:08 UTC] PHP Warning:  include_once(): Failed opening '../config.php' for inclusion (include_path='.:/opt/cpanel/ea-php80/root/usr/share/pear') in /home2/dmitg/public_html/vtech/mobapp/dealer/ajax_files/ajax_product_specification.php on line 3
+[02-May-2023 18:01:08 UTC] PHP Warning:  Undefined array key "AcDc" in /home2/dmitg/public_html/vtech/mobapp/dealer/ajax_files/ajax_product_specification.php on line 89
+[02-May-2023 18:01:08 UTC] PHP Warning:  Undefined variable $conn in /home2/dmitg/public_html/vtech/mobapp/dealer/ajax_files/ajax_product_specification.php on line 97
+[02-May-2023 18:01:08 UTC] PHP Fatal error:  Uncaught Error: Call to a member function query() on null in /home2/dmitg/public_html/vtech/mobapp/dealer/ajax_files/ajax_product_specification.php:97
+Stack trace:
+#0 {main}
+  thrown in /home2/dmitg/public_html/vtech/mobapp/dealer/ajax_files/ajax_product_specification.php on line 97
+[02-May-2023 18:01:09 UTC] PHP Warning:  include_once(../config.php): Failed to open stream: No such file or directory in /home2/dmitg/public_html/vtech/mobapp/dealer/ajax_files/ajax_product_specification.php on line 3
+[02-May-2023 18:01:09 UTC] PHP Warning:  include_once(): Failed opening '../config.php' for inclusion (include_path='.:/opt/cpanel/ea-php80/root/usr/share/pear') in /home2/dmitg/public_html/vtech/mobapp/dealer/ajax_files/ajax_product_specification.php on line 3
+[02-May-2023 18:01:09 UTC] PHP Warning:  Undefined array key "AcDc" in /home2/dmitg/public_html/vtech/mobapp/dealer/ajax_files/ajax_product_specification.php on line 89
+[02-May-2023 18:01:09 UTC] PHP Warning:  Undefined variable $conn in /home2/dmitg/public_html/vtech/mobapp/dealer/ajax_files/ajax_product_specification.php on line 97
+[02-May-2023 18:01:09 UTC] PHP Fatal error:  Uncaught Error: Call to a member function query() on null in /home2/dmitg/public_html/vtech/mobapp/dealer/ajax_files/ajax_product_specification.php:97
+Stack trace:
+#0 {main}
+  thrown in /home2/dmitg/public_html/vtech/mobapp/dealer/ajax_files/ajax_product_specification.php on line 97
+[02-May-2023 18:01:10 UTC] PHP Warning:  include_once(../config.php): Failed to open stream: No such file or directory in /home2/dmitg/public_html/vtech/mobapp/dealer/ajax_files/ajax_product_specification.php on line 3
+[02-May-2023 18:01:10 UTC] PHP Warning:  include_once(): Failed opening '../config.php' for inclusion (include_path='.:/opt/cpanel/ea-php80/root/usr/share/pear') in /home2/dmitg/public_html/vtech/mobapp/dealer/ajax_files/ajax_product_specification.php on line 3
+[02-May-2023 18:01:10 UTC] PHP Warning:  Undefined array key "AcDc" in /home2/dmitg/public_html/vtech/mobapp/dealer/ajax_files/ajax_product_specification.php on line 89
+[02-May-2023 18:01:10 UTC] PHP Warning:  Undefined variable $conn in /home2/dmitg/public_html/vtech/mobapp/dealer/ajax_files/ajax_product_specification.php on line 97
+[02-May-2023 18:01:10 UTC] PHP Fatal error:  Uncaught Error: Call to a member function query() on null in /home2/dmitg/public_html/vtech/mobapp/dealer/ajax_files/ajax_product_specification.php:97
+Stack trace:
+#0 {main}
+  thrown in /home2/dmitg/public_html/vtech/mobapp/dealer/ajax_files/ajax_product_specification.php on line 97
+[02-May-2023 18:01:12 UTC] PHP Warning:  include_once(../config.php): Failed to open stream: No such file or directory in /home2/dmitg/public_html/vtech/mobapp/dealer/ajax_files/ajax_product_specification.php on line 3
+[02-May-2023 18:01:12 UTC] PHP Warning:  include_once(): Failed opening '../config.php' for inclusion (include_path='.:/opt/cpanel/ea-php80/root/usr/share/pear') in /home2/dmitg/public_html/vtech/mobapp/dealer/ajax_files/ajax_product_specification.php on line 3
+[02-May-2023 18:01:12 UTC] PHP Warning:  Undefined array key "AcDc" in /home2/dmitg/public_html/vtech/mobapp/dealer/ajax_files/ajax_product_specification.php on line 89
+[02-May-2023 18:01:12 UTC] PHP Warning:  Undefined variable $conn in /home2/dmitg/public_html/vtech/mobapp/dealer/ajax_files/ajax_product_specification.php on line 97
+[02-May-2023 18:01:12 UTC] PHP Fatal error:  Uncaught Error: Call to a member function query() on null in /home2/dmitg/public_html/vtech/mobapp/dealer/ajax_files/ajax_product_specification.php:97
+Stack trace:
+#0 {main}
+  thrown in /home2/dmitg/public_html/vtech/mobapp/dealer/ajax_files/ajax_product_specification.php on line 97
+[02-May-2023 18:01:26 UTC] PHP Warning:  include_once(../config.php): Failed to open stream: No such file or directory in /home2/dmitg/public_html/vtech/mobapp/dealer/ajax_files/ajax_customer_account.php on line 4
+[02-May-2023 18:01:26 UTC] PHP Warning:  include_once(): Failed opening '../config.php' for inclusion (include_path='.:/opt/cpanel/ea-php80/root/usr/share/pear') in /home2/dmitg/public_html/vtech/mobapp/dealer/ajax_files/ajax_customer_account.php on line 4
+[02-May-2023 18:01:26 UTC] PHP Warning:  Undefined array key "ColgId" in /home2/dmitg/public_html/vtech/mobapp/dealer/ajax_files/ajax_customer_account.php on line 8
+[02-May-2023 18:01:26 UTC] PHP Warning:  Undefined array key "CourseId" in /home2/dmitg/public_html/vtech/mobapp/dealer/ajax_files/ajax_customer_account.php on line 9
+[02-May-2023 18:01:26 UTC] PHP Warning:  Undefined array key "Mname" in /home2/dmitg/public_html/vtech/mobapp/dealer/ajax_files/ajax_customer_account.php on line 11
+[02-May-2023 18:01:26 UTC] PHP Warning:  Undefined array key "Lname" in /home2/dmitg/public_html/vtech/mobapp/dealer/ajax_files/ajax_customer_account.php on line 12
+[02-May-2023 18:01:26 UTC] PHP Warning:  Undefined array key "Phone2" in /home2/dmitg/public_html/vtech/mobapp/dealer/ajax_files/ajax_customer_account.php on line 15
+[02-May-2023 18:01:26 UTC] PHP Warning:  Undefined array key "CityId" in /home2/dmitg/public_html/vtech/mobapp/dealer/ajax_files/ajax_customer_account.php on line 19
+[02-May-2023 18:01:26 UTC] PHP Warning:  Undefined array key "Address" in /home2/dmitg/public_html/vtech/mobapp/dealer/ajax_files/ajax_customer_account.php on line 20
+[02-May-2023 18:01:26 UTC] PHP Warning:  Undefined array key "LoanCategory" in /home2/dmitg/public_html/vtech/mobapp/dealer/ajax_files/ajax_customer_account.php on line 21
+[02-May-2023 18:01:26 UTC] PHP Warning:  Undefined array key "SubCategory" in /home2/dmitg/public_html/vtech/mobapp/dealer/ajax_files/ajax_customer_account.php on line 22
+[02-May-2023 18:01:26 UTC] PHP Warning:  Undefined array key "Campaign" in /home2/dmitg/public_html/vtech/mobapp/dealer/ajax_files/ajax_customer_account.php on line 23
+[02-May-2023 18:01:26 UTC] PHP Warning:  Undefined array key "Source" in /home2/dmitg/public_html/vtech/mobapp/dealer/ajax_files/ajax_customer_account.php on line 24
+[02-May-2023 18:01:26 UTC] PHP Warning:  Undefined array key "CallDate" in /home2/dmitg/public_html/vtech/mobapp/dealer/ajax_files/ajax_customer_account.php on line 25
+[02-May-2023 18:01:26 UTC] PHP Warning:  Undefined array key "AgentName" in /home2/dmitg/public_html/vtech/mobapp/dealer/ajax_files/ajax_customer_account.php on line 26
+[02-May-2023 18:01:26 UTC] PHP Warning:  Undefined array key "AgentComments" in /home2/dmitg/public_html/vtech/mobapp/dealer/ajax_files/ajax_customer_account.php on line 27
+[02-May-2023 18:01:26 UTC] PHP Warning:  Undefined array key "PartId" in /home2/dmitg/public_html/vtech/mobapp/dealer/ajax_files/ajax_customer_account.php on line 28
+[02-May-2023 18:01:26 UTC] PHP Warning:  Undefined array key "Pincode" in /home2/dmitg/public_html/vtech/mobapp/dealer/ajax_files/ajax_customer_account.php on line 30
+[02-May-2023 18:01:26 UTC] PHP Warning:  Undefined array key "LeadId" in /home2/dmitg/public_html/vtech/mobapp/dealer/ajax_files/ajax_customer_account.php on line 31
+[02-May-2023 18:01:26 UTC] PHP Warning:  Undefined array key "UserType" in /home2/dmitg/public_html/vtech/mobapp/dealer/ajax_files/ajax_customer_account.php on line 33
+[02-May-2023 18:01:26 UTC] PHP Warning:  Undefined array key "Roll" in /home2/dmitg/public_html/vtech/mobapp/dealer/ajax_files/ajax_customer_account.php on line 34
+[02-May-2023 18:01:26 UTC] PHP Warning:  Undefined array key "Address2" in /home2/dmitg/public_html/vtech/mobapp/dealer/ajax_files/ajax_customer_account.php on line 36
+[02-May-2023 18:01:26 UTC] PHP Warning:  Undefined array key "WorkingDetails" in /home2/dmitg/public_html/vtech/mobapp/dealer/ajax_files/ajax_customer_account.php on line 37
+[02-May-2023 18:01:26 UTC] PHP Warning:  Undefined array key "WorkingAddress" in /home2/dmitg/public_html/vtech/mobapp/dealer/ajax_files/ajax_customer_account.php on line 38
+[02-May-2023 18:01:26 UTC] PHP Warning:  Undefined array key "Gname" in /home2/dmitg/public_html/vtech/mobapp/dealer/ajax_files/ajax_customer_account.php on line 39
+[02-May-2023 18:01:26 UTC] PHP Warning:  Undefined array key "Gphone" in /home2/dmitg/public_html/vtech/mobapp/dealer/ajax_files/ajax_customer_account.php on line 40
+[02-May-2023 18:01:26 UTC] PHP Warning:  Undefined array key "Gname2" in /home2/dmitg/public_html/vtech/mobapp/dealer/ajax_files/ajax_customer_account.php on line 41
+[02-May-2023 18:01:26 UTC] PHP Warning:  Undefined array key "Gphone2" in /home2/dmitg/public_html/vtech/mobapp/dealer/ajax_files/ajax_customer_account.php on line 42
+[02-May-2023 18:01:26 UTC] PHP Warning:  Undefined array key "Dob" in /home2/dmitg/public_html/vtech/mobapp/dealer/ajax_files/ajax_customer_account.php on line 43
+[02-May-2023 18:01:26 UTC] PHP Warning:  Undefined array key "Area" in /home2/dmitg/public_html/vtech/mobapp/dealer/ajax_files/ajax_customer_account.php on line 44
+[02-May-2023 18:01:26 UTC] PHP Warning:  Undefined array key "UnderUser" in /home2/dmitg/public_html/vtech/mobapp/dealer/ajax_files/ajax_customer_account.php on line 45
+[02-May-2023 18:01:26 UTC] PHP Warning:  Undefined array key "InsuranceAgency" in /home2/dmitg/public_html/vtech/mobapp/dealer/ajax_files/ajax_customer_account.php on line 69
+[02-May-2023 18:01:26 UTC] PHP Warning:  Undefined array key "PumpHeadSelect" in /home2/dmitg/public_html/vtech/mobapp/dealer/ajax_files/ajax_customer_account.php on line 72
+[02-May-2023 18:01:26 UTC] PHP Warning:  Undefined array key "Photo" in /home2/dmitg/public_html/vtech/mobapp/dealer/ajax_files/ajax_customer_account.php on line 103
+[02-May-2023 18:01:26 UTC] PHP Warning:  Trying to access array offset on value of type null in /home2/dmitg/public_html/vtech/mobapp/dealer/ajax_files/ajax_customer_account.php on line 103
+[02-May-2023 18:01:26 UTC] PHP Warning:  Undefined array key "Photo" in /home2/dmitg/public_html/vtech/mobapp/dealer/ajax_files/ajax_customer_account.php on line 104
+[02-May-2023 18:01:26 UTC] PHP Warning:  Trying to access array offset on value of type null in /home2/dmitg/public_html/vtech/mobapp/dealer/ajax_files/ajax_customer_account.php on line 104
+[02-May-2023 18:01:26 UTC] PHP Warning:  Undefined array key "Photo" in /home2/dmitg/public_html/vtech/mobapp/dealer/ajax_files/ajax_customer_account.php on line 104
+[02-May-2023 18:01:26 UTC] PHP Warning:  Trying to access array offset on value of type null in /home2/dmitg/public_html/vtech/mobapp/dealer/ajax_files/ajax_customer_account.php on line 104
+[02-May-2023 18:01:26 UTC] PHP Warning:  Undefined array key "Photo" in /home2/dmitg/public_html/vtech/mobapp/dealer/ajax_files/ajax_customer_account.php on line 106
+[02-May-2023 18:01:26 UTC] PHP Warning:  Trying to access array offset on value of type null in /home2/dmitg/public_html/vtech/mobapp/dealer/ajax_files/ajax_customer_account.php on line 106
+[02-May-2023 18:01:26 UTC] PHP Warning:  Undefined array key "Photo" in /home2/dmitg/public_html/vtech/mobapp/dealer/ajax_files/ajax_customer_account.php on line 106
+[02-May-2023 18:01:26 UTC] PHP Warning:  Trying to access array offset on value of type null in /home2/dmitg/public_html/vtech/mobapp/dealer/ajax_files/ajax_customer_account.php on line 106
+[02-May-2023 18:01:26 UTC] PHP Warning:  Undefined array key "OldPhoto" in /home2/dmitg/public_html/vtech/mobapp/dealer/ajax_files/ajax_customer_account.php on line 114
+[02-May-2023 18:01:26 UTC] PHP Fatal error:  Uncaught Error: Call to undefined function getRow() in /home2/dmitg/public_html/vtech/mobapp/dealer/ajax_files/ajax_customer_account.php:197
+Stack trace:
+#0 {main}
+  thrown in /home2/dmitg/public_html/vtech/mobapp/dealer/ajax_files/ajax_customer_account.php on line 197
+[02-May-2023 18:02:24 UTC] PHP Warning:  include_once(../config.php): Failed to open stream: No such file or directory in /home2/dmitg/public_html/vtech/mobapp/dealer/ajax_files/ajax_dropdown.php on line 3
+[02-May-2023 18:02:24 UTC] PHP Warning:  include_once(): Failed opening '../config.php' for inclusion (include_path='.:/opt/cpanel/ea-php80/root/usr/share/pear') in /home2/dmitg/public_html/vtech/mobapp/dealer/ajax_files/ajax_dropdown.php on line 3
+[02-May-2023 18:02:24 UTC] PHP Warning:  Undefined variable $conn in /home2/dmitg/public_html/vtech/mobapp/dealer/ajax_files/ajax_dropdown.php on line 22
+[02-May-2023 18:02:24 UTC] PHP Fatal error:  Uncaught Error: Call to a member function query() on null in /home2/dmitg/public_html/vtech/mobapp/dealer/ajax_files/ajax_dropdown.php:22
+Stack trace:
+#0 {main}
+  thrown in /home2/dmitg/public_html/vtech/mobapp/dealer/ajax_files/ajax_dropdown.php on line 22
+[02-May-2023 18:02:37 UTC] PHP Warning:  include_once(../config.php): Failed to open stream: No such file or directory in /home2/dmitg/public_html/vtech/mobapp/dealer/ajax_files/ajax_product_specification.php on line 3
+[02-May-2023 18:02:37 UTC] PHP Warning:  include_once(): Failed opening '../config.php' for inclusion (include_path='.:/opt/cpanel/ea-php80/root/usr/share/pear') in /home2/dmitg/public_html/vtech/mobapp/dealer/ajax_files/ajax_product_specification.php on line 3
+[02-May-2023 18:02:37 UTC] PHP Warning:  Undefined array key "AcDc" in /home2/dmitg/public_html/vtech/mobapp/dealer/ajax_files/ajax_product_specification.php on line 89
+[02-May-2023 18:02:37 UTC] PHP Warning:  Undefined variable $conn in /home2/dmitg/public_html/vtech/mobapp/dealer/ajax_files/ajax_product_specification.php on line 97
+[02-May-2023 18:02:37 UTC] PHP Fatal error:  Uncaught Error: Call to a member function query() on null in /home2/dmitg/public_html/vtech/mobapp/dealer/ajax_files/ajax_product_specification.php:97
+Stack trace:
+#0 {main}
+  thrown in /home2/dmitg/public_html/vtech/mobapp/dealer/ajax_files/ajax_product_specification.php on line 97
+[02-May-2023 18:02:38 UTC] PHP Warning:  include_once(../config.php): Failed to open stream: No such file or directory in /home2/dmitg/public_html/vtech/mobapp/dealer/ajax_files/ajax_product_specification.php on line 3
+[02-May-2023 18:02:38 UTC] PHP Warning:  include_once(): Failed opening '../config.php' for inclusion (include_path='.:/opt/cpanel/ea-php80/root/usr/share/pear') in /home2/dmitg/public_html/vtech/mobapp/dealer/ajax_files/ajax_product_specification.php on line 3
+[02-May-2023 18:02:38 UTC] PHP Warning:  Undefined array key "AcDc" in /home2/dmitg/public_html/vtech/mobapp/dealer/ajax_files/ajax_product_specification.php on line 89
+[02-May-2023 18:02:38 UTC] PHP Warning:  Undefined variable $conn in /home2/dmitg/public_html/vtech/mobapp/dealer/ajax_files/ajax_product_specification.php on line 97
+[02-May-2023 18:02:38 UTC] PHP Fatal error:  Uncaught Error: Call to a member function query() on null in /home2/dmitg/public_html/vtech/mobapp/dealer/ajax_files/ajax_product_specification.php:97
+Stack trace:
+#0 {main}
+  thrown in /home2/dmitg/public_html/vtech/mobapp/dealer/ajax_files/ajax_product_specification.php on line 97
+[02-May-2023 18:02:39 UTC] PHP Warning:  include_once(../config.php): Failed to open stream: No such file or directory in /home2/dmitg/public_html/vtech/mobapp/dealer/ajax_files/ajax_product_specification.php on line 3
+[02-May-2023 18:02:39 UTC] PHP Warning:  include_once(): Failed opening '../config.php' for inclusion (include_path='.:/opt/cpanel/ea-php80/root/usr/share/pear') in /home2/dmitg/public_html/vtech/mobapp/dealer/ajax_files/ajax_product_specification.php on line 3
+[02-May-2023 18:02:39 UTC] PHP Warning:  Undefined array key "AcDc" in /home2/dmitg/public_html/vtech/mobapp/dealer/ajax_files/ajax_product_specification.php on line 89
+[02-May-2023 18:02:39 UTC] PHP Warning:  Undefined variable $conn in /home2/dmitg/public_html/vtech/mobapp/dealer/ajax_files/ajax_product_specification.php on line 97
+[02-May-2023 18:02:39 UTC] PHP Fatal error:  Uncaught Error: Call to a member function query() on null in /home2/dmitg/public_html/vtech/mobapp/dealer/ajax_files/ajax_product_specification.php:97
+Stack trace:
+#0 {main}
+  thrown in /home2/dmitg/public_html/vtech/mobapp/dealer/ajax_files/ajax_product_specification.php on line 97
+[02-May-2023 18:02:40 UTC] PHP Warning:  include_once(../config.php): Failed to open stream: No such file or directory in /home2/dmitg/public_html/vtech/mobapp/dealer/ajax_files/ajax_product_specification.php on line 3
+[02-May-2023 18:02:40 UTC] PHP Warning:  include_once(): Failed opening '../config.php' for inclusion (include_path='.:/opt/cpanel/ea-php80/root/usr/share/pear') in /home2/dmitg/public_html/vtech/mobapp/dealer/ajax_files/ajax_product_specification.php on line 3
+[02-May-2023 18:02:40 UTC] PHP Warning:  Undefined array key "AcDc" in /home2/dmitg/public_html/vtech/mobapp/dealer/ajax_files/ajax_product_specification.php on line 89
+[02-May-2023 18:02:40 UTC] PHP Warning:  Undefined variable $conn in /home2/dmitg/public_html/vtech/mobapp/dealer/ajax_files/ajax_product_specification.php on line 97
+[02-May-2023 18:02:40 UTC] PHP Fatal error:  Uncaught Error: Call to a member function query() on null in /home2/dmitg/public_html/vtech/mobapp/dealer/ajax_files/ajax_product_specification.php:97
+Stack trace:
+#0 {main}
+  thrown in /home2/dmitg/public_html/vtech/mobapp/dealer/ajax_files/ajax_product_specification.php on line 97
+[02-May-2023 18:02:42 UTC] PHP Warning:  include_once(../config.php): Failed to open stream: No such file or directory in /home2/dmitg/public_html/vtech/mobapp/dealer/ajax_files/ajax_product_specification.php on line 3
+[02-May-2023 18:02:42 UTC] PHP Warning:  include_once(): Failed opening '../config.php' for inclusion (include_path='.:/opt/cpanel/ea-php80/root/usr/share/pear') in /home2/dmitg/public_html/vtech/mobapp/dealer/ajax_files/ajax_product_specification.php on line 3
+[02-May-2023 18:02:42 UTC] PHP Warning:  Undefined array key "AcDc" in /home2/dmitg/public_html/vtech/mobapp/dealer/ajax_files/ajax_product_specification.php on line 89
+[02-May-2023 18:02:42 UTC] PHP Warning:  Undefined variable $conn in /home2/dmitg/public_html/vtech/mobapp/dealer/ajax_files/ajax_product_specification.php on line 97
+[02-May-2023 18:02:42 UTC] PHP Fatal error:  Uncaught Error: Call to a member function query() on null in /home2/dmitg/public_html/vtech/mobapp/dealer/ajax_files/ajax_product_specification.php:97
+Stack trace:
+#0 {main}
+  thrown in /home2/dmitg/public_html/vtech/mobapp/dealer/ajax_files/ajax_product_specification.php on line 97
+[02-May-2023 18:02:43 UTC] PHP Warning:  include_once(../config.php): Failed to open stream: No such file or directory in /home2/dmitg/public_html/vtech/mobapp/dealer/ajax_files/ajax_product_specification.php on line 3
+[02-May-2023 18:02:43 UTC] PHP Warning:  include_once(): Failed opening '../config.php' for inclusion (include_path='.:/opt/cpanel/ea-php80/root/usr/share/pear') in /home2/dmitg/public_html/vtech/mobapp/dealer/ajax_files/ajax_product_specification.php on line 3
+[02-May-2023 18:02:43 UTC] PHP Warning:  Undefined array key "AcDc" in /home2/dmitg/public_html/vtech/mobapp/dealer/ajax_files/ajax_product_specification.php on line 89
+[02-May-2023 18:02:43 UTC] PHP Warning:  Undefined variable $conn in /home2/dmitg/public_html/vtech/mobapp/dealer/ajax_files/ajax_product_specification.php on line 97
+[02-May-2023 18:02:43 UTC] PHP Fatal error:  Uncaught Error: Call to a member function query() on null in /home2/dmitg/public_html/vtech/mobapp/dealer/ajax_files/ajax_product_specification.php:97
+Stack trace:
+#0 {main}
+  thrown in /home2/dmitg/public_html/vtech/mobapp/dealer/ajax_files/ajax_product_specification.php on line 97
+[02-May-2023 18:04:44 UTC] PHP Warning:  include_once(../config.php): Failed to open stream: No such file or directory in /home2/dmitg/public_html/vtech/mobapp/dealer/ajax_files/ajax_dropdown.php on line 3
+[02-May-2023 18:04:44 UTC] PHP Warning:  include_once(): Failed opening '../config.php' for inclusion (include_path='.:/opt/cpanel/ea-php80/root/usr/share/pear') in /home2/dmitg/public_html/vtech/mobapp/dealer/ajax_files/ajax_dropdown.php on line 3
+[02-May-2023 18:04:44 UTC] PHP Warning:  Undefined variable $conn in /home2/dmitg/public_html/vtech/mobapp/dealer/ajax_files/ajax_dropdown.php on line 22
+[02-May-2023 18:04:44 UTC] PHP Fatal error:  Uncaught Error: Call to a member function query() on null in /home2/dmitg/public_html/vtech/mobapp/dealer/ajax_files/ajax_dropdown.php:22
+Stack trace:
+#0 {main}
+  thrown in /home2/dmitg/public_html/vtech/mobapp/dealer/ajax_files/ajax_dropdown.php on line 22
+[02-May-2023 18:07:51 UTC] PHP Warning:  include_once(../config.php): Failed to open stream: No such file or directory in /home2/dmitg/public_html/vtech/mobapp/dealer/ajax_files/ajax_dropdown.php on line 3
+[02-May-2023 18:07:51 UTC] PHP Warning:  include_once(): Failed opening '../config.php' for inclusion (include_path='.:/opt/cpanel/ea-php80/root/usr/share/pear') in /home2/dmitg/public_html/vtech/mobapp/dealer/ajax_files/ajax_dropdown.php on line 3
+[02-May-2023 18:07:51 UTC] PHP Warning:  Undefined variable $conn in /home2/dmitg/public_html/vtech/mobapp/dealer/ajax_files/ajax_dropdown.php on line 22
+[02-May-2023 18:07:51 UTC] PHP Fatal error:  Uncaught Error: Call to a member function query() on null in /home2/dmitg/public_html/vtech/mobapp/dealer/ajax_files/ajax_dropdown.php:22
+Stack trace:
+#0 {main}
+  thrown in /home2/dmitg/public_html/vtech/mobapp/dealer/ajax_files/ajax_dropdown.php on line 22
+[02-May-2023 18:41:34 UTC] PHP Warning:  include_once(../config.php): Failed to open stream: No such file or directory in /home2/dmitg/public_html/vtech/mobapp/dealer/ajax_files/ajax_dealer.php on line 3
+[02-May-2023 18:41:34 UTC] PHP Warning:  include_once(): Failed opening '../config.php' for inclusion (include_path='.:/opt/cpanel/ea-php80/root/usr/share/pear') in /home2/dmitg/public_html/vtech/mobapp/dealer/ajax_files/ajax_dealer.php on line 3
+[02-May-2023 18:41:34 UTC] PHP Warning:  Undefined array key "Mname" in /home2/dmitg/public_html/vtech/mobapp/dealer/ajax_files/ajax_dealer.php on line 8
+[02-May-2023 18:41:34 UTC] PHP Warning:  Undefined array key "Lname" in /home2/dmitg/public_html/vtech/mobapp/dealer/ajax_files/ajax_dealer.php on line 9
+[02-May-2023 18:41:34 UTC] PHP Warning:  Undefined array key "Password" in /home2/dmitg/public_html/vtech/mobapp/dealer/ajax_files/ajax_dealer.php on line 13
+[02-May-2023 18:41:34 UTC] PHP Warning:  Undefined array key "CountryId" in /home2/dmitg/public_html/vtech/mobapp/dealer/ajax_files/ajax_dealer.php on line 14
+[02-May-2023 18:41:34 UTC] PHP Warning:  Undefined array key "StateId" in /home2/dmitg/public_html/vtech/mobapp/dealer/ajax_files/ajax_dealer.php on line 15
+[02-May-2023 18:41:34 UTC] PHP Warning:  Undefined array key "CityId" in /home2/dmitg/public_html/vtech/mobapp/dealer/ajax_files/ajax_dealer.php on line 16
+[02-May-2023 18:41:34 UTC] PHP Warning:  Undefined array key "Pincode" in /home2/dmitg/public_html/vtech/mobapp/dealer/ajax_files/ajax_dealer.php on line 19
+[02-May-2023 18:41:34 UTC] PHP Warning:  Undefined array key "Status" in /home2/dmitg/public_html/vtech/mobapp/dealer/ajax_files/ajax_dealer.php on line 21
+[02-May-2023 18:41:34 UTC] PHP Warning:  Undefined array key "CatId" in /home2/dmitg/public_html/vtech/mobapp/dealer/ajax_files/ajax_dealer.php on line 22
+[02-May-2023 18:41:34 UTC] PHP Warning:  Undefined array key "Roll" in /home2/dmitg/public_html/vtech/mobapp/dealer/ajax_files/ajax_dealer.php on line 23
+[02-May-2023 18:41:34 UTC] PHP Warning:  Undefined array key "Photo2" in /home2/dmitg/public_html/vtech/mobapp/dealer/ajax_files/ajax_dealer.php on line 56
+[02-May-2023 18:41:34 UTC] PHP Warning:  Trying to access array offset on value of type null in /home2/dmitg/public_html/vtech/mobapp/dealer/ajax_files/ajax_dealer.php on line 56
+[02-May-2023 18:41:34 UTC] PHP Warning:  Undefined array key "Photo2" in /home2/dmitg/public_html/vtech/mobapp/dealer/ajax_files/ajax_dealer.php on line 57
+[02-May-2023 18:41:34 UTC] PHP Warning:  Trying to access array offset on value of type null in /home2/dmitg/public_html/vtech/mobapp/dealer/ajax_files/ajax_dealer.php on line 57
+[02-May-2023 18:41:34 UTC] PHP Warning:  Undefined array key "Photo2" in /home2/dmitg/public_html/vtech/mobapp/dealer/ajax_files/ajax_dealer.php on line 57
+[02-May-2023 18:41:34 UTC] PHP Warning:  Trying to access array offset on value of type null in /home2/dmitg/public_html/vtech/mobapp/dealer/ajax_files/ajax_dealer.php on line 57
+[02-May-2023 18:41:34 UTC] PHP Warning:  Undefined array key "Photo2" in /home2/dmitg/public_html/vtech/mobapp/dealer/ajax_files/ajax_dealer.php on line 59
+[02-May-2023 18:41:34 UTC] PHP Warning:  Trying to access array offset on value of type null in /home2/dmitg/public_html/vtech/mobapp/dealer/ajax_files/ajax_dealer.php on line 59
+[02-May-2023 18:41:34 UTC] PHP Warning:  Undefined array key "Photo2" in /home2/dmitg/public_html/vtech/mobapp/dealer/ajax_files/ajax_dealer.php on line 59
+[02-May-2023 18:41:34 UTC] PHP Warning:  Trying to access array offset on value of type null in /home2/dmitg/public_html/vtech/mobapp/dealer/ajax_files/ajax_dealer.php on line 59
+[02-May-2023 18:41:34 UTC] PHP Warning:  Undefined array key "OldPhoto2" in /home2/dmitg/public_html/vtech/mobapp/dealer/ajax_files/ajax_dealer.php on line 67
+[02-May-2023 18:41:34 UTC] PHP Warning:  Undefined array key "Photo3" in /home2/dmitg/public_html/vtech/mobapp/dealer/ajax_files/ajax_dealer.php on line 72
+[02-May-2023 18:41:34 UTC] PHP Warning:  Trying to access array offset on value of type null in /home2/dmitg/public_html/vtech/mobapp/dealer/ajax_files/ajax_dealer.php on line 72
+[02-May-2023 18:41:34 UTC] PHP Warning:  Undefined array key "Photo3" in /home2/dmitg/public_html/vtech/mobapp/dealer/ajax_files/ajax_dealer.php on line 73
+[02-May-2023 18:41:34 UTC] PHP Warning:  Trying to access array offset on value of type null in /home2/dmitg/public_html/vtech/mobapp/dealer/ajax_files/ajax_dealer.php on line 73
+[02-May-2023 18:41:34 UTC] PHP Warning:  Undefined array key "Photo3" in /home2/dmitg/public_html/vtech/mobapp/dealer/ajax_files/ajax_dealer.php on line 73
+[02-May-2023 18:41:34 UTC] PHP Warning:  Trying to access array offset on value of type null in /home2/dmitg/public_html/vtech/mobapp/dealer/ajax_files/ajax_dealer.php on line 73
+[02-May-2023 18:41:34 UTC] PHP Warning:  Undefined array key "Photo3" in /home2/dmitg/public_html/vtech/mobapp/dealer/ajax_files/ajax_dealer.php on line 75
+[02-May-2023 18:41:34 UTC] PHP Warning:  Trying to access array offset on value of type null in /home2/dmitg/public_html/vtech/mobapp/dealer/ajax_files/ajax_dealer.php on line 75
+[02-May-2023 18:41:34 UTC] PHP Warning:  Undefined array key "Photo3" in /home2/dmitg/public_html/vtech/mobapp/dealer/ajax_files/ajax_dealer.php on line 75
+[02-May-2023 18:41:34 UTC] PHP Warning:  Trying to access array offset on value of type null in /home2/dmitg/public_html/vtech/mobapp/dealer/ajax_files/ajax_dealer.php on line 75
+[02-May-2023 18:41:34 UTC] PHP Warning:  Undefined array key "OldPhoto3" in /home2/dmitg/public_html/vtech/mobapp/dealer/ajax_files/ajax_dealer.php on line 83
+[02-May-2023 18:41:34 UTC] PHP Warning:  move_uploaded_file(../../uploads/80_sample.pdf): Failed to open stream: No such file or directory in /home2/dmitg/public_html/vtech/mobapp/dealer/ajax_files/ajax_dealer.php on line 94
+[02-May-2023 18:41:34 UTC] PHP Warning:  move_uploaded_file(): Unable to move &quot;/tmp/phpuCkno6&quot; to &quot;../../uploads/80_sample.pdf&quot; in /home2/dmitg/public_html/vtech/mobapp/dealer/ajax_files/ajax_dealer.php on line 94
+[02-May-2023 18:41:34 UTC] PHP Warning:  Undefined variable $Gumasta in /home2/dmitg/public_html/vtech/mobapp/dealer/ajax_files/ajax_dealer.php on line 174
+[02-May-2023 18:41:34 UTC] PHP Warning:  Undefined variable $Msme in /home2/dmitg/public_html/vtech/mobapp/dealer/ajax_files/ajax_dealer.php on line 174
+[02-May-2023 18:41:34 UTC] PHP Warning:  Undefined variable $conn in /home2/dmitg/public_html/vtech/mobapp/dealer/ajax_files/ajax_dealer.php on line 175
+[02-May-2023 18:41:34 UTC] PHP Fatal error:  Uncaught Error: Call to a member function query() on null in /home2/dmitg/public_html/vtech/mobapp/dealer/ajax_files/ajax_dealer.php:175
+Stack trace:
+#0 {main}
+  thrown in /home2/dmitg/public_html/vtech/mobapp/dealer/ajax_files/ajax_dealer.php on line 175
+[02-May-2023 18:49:31 UTC] PHP Warning:  include_once(../config.php): Failed to open stream: No such file or directory in /home2/dmitg/public_html/vtech/mobapp/manufacture/ajax_files/ajax_manufacture.php on line 3
+[02-May-2023 18:49:31 UTC] PHP Warning:  include_once(): Failed opening '../config.php' for inclusion (include_path='.:/opt/cpanel/ea-php80/root/usr/share/pear') in /home2/dmitg/public_html/vtech/mobapp/manufacture/ajax_files/ajax_manufacture.php on line 3
+[02-May-2023 18:49:31 UTC] PHP Warning:  Undefined array key "Mname" in /home2/dmitg/public_html/vtech/mobapp/manufacture/ajax_files/ajax_manufacture.php on line 8
+[02-May-2023 18:49:31 UTC] PHP Warning:  Undefined array key "Lname" in /home2/dmitg/public_html/vtech/mobapp/manufacture/ajax_files/ajax_manufacture.php on line 9
+[02-May-2023 18:49:31 UTC] PHP Warning:  Undefined array key "Password" in /home2/dmitg/public_html/vtech/mobapp/manufacture/ajax_files/ajax_manufacture.php on line 13
+[02-May-2023 18:49:31 UTC] PHP Warning:  Undefined array key "CountryId" in /home2/dmitg/public_html/vtech/mobapp/manufacture/ajax_files/ajax_manufacture.php on line 14
+[02-May-2023 18:49:31 UTC] PHP Warning:  Undefined array key "StateId" in /home2/dmitg/public_html/vtech/mobapp/manufacture/ajax_files/ajax_manufacture.php on line 15
+[02-May-2023 18:49:31 UTC] PHP Warning:  Undefined array key "CityId" in /home2/dmitg/public_html/vtech/mobapp/manufacture/ajax_files/ajax_manufacture.php on line 16
+[02-May-2023 18:49:31 UTC] PHP Warning:  Undefined array key "Pincode" in /home2/dmitg/public_html/vtech/mobapp/manufacture/ajax_files/ajax_manufacture.php on line 19
+[02-May-2023 18:49:31 UTC] PHP Warning:  Undefined array key "Status" in /home2/dmitg/public_html/vtech/mobapp/manufacture/ajax_files/ajax_manufacture.php on line 21
+[02-May-2023 18:49:31 UTC] PHP Warning:  Undefined array key "CatId" in /home2/dmitg/public_html/vtech/mobapp/manufacture/ajax_files/ajax_manufacture.php on line 22
+[02-May-2023 18:49:31 UTC] PHP Warning:  Undefined array key "Roll" in /home2/dmitg/public_html/vtech/mobapp/manufacture/ajax_files/ajax_manufacture.php on line 23
+[02-May-2023 18:49:31 UTC] PHP Warning:  Undefined array key "Photo2" in /home2/dmitg/public_html/vtech/mobapp/manufacture/ajax_files/ajax_manufacture.php on line 60
+[02-May-2023 18:49:31 UTC] PHP Warning:  Trying to access array offset on value of type null in /home2/dmitg/public_html/vtech/mobapp/manufacture/ajax_files/ajax_manufacture.php on line 60
+[02-May-2023 18:49:31 UTC] PHP Warning:  Undefined array key "Photo2" in /home2/dmitg/public_html/vtech/mobapp/manufacture/ajax_files/ajax_manufacture.php on line 61
+[02-May-2023 18:49:31 UTC] PHP Warning:  Trying to access array offset on value of type null in /home2/dmitg/public_html/vtech/mobapp/manufacture/ajax_files/ajax_manufacture.php on line 61
+[02-May-2023 18:49:31 UTC] PHP Warning:  Undefined array key "Photo2" in /home2/dmitg/public_html/vtech/mobapp/manufacture/ajax_files/ajax_manufacture.php on line 61
+[02-May-2023 18:49:31 UTC] PHP Warning:  Trying to access array offset on value of type null in /home2/dmitg/public_html/vtech/mobapp/manufacture/ajax_files/ajax_manufacture.php on line 61
+[02-May-2023 18:49:31 UTC] PHP Warning:  Undefined array key "Photo2" in /home2/dmitg/public_html/vtech/mobapp/manufacture/ajax_files/ajax_manufacture.php on line 63
+[02-May-2023 18:49:31 UTC] PHP Warning:  Trying to access array offset on value of type null in /home2/dmitg/public_html/vtech/mobapp/manufacture/ajax_files/ajax_manufacture.php on line 63
+[02-May-2023 18:49:31 UTC] PHP Warning:  Undefined array key "Photo2" in /home2/dmitg/public_html/vtech/mobapp/manufacture/ajax_files/ajax_manufacture.php on line 63
+[02-May-2023 18:49:31 UTC] PHP Warning:  Trying to access array offset on value of type null in /home2/dmitg/public_html/vtech/mobapp/manufacture/ajax_files/ajax_manufacture.php on line 63
+[02-May-2023 18:49:31 UTC] PHP Warning:  Undefined array key "OldPhoto2" in /home2/dmitg/public_html/vtech/mobapp/manufacture/ajax_files/ajax_manufacture.php on line 71
+[02-May-2023 18:49:31 UTC] PHP Warning:  Undefined array key "Photo3" in /home2/dmitg/public_html/vtech/mobapp/manufacture/ajax_files/ajax_manufacture.php on line 76
+[02-May-2023 18:49:31 UTC] PHP Warning:  Trying to access array offset on value of type null in /home2/dmitg/public_html/vtech/mobapp/manufacture/ajax_files/ajax_manufacture.php on line 76
+[02-May-2023 18:49:31 UTC] PHP Warning:  Undefined array key "Photo3" in /home2/dmitg/public_html/vtech/mobapp/manufacture/ajax_files/ajax_manufacture.php on line 77
+[02-May-2023 18:49:31 UTC] PHP Warning:  Trying to access array offset on value of type null in /home2/dmitg/public_html/vtech/mobapp/manufacture/ajax_files/ajax_manufacture.php on line 77
+[02-May-2023 18:49:31 UTC] PHP Warning:  Undefined array key "Photo3" in /home2/dmitg/public_html/vtech/mobapp/manufacture/ajax_files/ajax_manufacture.php on line 77
+[02-May-2023 18:49:31 UTC] PHP Warning:  Trying to access array offset on value of type null in /home2/dmitg/public_html/vtech/mobapp/manufacture/ajax_files/ajax_manufacture.php on line 77
+[02-May-2023 18:49:31 UTC] PHP Warning:  Undefined array key "Photo3" in /home2/dmitg/public_html/vtech/mobapp/manufacture/ajax_files/ajax_manufacture.php on line 79
+[02-May-2023 18:49:31 UTC] PHP Warning:  Trying to access array offset on value of type null in /home2/dmitg/public_html/vtech/mobapp/manufacture/ajax_files/ajax_manufacture.php on line 79
+[02-May-2023 18:49:31 UTC] PHP Warning:  Undefined array key "Photo3" in /home2/dmitg/public_html/vtech/mobapp/manufacture/ajax_files/ajax_manufacture.php on line 79
+[02-May-2023 18:49:31 UTC] PHP Warning:  Trying to access array offset on value of type null in /home2/dmitg/public_html/vtech/mobapp/manufacture/ajax_files/ajax_manufacture.php on line 79
+[02-May-2023 18:49:31 UTC] PHP Warning:  Undefined array key "OldPhoto3" in /home2/dmitg/public_html/vtech/mobapp/manufacture/ajax_files/ajax_manufacture.php on line 87
+[02-May-2023 18:49:31 UTC] PHP Warning:  Undefined variable $Gumasta in /home2/dmitg/public_html/vtech/mobapp/manufacture/ajax_files/ajax_manufacture.php on line 179
+[02-May-2023 18:49:31 UTC] PHP Warning:  Undefined variable $Msme in /home2/dmitg/public_html/vtech/mobapp/manufacture/ajax_files/ajax_manufacture.php on line 179
+[02-May-2023 18:49:31 UTC] PHP Warning:  Undefined variable $conn in /home2/dmitg/public_html/vtech/mobapp/manufacture/ajax_files/ajax_manufacture.php on line 180
+[02-May-2023 18:49:31 UTC] PHP Fatal error:  Uncaught Error: Call to a member function query() on null in /home2/dmitg/public_html/vtech/mobapp/manufacture/ajax_files/ajax_manufacture.php:180
+Stack trace:
+#0 {main}
+  thrown in /home2/dmitg/public_html/vtech/mobapp/manufacture/ajax_files/ajax_manufacture.php on line 180
+[02-May-2023 18:55:35 UTC] PHP Warning:  include_once(../config.php): Failed to open stream: No such file or directory in /home2/dmitg/public_html/vtech/mobapp/manufacture/ajax_files/ajax_vendor.php on line 3
+[02-May-2023 18:55:35 UTC] PHP Warning:  include_once(): Failed opening '../config.php' for inclusion (include_path='.:/opt/cpanel/ea-php80/root/usr/share/pear') in /home2/dmitg/public_html/vtech/mobapp/manufacture/ajax_files/ajax_vendor.php on line 3
+[02-May-2023 18:55:35 UTC] PHP Fatal error:  Uncaught Error: Call to undefined function getRecord() in /home2/dmitg/public_html/vtech/mobapp/manufacture/ajax_files/ajax_vendor.php:106
+Stack trace:
+#0 {main}
+  thrown in /home2/dmitg/public_html/vtech/mobapp/manufacture/ajax_files/ajax_vendor.php on line 106

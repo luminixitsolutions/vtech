@@ -1,0 +1,6 @@
+[27-Apr-2023 18:51:02 UTC] PHP Warning:  session_start(): Session cannot be started after headers have already been sent in /home2/dmitg/public_html/vtech/admin/dashboard.php on line 7
+[27-Apr-2023 18:51:22 UTC] PHP Warning:  session_start(): Session cannot be started after headers have already been sent in /home2/dmitg/public_html/vtech/admin/dashboard.php on line 7
+[28-Apr-2023 06:12:33 UTC] PHP Warning:  session_start(): Session cannot be started after headers have already been sent in /home2/dmitg/public_html/vtech/admin/show-all-customer-report.php on line 17
+[28-Apr-2023 06:13:18 UTC] PHP Warning:  session_start(): Session cannot be started after headers have already been sent in /home2/dmitg/public_html/vtech/admin/show-all-customer-report.php on line 17
+[28-Apr-2023 11:05:18 UTC] PHP Warning:  session_start(): Session cannot be started after headers have already been sent in /home2/dmitg/public_html/vtech/admin/show-all-customer-report.php on line 17
+[28-Apr-2023 11:06:28 UTC] PHP Warning:  session_start(): Session cannot be started after headers have already been sent in /home2/dmitg/public_html/vtech/admin/show-all-customer-report.php on line 17

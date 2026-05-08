@@ -1,0 +1,418 @@
+<?php 
+session_start();
+include_once 'config.php';
+include_once 'auth.php';
+$user_id = $_SESSION['Admin']['id'];
+$MainPage = "Leads";
+$Page = "Bank-Leads";
+?>
+<!DOCTYPE html>
+<html lang="en" class="default-style layout-fixed layout-navbar-fixed">
+<head>
+<title><?php echo $Proj_Title; ?> | Education Leads List</title>
+<meta charset="utf-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=0, minimal-ui">
+<meta name="description" content="" />
+<meta name="keywords" content="">
+<meta name="author" content="" />
+<link rel="stylesheet" href="pipe/css/style.css">
+
+<?php include_once 'header_script.php'; ?>
+
+<link rel="stylesheet" href="https://cdn.datatables.net/responsive/2.2.3/css/responsive.bootstrap.min.css">
+</head>
+<body>
+<style>
+/*  .breadcrumbs {*/
+/*  border: 1px solid #cbd2d9;*/
+/*  border-radius: 0.3rem;*/
+/*  display: inline-flex;*/
+/*  overflow: hidden;*/
+/*}*/
+
+/*.breadcrumbs__item {*/
+/*  background: #fff;*/
+/*  color: #333;*/
+/*  outline: none;*/
+/*  padding: 0.75em 0.75em 0.75em 1.25em;*/
+/*  position: relative;*/
+/*  text-decoration: none;*/
+/*  transition: background 0.2s linear;*/
+/*}*/
+
+/*.breadcrumbs__item:hover:after,*/
+/*.breadcrumbs__item:hover {*/
+/*  background: #62d493;*/
+/*}*/
+
+/*.breadcrumbs__item:focus:after,*/
+/*.breadcrumbs__item:focus,*/
+/*.breadcrumbs__item.is-active:focus {*/
+/*  background: #323f4a;*/
+/*  color: #fff;*/
+/*}*/
+
+/*.breadcrumbs__item:after,*/
+/*.breadcrumbs__item:before {*/
+/*  background: white;*/
+/*  bottom: 2px;*/
+/*  -webkit-clip-path: polygon(50% 50%, -50% -50%, 0 100%);*/
+/*          clip-path: polygon(50% 50%, -50% -50%, 0 100%);*/
+/*  content: "";*/
+/*  left: 100%;*/
+/*  position: absolute;*/
+/*  top: 0;*/
+/*  transition: background 0.2s linear;*/
+/*  width: 1em;*/
+/*  z-index: 1;*/
+/*}*/
+
+/*.breadcrumbs__item:before {*/
+/*  background: #cbd2d9;*/
+/*  margin-left: 1px;*/
+/*}*/
+
+/*.breadcrumbs__item:last-child {*/
+/*  border-right: none;*/
+/*}*/
+
+/*.breadcrumbs__item.is-active {*/
+/*  background: #62d493;*/
+/*}*/
+
+
+/* Some styles to make the page look a little nicer */
+
+</style>
+<body class="body-scroll d-flex flex-column h-100 menu-overlay">
+   
+
+
+    <!-- Begin page content -->
+    <main class="flex-shrink-0 main">
+        <!-- Fixed navbar -->
+        <?php include_once 'back-header.php'; ?> 
+        
+
+        <div class="main-container">
+
+<?php //include_once 'sidebar.php'; ?>
+
+
+
+
+<?php //include_once 'top_header.php'; ?>
+
+<?php 
+$id = $_GET['id'];
+$sql7 = "SELECT * FROM tbl_other_feedback WHERE id='$id'";
+$row7 = getRecord($sql7);
+
+
+  if(isset($_POST['submit'])){
+    $CustId = addslashes(trim($_POST["CustId"]));
+    $Fname = addslashes(trim($_POST['Fname']));
+$Status = $_POST["Status"];
+$Phone = addslashes(trim($_POST["Phone"]));
+$Address = addslashes(trim($_POST['Address']));
+$EmailId = addslashes(trim($_POST["EmailId"]));
+$CallAfter = addslashes(trim($_POST["CallAfter"]));
+$NextDate = addslashes(trim($_POST["NextDate"]));
+$NextTime = addslashes(trim($_POST["NextTime"]));
+$Details = addslashes(trim($_POST["Details"]));
+$UserType = $_POST['UserType'];
+$CreatedDate = date('Y-m-d');
+$CreatedTime = date('h:i a');
+
+$sql = "INSERT INTO tbl_users SET Fname='$Fname',Phone='$Phone',EmailId='$EmailId',Address='$Address',UserType='$UserType',Roll=5";
+  $conn->query($sql);
+$CustId = mysqli_insert_id($conn);
+
+      $qx = "INSERT INTO tbl_other_feedback SET CustId='$CustId',CustName='$Fname',Phone = '$Phone',EmailId='$EmailId',Status='1',Address='$Address',CreatedBy='$user_id',NextDate='$NextDate',NextTime='$NextTime',Details='$Details',CreatedDate='$CreatedDate',CreatedTime='$CreatedTime'";
+  $conn->query($qx);
+  $FeedId = mysqli_insert_id($conn);
+
+  
+echo "<script>alert('Feedback Added Successfully!');window.close();window.opener.location.reload(true);</script>";
+
+  }
+ ?>
+
+<!-- [ content ] Start -->
+                    <div class="container-fluid flex-grow-1 container-p-y">
+
+<style type="text/css">
+    {
+    --breadcrumb-theme-11: red;
+}
+</style>
+
+                   
+                        <!-- Header -->
+
+                        <div class="row">
+                            <div class="col">
+
+                                <!-- Info -->
+                             
+                                     
+                                        
+                                <!-- / Info -->
+
+                                <!-- Posts -->
+
+ <div class="card mb-4">
+                            <h6 class="card-header">Notes</h6>
+                            <div class="card-body">
+                                <form id="validation-form" method="post" enctype="multipart/form-data">
+                                     
+<div class="form-row">
+                               
+<div class="form-group col-md-6">
+                                            <label class="form-label">Mobile No <span
+                                                    class="text-danger">*</span></label>
+                                            <input type="text" name="Phone" id="Phone" class="form-control"
+                                                placeholder="Mobile No" value="<?php echo $row7["Phone"]; ?>" oninput="getUserDetails()">
+                                            <div class="clearfix"></div>
+                                        </div>
+
+                                         <div class="form-group col-md-6">
+                                            <label class="form-label">Email Id </label>
+                                            <input type="email" name="EmailId" id="EmailId" class="form-control"
+                                                placeholder="Email Id" value="<?php echo $row7["EmailId"]; ?>"
+                                                autocomplete="off">
+                                            <div class="clearfix"></div>
+                                        </div>
+
+<div class="form-group col-md-12">
+                                            <label class="form-label">Customer Name <span
+                                                    class="text-danger">*</span></label>
+                                            <input type="text" name="Fname" id="Fname" class="form-control"
+                                                placeholder="" value="<?php echo $row7["CustName"]; ?>"
+                                                autocomplete="off">
+                                        </div>
+
+
+                                       
+                                       
+                                        
+
+                                          <div class="form-group col-md-12">
+                                            <label class="form-label">Address <span class="text-danger">*</span></label>
+                                            <textarea name="Address" id="Address" class="form-control" placeholder="Address"
+                                                autocomplete="off" required><?php echo $row7["Address"]; ?></textarea>
+                                            <div class="clearfix"></div>
+                                        </div>
+
+
+  <div class="form-group col-md-12">
+                                            <label class="form-label">Customer Type </label>
+                                            <select class="form-control" name="UserType" id="UserType">
+                                                <option selected="" disabled="">Select Customer Type</option>
+                                                <?php 
+                                        $q = "select * from tbl_user_type WHERE Status=1 AND id!=1";
+                                        $r = $conn->query($q);
+                                        while($rw = $r->fetch_assoc())
+                                    {
+                                ?>
+                                                <option <?php if($row7['UserType']==$rw['id']){ ?> selected <?php } ?>
+                                                    value="<?php echo $rw['id']; ?>"><?php echo $rw['Name']; ?></option>
+                                                <?php } ?>
+                                            </select>
+                                        </div>
+
+<div class="form-group col-lg-12">
+<label class="form-label">Conversation <span class="text-danger">*</span></label>
+<textarea name="Details" class="form-control" placeholder="Details" required></textarea>
+<div class="clearfix"></div>
+</div>
+
+<div class="form-group col-md-6 col-lg-6 col-xl-6">
+<label class="form-label">Call After Date</label>
+<input type="date" name="NextDate" class="form-control" id="NextDate" placeholder="" value="">
+<div class="clearfix"></div>
+</div>
+
+<div class="form-group col-md-6 col-lg-6 col-xl-6">
+<label class="form-label">Time</label>
+<input type="text" name="NextTime" class="form-control" id="NextTime" placeholder="" value="">
+<div class="clearfix"></div>
+</div>
+
+</div>
+
+                                <button class="btn btn-primary" type="submit" name="submit"
+                               >Save</button>
+                                </form>
+                            </div>
+                        </div>
+
+
+ 
+                                
+
+                                
+
+                            </div>
+                            <div class="col-xl-5">
+
+                               
+
+                                
+
+                            </div>
+                        </div>
+
+                    </div>
+                    <!-- [ content ] End -->
+
+                    <!-- [ Layout footer ] Start -->
+                  
+                    <!-- [ Layout footer ] End -->
+
+                </div>
+                <!-- [ Layout content ] Start -->
+                
+</div>
+</div>
+</div>
+
+
+<?php include_once 'footer.php'; ?>
+
+</div>
+
+</main>
+
+    <!-- footer-->
+    
+
+
+    <!-- Required jquery and libraries -->
+    <script src="js/jquery-3.3.1.min.js"></script>
+    <script src="js/popper.min.js"></script>
+    <script src="vendor/bootstrap/js/bootstrap.min.js"></script>
+
+    <!-- cookie js -->
+    <script src="js/jquery.cookie.js"></script>
+
+    <!-- Swiper slider  js-->
+    <script src="vendor/swiper/js/swiper.min.js"></script>
+
+    <!-- Customized jquery file  -->
+    <script src="js/main.js"></script>
+    <script src="js/color-scheme-demo.js"></script>
+
+
+    <!-- page level custom script -->
+    <script src="js/app.js"></script>
+       <?php include_once 'footer_script.php'; ?>
+
+    <!-- Libs -->
+    <script src="assets/libs/perfect-scrollbar/perfect-scrollbar.js"></script>
+
+    <!-- Demo -->
+    <script src="assets/js/demo.js"></script><script src="assets/js/analytics.js"></script>
+
+
+<script type="text/javascript">
+ 
+	$(document).ready(function() {
+    $('#example').DataTable({
+        "scrollX": true
+    });
+});
+</script>
+<script>
+       function featured(){
+        if($('#VeryInt').prop('checked') == true) {
+            $('#VeryInt').val(1);
+            $('.ptnlist').show();
+        }
+        else{
+           $('#VeryInt').val(0);
+            $('.ptnlist').hide();
+            }
+        }
+$(document).ready(function() {
+           $(document).on("change", "#Services", function(event) {
+            var val = this.value;
+            var action = "getServicesDetails";
+            $.ajax({
+                url: "ajax_files/ajax_dropdown.php",
+                method: "POST",
+                data: {
+                    action: action,
+                    id: val
+                },
+                success: function(data) {
+                    $('#servicedetails').html(data);
+                  
+                }
+            });
+
+        });
+
+           $(document).on("change", "#PartId", function(event) {
+            var val = this.value;
+            var action = "getBranch";
+            $.ajax({
+                url: "ajax_files/ajax_dropdown.php",
+                method: "POST",
+                data: {
+                    action: action,
+                    id: val
+                },
+                success: function(data) {
+                    $('#BranchId').html(data);
+                  
+                }
+            });
+
+        });
+
+            
+            });
+            
+            function upload_doc(id){
+     setTimeout(function() {
+        window.open(
+            'upload-doc.php?id=' + id, 'stickerPrint2',
+            'toolbar=1, scrollbars=1, location=1,statusbar=0, menubar=1, resizable=1, width=800, height=800,left=250,top=50,right=50'
+        );
+    }, 1);
+ 
+ }
+  function editProfile(id){
+    setTimeout(function() {
+        window.open(
+            'edit-bank-profile.php?id=' + id, 'stickerPrint3',
+            'toolbar=1, scrollbars=1, location=1,statusbar=0, menubar=1, resizable=1, width=800, height=800,left=250,top=50,right=50'
+        );
+    }, 1);
+ }
+
+   function getUserDetails(){
+        var CellNo = $('#Phone').val();
+        var action = "getUserDetails2";
+            $.ajax({
+                url: "ajax_files/ajax_vendor.php",
+                method: "POST",
+                data: {
+                    action: action,
+                    CellNo: CellNo
+                },
+                dataType:"json",  
+                success: function(data) {
+                    $('#Address').val(data.Address);
+                    $('#Fname').val(data.Fname+" "+data.Lname);
+                    $('#EmailId').val(data.EmailId);
+                    
+                }
+            });
+
+    }
+</script>
+</body>
+</html>

@@ -1,0 +1,4 @@
+"id","TicketNo","BranchId","CustId","CellNo","CustName","Address","DocumentsStatus","ClainReason","ClainStatus","Status","CreatedDate","CreatedBy","ModifiedDate","ModifiedBy","AllocateId","NextDate","NextTime","OppConverted","customer_id"
+"1","#6014","0","5",,"Subhash Dongre","1233/4 behind Anand Lawn, Chandangaon, Chhindwara, Mdhya Pradesh-480001",,"Direct","Completed","1","2023-06-15","4",NULL,"0","5","0000-00-00",,"0","0"
+"2","#5789","0","0","9865986598","Karan","nagpur",,"Facebook","In Progress","1","2023-06-15","1",NULL,"0","5",NULL,NULL,"0","0"
+"3","#6553","0","7","9595454907","Rajat Dhanwalkar","Ayodhyanagar, Nagpur",,"Dealer","In Progress","1","2023-06-15","8",NULL,"0","0",NULL,NULL,"0","8"

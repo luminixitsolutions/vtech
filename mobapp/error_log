@@ -1,0 +1,6 @@
+[11-May-2021 11:11:40 UTC] PHP Parse error:  syntax error, unexpected 'else' (T_ELSE), expecting end of file in /home2/eotapbaa/public_html/otherprojects/maceye/mobapp/index.php on line 128
+[11-May-2021 11:12:09 UTC] PHP Parse error:  syntax error, unexpected end of file in /home2/eotapbaa/public_html/otherprojects/maceye/mobapp/index.php on line 454
+[22-Oct-2021 15:01:42 UTC] PHP Parse error:  syntax error, unexpected '>' in /home3/shdurban/dailydoorservices.com/mobapp1/index.php on line 272
+[12-Dec-2021 16:40:20 UTC] PHP Warning:  file_get_contents(http://jskbulksms.in/app/smsapi/index.php?key=2617273432AE1B&amp;campaign=1&amp;routeid=46&amp;type=text&amp;contacts=9595454907&amp;senderid=DDSSER&amp;msg=Dear {#var#} &amp; {#var#} is the OTP for your login at dailydoorservices. In case you have not requested this, please {#var#} us at {#var#} {DDSSER}&amp;template_id=1307163593844787945): failed to open stream: HTTP request failed! HTTP/1.1 400 Bad Request
+ in /home3/shdurban/dailydoorservices.com/mobapp21/incsmsfile.php on line 11
+[16-Apr-2022 18:01:37 UTC] PHP Parse error:  syntax error, unexpected end of file in /home3/shdurban/dailydoorservices.com/mobapp0704/offer-details.php on line 152

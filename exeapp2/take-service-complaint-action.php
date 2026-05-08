@@ -1,0 +1,522 @@
+<?php 
+session_start();
+include_once 'config.php';
+include_once 'auth.php';
+$user_id = $_SESSION['Admin']['id'];
+$MainPage = "service";
+$Page = "Add-Sell";
+?>
+<!DOCTYPE html>
+<html lang="en" class="default-style layout-fixed layout-navbar-fixed">
+
+<head>
+    <title><?php echo $Proj_Title; ?> - <?php if($_GET['id']) {?>Edit <?php } else{?> Add <?php } ?> Raw Stock
+    </title>
+    <meta name="apple-mobile-web-app-capable" content="yes">
+
+    <!-- Favicons -->
+    <link rel="apple-touch-icon" href="img/favicon180.png" sizes="180x180">
+    <link rel="icon" href="img/favicon32.png" sizes="32x32" type="image/png">
+    <link rel="icon" href="img/favicon16.png" sizes="16x16" type="image/png">
+
+    <!-- Material icons-->
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+
+    <!-- Google fonts-->
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500&amp;display=swap" rel="stylesheet">
+
+    <!-- swiper CSS -->
+    <link href="vendor/swiper/css/swiper.min.css" rel="stylesheet">
+    <!-- Custom styles for this template -->
+    <link href="css/style.css" rel="stylesheet" id="style">
+    <link href="css/toastr.min.css" rel="stylesheet">
+    <script src="js/jquery.min3.5.1.js" type="text/javascript"></script>
+    <script type="text/javascript" src="js/toastr.min.js"></script>
+    <link rel="stylesheet" href="example/css/slim.min.css">
+    <?php include_once 'header_script.php'; ?>
+</head>
+
+<body>
+    <style type="text/css">
+    .password-tog-info {
+        display: inline-block;
+        cursor: pointer;
+        font-size: 12px;
+        font-weight: 600;
+        position: absolute;
+        right: 50px;
+        top: 30px;
+        text-transform: uppercase;
+        z-index: 2;
+    }
+    </style>
+    <body class="body-scroll d-flex flex-column h-100 menu-overlay">
+   
+
+
+    <!-- Begin page content -->
+    <main class="flex-shrink-0 main">
+
+            
+
+
+            
+
+                
+
+                <?php 
+$id = $_GET['id'];
+$CompId = $_GET['qid'];
+$sql7 = "SELECT * FROM tbl_service_complaint_details WHERE id='$id'";
+$row7 = getRecord($sql7);
+
+$sql77 = "SELECT * FROM tbl_service_complaint WHERE id='$CompId'";
+$row77 = getRecord($sql77);
+
+
+if(isset($_POST['submit'])){
+    $CustId = addslashes(trim($_POST["CustId"]));
+     $CellNo = addslashes(trim($_POST["CellNo"]));
+    $CustName = addslashes(trim($_POST["CustName"]));
+$Status = 1;
+$Address = addslashes(trim($_POST["Address"]));
+$RelatedIssue = addslashes(trim($_POST['RelatedIssue']));
+$Issue = addslashes(trim($_POST["Issue"]));
+$Message = addslashes(trim($_POST["Message"]));
+$ClainStatus = addslashes(trim($_POST["ClainStatus"]));
+$ServicePerson = addslashes(trim($_POST["ServicePerson"]));
+$CreatedDate = date('Y-m-d');
+$ModifiedDate = date('Y-m-d');
+
+
+if($_GET['id']==''){
+     $qx = "INSERT INTO tbl_service_complaint_details SET CompId='$CompId',Message='$Message',CreatedDate='$CreatedDate',CreatedBy='$user_id',ClainStatus='$ClainStatus',ServicePerson='$ServicePerson'";
+  $conn->query($qx);
+
+  $sql = "UPDATE tbl_service_complaint SET ClainStatus='$ClainStatus' WHERE id='$CompId'";
+  $conn->query($sql);
+  echo "<script>alert('Service Complaint Created Successfully!');window.location.href='view-service-complaint-action.php?id=$CompId';</script>";
+}
+else{
+ //$TicketNo= "#".rand(1000,9999);
+    $query2 = "UPDATE tbl_service_complaint_details SET CompId='$CompId',Message='$Message',ModifiedDate='$ModifiedDate',ModifiedBy='$user_id',ClainStatus='$ClainStatus',ServicePerson='$ServicePerson' WHERE id = '$id'";
+  $conn->query($query2);
+
+  $sql = "UPDATE tbl_service_complaint SET ClainStatus='$ClainStatus' WHERE id='$CompId'";
+  $conn->query($sql);
+
+  echo "<script>alert('Service Complaint Updated Successfully!');window.location.href='view-service-complaint-action.php?id=$CompId';</script>";
+
+}
+    //header('Location:courses.php'); 
+
+  }
+?>
+
+                <div class="layout-content">
+
+                    <div class="container-fluid flex-grow-1 container-p-y">
+                        <h4 class="font-weight-bold py-3 mb-0"><?php if($_GET['id']) {?>Edit <?php } else{?> Take
+                            <?php } ?> Action On Service Complaint</h4>
+
+                        <div class="card mb-4">
+                            <div class="card-body">
+                                 <form id="validation-form" method="post" autocomplete="off">
+                                <div class="row">
+
+                                    <div class="col-lg-12">
+                                <div id="alert_message"></div>
+                               
+                                    <input type="hidden" name="id" value="<?php echo $_GET['id']; ?>" id="userid">
+                                    <input type="hidden" name="action" value="Save" id="action">
+                                    <div class="form-row">
+                                    
+                                    <div class="form-group col-md-12" style="padding-top:10px;">
+<label class="form-label"> Customer<span class="text-danger">*</span></label>
+ <select class="select2-demo form-control" name="CustId" id="CustId" disabled>
+ <?php 
+  echo $sql12 = "SELECT * FROM tbl_users WHERE Status='1' AND Roll=5 AND id='".$row77['CustId']."'";
+  $row12 = getList($sql12);
+  foreach($row12 as $result){
+     ?>
+  <option <?php if($row7["CustId"] == $result['id']) {?> selected <?php } ?> value="<?php echo $result['id'];?>">
+    <?php echo $result['Fname']." (".$result['Phone'].")"; ?></option>
+<?php } ?>
+</select>
+<div class="clearfix"></div>
+</div>
+
+<!-- <div class="form-group col-md-2" style="padding-top: 30px;">
+<label class="form-label">&nbsp;</label>
+<button class="btn btn-secondary" type="button" onclick="addVendor()">+</button>
+</div> -->
+
+<div class="form-group col-md-12">
+                                            <label class="form-label">Contact No </label>
+                                            <input type="text" name="CellNo" id="CellNo" class="form-control"
+                                                placeholder="" value="<?php echo $row77["CellNo"]; ?>"
+                                                autocomplete="off" oninput="getUserDetails()" disabled>
+                                            <div class="clearfix"></div>
+                                        </div>
+  <div class="form-group col-md-12">
+   <label class="form-label">Customer Name </label>
+     <input type="text" name="CustName" id="CustName" class="form-control"
+                                                placeholder="" value="<?php echo $row77["CustName"]; ?>"
+                                                autocomplete="off" disabled>
+    <div class="clearfix"></div>
+ </div> 
+
+ <div class="form-group col-md-12">
+   <label class="form-label">Address</label>
+     <textarea name="Address" id="Address" class="form-control"  disabled
+                                                ><?php echo $row77['Address']; ?></textarea>
+    <div class="clearfix"></div>
+ </div>   
+
+
+<div class="form-group col-md-3">
+<label class="form-label"> Service Type<span class="text-danger">*</span></label>
+ <select class="form-control" name="ServiceType" id="ServiceType" disabled>
+
+<option selected="" value="">Select Service Type</option>
+
+  <option value="Insurance" <?php if($row77['ServiceType'] == 'Insurance'){?> selected <?php } ?>>Insurance</option>
+    <option value="Maintaince" <?php if($row77['ServiceType'] == 'Maintaince'){?> selected <?php } ?>>Maintaince</option>
+</select>
+<div class="clearfix"></div>
+</div>
+
+  <div class="form-group col-md-3">
+<label class="form-label"> Service Related Issue<span class="text-danger">*</span></label>
+ <select class="form-control" name="RelatedIssue" id="RelatedIssue" disabled>
+
+<option selected="" value="">Select Related Issue</option>
+
+  <option value="Repair" <?php if($row77['RelatedIssue'] == 'Repair'){?> selected <?php } ?>>Repair</option>
+    <option value="Replacement" <?php if($row77['RelatedIssue'] == 'Replacement'){?> selected <?php } ?>>Replacement</option>
+</select>
+<div class="clearfix"></div>
+</div>
+
+<div class="form-group col-lg-3">
+<label class="form-label"> Issue<span class="text-danger">*</span></label>
+ <select class="form-control" name="Issue" id="Issue" disabled>
+<option selected="" value="">Select Issue</option>
+ <?php 
+  $sql12 = "SELECT * FROM tbl_issues WHERE Status='1'";
+  $row12 = getList($sql12);
+  foreach($row12 as $result){
+     ?>
+  <option <?php if($row77['Issue'] == $result['id']){?> selected <?php } ?> value="<?php echo $result['id'];?>">
+    <?php echo $result['Name']; ?></option>
+<?php } ?>
+</select>
+<div class="clearfix"></div>
+</div>
+
+<div class="form-group col-lg-3">
+<label class="form-label"> Status<span class="text-danger">*</span></label>
+ <select class="form-control" name="ClainStatus" id="ClainStatus" required>
+<option selected="" value="">Select</option>
+ <?php 
+  $sql12 = "SELECT * FROM tbl_common_master WHERE Status='1' AND Roll=6";
+  $row12 = getList($sql12);
+  foreach($row12 as $result){
+     ?>
+  <option <?php if($row7['ClainStatus'] == $result['Name']){?> selected <?php } ?> value="<?php echo $result['Name'];?>">
+    <?php echo $result['Name']; ?></option>
+<?php } ?>
+</select>
+<div class="clearfix"></div>
+</div>
+
+<div class="form-group col-md-12">
+   <label class="form-label">Service Update</label>
+     <textarea  type="text" name="Message" id="Message" class="form-control"><?php echo $row7['Message']; ?></textarea>
+    <div class="clearfix"></div>
+ </div>   
+
+<div class="form-group col-md-12">
+   <label class="form-label">Service Person</label>
+     <textarea  type="text" name="ServicePerson" id="ServicePerson" class="form-control"><?php echo $row7['ServicePerson']; ?></textarea>
+    <div class="clearfix"></div>
+ </div> 
+
+ 
+
+</div>
+<br>
+
+                                   <div class="form-row">
+                                    <div class="form-group col-md-2">
+                                    <button type="submit" name="submit" class="btn btn-primary btn-finish" id="submit">Submit</button>
+                                    </div>
+
+                
+                                    </div>
+                               </div>
+
+
+ <div class="col-lg-5" id="emidetails" style="display:none;">
+    
+
+ </div>
+
+  
+                                
+
+ </div>
+ </form>
+
+
+
+
+
+                            </div>
+                        </div>
+
+
+
+</div>
+
+
+                   
+
+
+                    <?php include_once 'footer.php'; ?>
+                </div>
+
+             </main>
+
+    <!-- footer-->
+    
+
+
+    <!-- Required jquery and libraries -->
+    <script src="js/jquery-3.3.1.min.js"></script>
+    <script src="js/popper.min.js"></script>
+    <script src="vendor/bootstrap/js/bootstrap.min.js"></script>
+
+    <!-- cookie js -->
+    <script src="js/jquery.cookie.js"></script>
+
+    <!-- Swiper slider  js-->
+    <script src="vendor/swiper/js/swiper.min.js"></script>
+
+    <!-- Customized jquery file  -->
+    <script src="js/main.js"></script>
+    <script src="js/color-scheme-demo.js"></script>
+
+
+    <!-- page level custom script -->
+    <script src="js/app.js"></script>
+       <?php include_once 'footer_script.php'; ?>
+
+ <script type="text/javascript">
+  function addVendor(){
+        setTimeout(function() {
+        window.open(
+            'add-customer2.php', 'stickerPrint',
+            'toolbar=1, scrollbars=1, location=1,statusbar=0, menubar=1, resizable=1, width=800, height=600,left=350,top=40,right=200'
+        );
+    }, 1);
+    }
+
+     function getPayType(val){
+    if(val == 'Cheque'){
+      $('.chequeoption').show();
+      $('.upioption').hide();
+    }
+    else if(val == 'UPI'){
+      $('.chequeoption').hide();
+      $('.upioption').show();
+    }
+    else{
+      $('.chequeoption').hide();
+      $('.upioption').hide();
+    }
+  }
+
+      function getSubTotal(){
+     var sum = 0;
+      $(".txt").each(function() {
+      if(!isNaN(this.value) && this.value.length!=0) {
+        sum += parseFloat(this.value);
+      }
+   });
+   $('#GrossAmt').val(sum);
+   
+    }
+
+
+    function getUserDetails(){
+        var CellNo = $('#CellNo').val();
+        var action = "getUserDetails2";
+            $.ajax({
+                url: "ajax_files/ajax_vendor.php",
+                method: "POST",
+                data: {
+                    action: action,
+                    CellNo: CellNo
+                },
+                dataType:"json",  
+                success: function(data) {
+                    $('#Address').val(data.Address);
+                    $('#CustName').val(data.Fname+" "+data.Lname);
+                    $('#Gname').val(data.Gname);
+                    $('#Gphone').val(data.Gphone);
+                    $('#Gname2').val(data.Gname2);
+                    $('#Gphone2').val(data.Gphone2);
+                    $('#AgentName').val(data.AgentName);
+                    
+                }
+            });
+
+    }
+     $(document).ready(function() {
+
+        var i=1; 
+    $('#add_more').click(function(){  
+           i++;  
+       var action = "getCustRow";
+    $.ajax({
+    url:"ajax_files/ajax_sell_products.php",
+    method:"POST",
+    data : {action:action,id:i},
+    success:function(data)
+    {
+      $('#dynamic_field').append(data);
+    }   
+    });  
+    }); 
+
+    $(document).on('click', '.btn_remove', function(){  
+           var button_id = $(this).attr("id");  
+           if(confirm("Are you sure you want to delete?"))  
+           { 
+           $('#row'+button_id+'').remove();  
+            getSubTotal();
+            commonTotal();
+           }
+      }); 
+
+
+     $(document).on("change", "#CustId", function(event) {
+            var val = this.value;
+            var action = "getUserDetails";
+            $.ajax({
+                url: "ajax_files/ajax_vendor.php",
+                method: "POST",
+                data: {
+                    action: action,
+                    id: val
+                },
+                dataType:"json",  
+                success: function(data) {
+                    
+                    $('#Address').val(data.Taluka+", "+data.Village+", "+data.District);
+                    $('#CustName').val(data.Fname);
+                    $('#CellNo').val(data.Phone);
+                     $('#Gname').val(data.Gname);
+                    $('#Gphone').val(data.Gphone);
+                    $('#Gname2').val(data.Gname2);
+                    $('#Gphone2').val(data.Gphone2);
+                    $('#AgentName').val(data.AgentName);
+                }
+            });
+
+        });
+
+
+    });
+
+     
+
+     function getBrand(catid){
+var action = "getBrands";
+            $.ajax({
+                url: "ajax_files/ajax_dropdown.php",
+                method: "POST",
+                data: {
+                    action: action,
+                    id: catid
+                },
+                success: function(data) {
+                    $('#BrandId').html(data);
+                  
+                }
+            });
+}
+
+function getProd(brandid){
+var action = "getProd";
+            $.ajax({
+                url: "ajax_files/ajax_dropdown.php",
+                method: "POST",
+                data: {
+                    action: action,
+                    id: brandid
+                },
+                success: function(data) {
+                    $('#ProductId').html(data);
+                  
+                }
+            });
+}
+
+function getTotal(GrossAmt,CgstPer,SgstPer,IgstPer,SubTotal,Discount){
+    //console.log(qty,vedprice,srno);
+        var CgstAmt = Number(GrossAmt)*(Number(CgstPer)/100);
+        var SgstAmt = Number(GrossAmt)*(Number(SgstPer)/100);
+        var IgstAmt = Number(GrossAmt)*(Number(IgstPer)/100);
+        $('#CgstAmt').val(parseFloat(CgstAmt).toFixed(2));
+        $('#SgstAmt').val(parseFloat(SgstAmt).toFixed(2));
+        $('#IgstAmt').val(parseFloat(IgstAmt).toFixed(2));
+var SubTotal = Number(GrossAmt) + Number(CgstAmt) + Number(SgstAmt) + Number(IgstAmt);
+$('#SubTotal').val(parseFloat(SubTotal).toFixed(2));
+var Total = Number(SubTotal) - Number(Discount);
+$('#Total').val(parseFloat(Total).toFixed(2));
+}
+
+    function commonTotal(){
+        var GrossAmt = $('#GrossAmt').val();
+        var CgstPer = $('#CgstPer').val();
+        var SgstPer = $('#SgstPer').val();
+        var IgstPer = $('#IgstPer').val();
+        var SubTotal = $('#SubTotal').val();
+        var UcdAmt = 0;
+        var Discount = $('#Discount').val();
+        getTotal(GrossAmt,CgstPer,SgstPer,IgstPer,SubTotal,Discount);
+    }
+
+function getProdTotal(qty,price,srno){
+    var Total = (Number(qty) * Number(price));
+$('#Total'+srno).val(parseFloat(Total).toFixed(2));
+getSubTotal();
+commonTotal();
+}
+
+function getProdDetails(val,srno){
+    var qty = $('#Qty'+srno).val();
+     var action = "getProdDetails";
+            $.ajax({
+                url: "ajax_files/ajax_sell_products.php",
+                method: "POST",
+                data: {
+                    action: action,
+                    id: val
+                },
+                dataType:"json",
+                success: function(data) {
+                
+                    $('#ProductName'+srno).val(data.ProductName);
+                    $('#ModelNo'+srno).val(data.ModelNo);
+                    $('#Price'+srno).val(data.Price); 
+                     getProdTotal(qty,data.Price,srno);
+                }
+            });
+}
+ </script>
+</body>
+
+</html>

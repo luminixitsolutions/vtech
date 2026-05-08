@@ -1,0 +1,336 @@
+<?php 
+session_start();
+include_once '../config.php';
+include_once '../auth.php';
+$user_id = $_SESSION['Admin']['id'];
+$MainPage="CIF";
+$Page = "Pending-CIF";
+?>
+<!DOCTYPE html>
+<html lang="en" class="default-style layout-fixed layout-navbar-fixed">
+
+<head>
+    <title><?php echo $Proj_Title; ?> - Pending CIF
+    </title>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=0, minimal-ui">
+    <meta name="description" content="" />
+    <meta name="keywords" content="">
+    <meta name="author" content="" />
+
+    <?php include_once '../header_script.php'; ?>
+</head>
+<body>
+
+<div class="layout-wrapper layout-2">
+<div class="layout-inner">
+
+ <?php include_once 'mp-sidebar.php'; ?>
+
+
+            <div class="layout-container">
+
+                <?php include_once '../top_header.php'; ?>
+
+
+
+<div class="layout-content">
+
+<div class="container-fluid flex-grow-1 container-p-y">
+<h4 class="font-weight-bold py-3 mb-0">Pending CIF
+</h4><br>
+
+<div class="card" style="padding:10px;">
+    <div id="accordion2">
+<div class="card mb-2">
+                                        
+                                        <div id="accordion2-2" class="collapse show" data-parent="#accordion2">
+                                            <div class="" style="padding:5px;">
+                                                
+
+       <form id="validation-form" method="post" enctype="multipart/form-data" action="">
+                                                <div class="form-row">
+
+                                                    <div class="form-group col-md-2">
+                                                        <label class="form-label">Pump Capacity </label>
+                                                        <select class="form-control" id="PumpCapacity" name="PumpCapacity">
+                                                        <option value="all" selected>All</option>
+                                                        
+  <?php 
+        $q = "select * from tbl_common_master WHERE Status='1' AND Roll=2 ORDER BY id ASC";
+        $r = $conn->query($q);
+        while($rw = $r->fetch_assoc())
+    {
+?>
+                <option <?php if($_REQUEST['PumpCapacity']==$rw['id']){ ?> selected <?php } ?> value="<?php echo $rw['id']; ?>"><?php echo $rw['Name']; ?></option>
+              <?php } ?></select>
+                                                    </div>
+
+                                                    <div class="form-group col-md-2">
+        <label class="form-label">State <span class="text-danger">*</span></label>
+<select class="select2-demo form-control" id="StateId" name="StateId">
+<option selected="" value="all">All State</option>
+ <?php 
+        $CountryId = $row7['CountryId'];
+        $q = "select * from tbl_state WHERE CountryId='1' ORDER BY Name ASC";
+        $r = $conn->query($q);
+        while($rw = $r->fetch_assoc())
+    {
+?>
+                <option <?php if($_REQUEST['StateId']==$rw['id']){ ?> selected <?php } ?> value="<?php echo $rw['id']; ?>"><?php echo $rw['Name']; ?></option>
+              <?php } ?>
+</select>
+    </div>
+
+<div class="form-group col-md-2">
+        <label class="form-label">Village <span class="text-danger">*</span></label>
+<select class="select2-demo form-control" id="Village" name="Village">
+<option selected="" value="all">All Village</option>
+ <?php 
+        $q = "select DISTINCT(Village) AS Village from tbl_users WHERE Village!='' AND ProjectType='1'";
+        $r = $conn->query($q);
+        while($rw = $r->fetch_assoc())
+    {
+?>
+                <option <?php if($_REQUEST['Village']==$rw['Village']){ ?> selected <?php } ?> value="<?php echo $rw['Village']; ?>"><?php echo $rw['Village']; ?></option>
+              <?php } ?>
+</select>
+    </div>
+    
+    <div class="form-group col-md-2">
+        <label class="form-label">District <span class="text-danger">*</span></label>
+<select class="select2-demo form-control" id="District" name="District">
+<option selected="" value="all">All District</option>
+ <?php 
+        $q = "select DISTINCT(District) AS District from tbl_users WHERE District!='' AND ProjectType='1'";
+        $r = $conn->query($q);
+        while($rw = $r->fetch_assoc())
+    {
+?>
+                <option <?php if($_REQUEST['District']==$rw['District']){ ?> selected <?php } ?> value="<?php echo $rw['District']; ?>"><?php echo $rw['District']; ?></option>
+              <?php } ?>
+</select>
+    </div>
+
+    
+                                                    <input type="hidden" id="Search" value="Search">
+                                                    <div class="form-group col-md-1" style="padding-top:25px;">
+                                                        <button type="button" onclick="search()" class="btn btn-primary btn-finish">Search</button>
+                                                    </div>
+                                                    <?php if (isset($_REQUEST['Search'])) { ?>
+                                                        <div class="form-group col-md-1">
+                                                            <label class="form-label">&nbsp;</label>
+                                                            <a href="<?php echo $_SERVER['PHP_SELF']; ?>" class="btn btn-info btn-block" data-toggle="tooltip" data-placement="top" data-original-title="Clear Filter">X</a>
+                                                        </div>
+                                                    <?php } ?>
+                                                </div>
+
+                                            </form>
+
+                                            </div>
+                                        </div>
+                                    </div>
+   </div>
+   <form id="validation-form" method="post" enctype="multipart/form-data" action="">
+<div class="card-datatable table-responsive">
+<table id="example" class="table table-striped table-bordered" style="width:100%">
+        <thead>
+            <tr>
+                <th>Beneficiary ID</th>
+                <th>Customer Name</th>
+                <th>Contact No</th>
+                <th>Pump Capacity</th>
+                <th>State</th>
+                <th>Village</th>
+                <th>District</th>
+                <th>AIF No</th>
+                <th>AIF Date</th>
+                <th>CIF No</th>
+                <th>CIF Date</th>
+                <th>CIF Complete</th>
+                <th>Action</th>
+            </tr>
+        </thead>
+        <tbody>
+            <?php 
+            $i=1;
+           
+            $sql = "SELECT ts.*,tcm.Name AS Pump_Capacity,tcm.Amount AS PumpAmt,ts2.Name AS StateName
+                    FROM tbl_users ts
+                    LEFT JOIN tbl_common_master tcm ON tcm.id=ts.PumpCapacity
+                    LEFT JOIN tbl_state ts2 ON ts2.id=ts.StateId
+                    WHERE ts.Status=1 AND ts.ProjectType=1 AND ts.SurveyMatch=0 AND ts.ProjectId=106 AND ts.MpSelectionStatus=1 AND ts.AifComplete = 'yes' AND (ts.CifComplete IS NULL OR ts.CifComplete = '' OR ts.CifComplete = 'no')";
+            
+            if($_REQUEST['CoordinatorStatus']!=''){
+                if($_REQUEST['CoordinatorStatus'] == 'all'){
+                    $sql.=" ";
+                }
+                else{
+                $sql.=" AND ts.CoordinatorStatus='".$_REQUEST['CoordinatorStatus']."'";
+                }
+            }
+
+            if($_REQUEST['PumpCapacity']!=''){
+                if($_REQUEST['PumpCapacity'] == 'all'){
+                    $sql.=" ";
+                }
+                else{
+                $sql.=" AND ts.PumpCapacity='".$_REQUEST['PumpCapacity']."'";
+                }
+            }
+            if($_REQUEST['StateId']!=''){
+                if($_REQUEST['StateId'] == 'all'){
+                    $sql.=" ";
+                }
+                else{
+                $sql.=" AND ts.StateId='".$_REQUEST['StateId']."'";
+                }
+            }
+            if($_REQUEST['Village']!=''){
+                if($_REQUEST['Village'] == 'all'){
+                    $sql.=" ";
+                }
+                else{
+                $sql.=" AND ts.Village='".$_REQUEST['Village']."'";
+                }
+            }
+            if($_REQUEST['District']!=''){
+                if($_REQUEST['District'] == 'all'){
+                    $sql.=" ";
+                }
+                else{
+                $sql.=" AND ts.District='".$_REQUEST['District']."'";
+                }
+            }
+            $sql .= " ORDER BY ts.id DESC";
+            $res = $conn->query($sql);
+            while($row = $res->fetch_assoc())
+            {
+             ?>
+            <tr>
+                <td><?php echo $row['BeneficiaryId']; ?></td>
+                <td><?php echo $row['Fname']; ?></td>
+                <td><?php echo $row['Phone']; ?></td>
+                <td><?php echo $row['Pump_Capacity']; ?></td>
+                <td><?php echo $row['StateName']; ?></td>
+                <td><?php echo $row['Village']; ?></td>
+                <td><?php echo $row['District']; ?></td>
+                <td><?php echo htmlspecialchars($row['AifNo'] ?? ''); ?></td>
+                <td><?php echo htmlspecialchars($row['AifDate'] ?? ''); ?></td>
+                <td>
+                    <input type="text" class="form-control form-control-sm cif-no" name="cif_no[<?php echo $row['id']; ?>]" value="<?php echo htmlspecialchars($row['CifNo'] ?? ''); ?>" placeholder="CIF No">
+                </td>
+                <td>
+                    <input type="date" class="form-control form-control-sm cif-date" name="cif_date[<?php echo $row['id']; ?>]" value="<?php echo date('Y-m-d'); ?>">
+                </td>
+                <td>
+                    <select class="form-control form-control-sm cif-complete" name="cif_complete[<?php echo $row['id']; ?>]">
+                        <option value="">-- Select --</option>
+                        <option value="yes">Yes</option>
+                        <option value="no">No</option>
+                    </select>
+                </td>
+                <td>
+                    <button type="button" class="btn btn-sm btn-primary btn-save-cif" data-id="<?php echo (int)$row['id']; ?>">Submit</button>
+                </td>
+            </tr>
+           <?php  $i++;} ?>
+        </tbody>
+    </table>
+</div>
+
+</form>
+</div>
+</div>
+
+
+<?php include_once 'footer.php'; ?>
+
+</div>
+
+</div>
+
+</div>
+
+<div class="layout-overlay layout-sidenav-toggle"></div>
+</div>
+
+
+    <script src="<?php echo $SiteUrl;?>/assets/js/jquery.min.js"></script>
+    <script src="<?php echo $SiteUrl;?>/assets/js/datatables.min.js"></script>
+    <script src="<?php echo $SiteUrl;?>/assets/js/pace.js"></script>
+    <script src="<?php echo $SiteUrl;?>/assets/js/sidenav.js"></script>
+    <script src="<?php echo $SiteUrl;?>/assets/js/layout-helpers.js"></script>
+    <!-- Libs -->
+    <script src="<?php echo $SiteUrl;?>/assets/libs/perfect-scrollbar/perfect-scrollbar.js"></script>
+    <script src="<?php echo $SiteUrl;?>/assets/libs/select2/select2.js"></script>
+    <script src="<?php echo $SiteUrl;?>/assets/libs/bootstrap-select/bootstrap-select.js"></script>
+    <!-- Demo -->
+    <script src="<?php echo $SiteUrl;?>/assets/js/demo.js"></script>
+    <script src="<?php echo $SiteUrl;?>/assets/js/pages/forms_selects.js"></script>
+<script type="text/javascript">
+function search(){
+    var PumpCapacity = $('#PumpCapacity').val();
+    var StateId = $('#StateId').val();
+    var District = $('#District').val();
+    var Village = $('#Village').val();
+    var Search = $('#Search').val();
+    var CoordinatorStatus = $('#CoordinatorStatus').val();
+    window.location.href="pending-cif.php?PumpCapacity="+PumpCapacity+"&StateId="+StateId+"&District="+District+"&Village="+Village+"&Search="+Search+"&CoordinatorStatus="+CoordinatorStatus;
+}
+
+    $(document).ready(function() {
+    $('#example').DataTable({
+        "scrollX": true
+    });
+
+    $(document).on('click', '.btn-save-cif', function() {
+        var btn = $(this);
+        var id = btn.data('id');
+        var row = btn.closest('tr');
+        var cifNo = row.find('input.cif-no').val();
+        var cifDate = row.find('input.cif-date').val();
+        var cifComplete = row.find('select.cif-complete').val();
+
+        if(cifComplete == '') {
+            alert('Please select CIF Complete (Yes/No)');
+            return;
+        }
+
+        btn.prop('disabled', true).text('Saving...');
+
+        $.ajax({
+            url: 'save_cif.php',
+            type: 'POST',
+            data: {
+                user_id: id,
+                cif_no: cifNo,
+                cif_date: cifDate,
+                cif_complete: cifComplete
+            },
+            dataType: 'json',
+            success: function(data) {
+                if (data.success) {
+                    if (data.redirect) {
+                        window.location.href = data.redirect;
+                        return;
+                    }
+                    alert(data.message || 'CIF saved.');
+                } else {
+                    alert(data.message || 'Save failed.');
+                }
+            },
+            error: function(xhr) {
+                alert('Request failed. Please try again.');
+            },
+            complete: function() {
+                btn.prop('disabled', false).text('Submit');
+            }
+        });
+    });
+});
+</script>
+
+</body>
+</html>
