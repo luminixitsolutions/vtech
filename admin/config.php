@@ -1,8 +1,8 @@
 <?php
 error_reporting(0);
 $servername = "localhost";
-$username = "root";
-$password = "";
+$username = "vtechsolar_newcode";
+$password = "GRImfzV7Ub4K";
 $dbname = "vtechsolar_newcode";
 
 /// Create connection
@@ -15,7 +15,7 @@ if($conn->connect_error) {
     // echo "Successfully Connected";
 }
 $Proj_Title = "VTECH";
-$SiteUrl = "http://localhost/vtechnewcode/admin/";
+$SiteUrl = "https://vtechsolar.in/vtechnewcode/admin";
 $SiteUrl = rtrim($SiteUrl, '/');
 /** Set true after SMS (incsmsapi.php) is purchased and configured; otherwise OTP is only logged for manual entry. */
 $AdminLoginOtpSendSms = false;

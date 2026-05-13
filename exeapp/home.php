@@ -91,15 +91,6 @@ require_once 'auth.php';
                             </div>
 
                             <div class="col-4 col-md-2 mb-3">
-                                <a href="leave-request.php">
-                                    <div class="avatar avatar-70 mb-1 rounded" style="background: linear-gradient(145deg, #1565c0, #42a5f5); display: flex; align-items: center; justify-content: center;">
-                                        <i class="fa fa-calendar-check-o" style="font-size: 2.1rem; color: #fff;" aria-hidden="true"></i>
-                                    </div>
-                                </a>
-                                <p class="text-secondary"><small style="font-size: 12px;font-weight: 700;font-family: Sans-serif;text-transform: uppercase;color:#000;">Leave Request</small></p>
-                            </div>
-
-                            <div class="col-4 col-md-2 mb-3">
                                 <a href="vehical-entry.php">
                                     <div class="avatar avatar-70 mb-1 rounded">
                                         <div class="background">

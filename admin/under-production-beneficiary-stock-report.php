@@ -27,8 +27,7 @@ $Page = 'Under-Production-Stock-Report';
 <div class="layout-content">
 <div class="container-fluid flex-grow-1 container-p-y">
     <h4 class="font-weight-bold py-3 mb-0">Done beneficiaries — required stock report</h4>
-    <p class="text-muted mb-3">Customers marked <strong>Done</strong> under production who do <strong>not</strong> yet have a delivery challan (<code>tbl_sell</code>, <code>SellType = 'Challan'</code>). Use <em>View required stock</em> for BOM lines and store-wise availability.</p>
-
+  
     <div class="card" style="padding: 10px;">
         <div class="card-datatable table-responsive">
             <table id="example" class="table table-striped table-bordered" style="width:100%">

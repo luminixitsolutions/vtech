@@ -174,7 +174,18 @@ else{
         <tbody>
             <?php 
             $i=1;
-            $sql = "SELECT ts.*,tb.Name As StoreName,tu.Fname As StoreIncName FROM tbl_distibute_items ts 
+            $sql = "SELECT ts.*,tb.Name As StoreName,tu.Fname As StoreIncName,
+                    (
+                        SELECT u2.Fname
+                        FROM tbl_distibute_items2 h2
+                        LEFT JOIN tbl_users u2 ON u2.id = h2.StoreExeId
+                        WHERE h2.Status='1'
+                          AND h2.Narration LIKE '%DistId(s):%'
+                          AND h2.Narration REGEXP CONCAT('(^|[^0-9])', ts.id, '([^0-9]|$)')
+                        ORDER BY h2.id DESC
+                        LIMIT 1
+                    ) AS DispatchOfficerName
+                    FROM tbl_distibute_items ts 
                     LEFT JOIN tbl_branch tb ON ts.BranchId=tb.id 
                     LEFT JOIN tbl_users tu ON ts.StoreInchId=tu.id WHERE ts.Status=1 
                     ";
@@ -218,7 +229,11 @@ else{
             <tr>
                 <?php if ($canAssignDispatch) { ?>
                 <td class="align-middle">
+                    <?php if (!empty($row['DispatchOfficerName'])) { ?>
+                    <span class="badge badge-success">Assigned: <?php echo htmlspecialchars($row['DispatchOfficerName']); ?></span>
+                    <?php } else { ?>
                     <button type="button" class="btn btn-sm btn-outline-primary btn-assign-dispatch-row" data-dist-id="<?php echo (int)$row['id']; ?>" data-toggle="modal" data-target="#modalAssignDispatch">Assign to dispatch</button>
+                    <?php } ?>
                 </td>
                 <?php } ?>
                <td><?php echo $i; ?></td>

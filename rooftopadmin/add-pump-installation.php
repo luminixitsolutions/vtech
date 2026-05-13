@@ -296,7 +296,7 @@ $Page = "Pump-Installation";
                                             <label class="form-label">Contact No </label>
                                             <input type="text" name="CellNo" id="CellNo" class="form-control"
                                                 placeholder="" value="<?php echo $row7["CellNo"]; ?>"
-                                                autocomplete="off" oninput="getUserDetails()" readonly>
+                                                autocomplete="off" oninput="getUserDetails()" >
                                             <div class="clearfix"></div>
                                         </div>
 
@@ -902,7 +902,7 @@ $Page = "Pump-Installation";
                                             <label class="form-label">Total Amount </label>
                                             <input type="text" class="form-control"
                                                 placeholder="" value="<?php echo $TotalCost;?>"
-                                                autocomplete="off" readonly>
+                                                autocomplete="off" required>
                                             <div class="clearfix"></div>
                                         </div>
                                         

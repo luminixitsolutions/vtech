@@ -1,8 +1,8 @@
 <?php
 error_reporting(0);
 $servername = "localhost";
-$username = "root";
-$password = "";
+$username = "vtechsolar_newcode";
+$password = "GRImfzV7Ub4K";
 $dbname = "vtechsolar_newcode";
 
 /// Create connection
@@ -18,12 +18,8 @@ $Uploadurl = "https://vtechsolar.com/";
 date_default_timezone_set("Asia/Kolkata");
 
 function getList($sql){
-  global $conn;
-    $row3 = array();
+  global $conn;  
     $res2 = $conn->query($sql);
-    if ($res2 === false) {
-        return $row3;
-    }
     while($row2 = $res2->fetch_assoc()){
         $row3[] = $row2;
     }

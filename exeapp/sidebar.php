@@ -116,23 +116,6 @@ $mybalance = $row11x['credit'] - $row11x['debit'];
                 </li>
 
                 <li class="nav-item">
-                    <a class="nav-link" href="<?php echo $SiteUrl;?>/leave-request.php">
-                        <div>
-                            <span class="material-icons icon">event_available</span>
-                            Apply leave
-                        </div>
-                    </a>
-                </li>
-                <li class="nav-item">
-                    <a class="nav-link" href="<?php echo $SiteUrl;?>/my-leave-requests.php">
-                        <div>
-                            <span class="material-icons icon">assignment</span>
-                            My leave requests
-                        </div>
-                    </a>
-                </li>
-
-                <li class="nav-item">
                     <a class="nav-link" href="<?php echo $SiteUrl;?>/vehical-entry.php">
                         <div>
                             <span class="material-icons icon">view_list</span>

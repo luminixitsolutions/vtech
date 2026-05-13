@@ -1,8 +1,8 @@
 <?php
 class DBController {
 	private $host = "localhost";
-	private $user = "root";
-	private $password = "";
+	private $user = "vtechsolar_newcode";
+	private $password = "GRImfzV7Ub4K";
 	private $database = "vtechsolar_newcode";
 	private $conn;
 	 

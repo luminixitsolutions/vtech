@@ -46,6 +46,30 @@ foreach ($distIds as $did) {
     $headers[] = $h;
 }
 
+foreach ($distIds as $did) {
+    $didInt = (int) $did;
+    $alreadyAssigned = getRecord("
+        SELECT h2.id, u2.Fname AS OfficerName
+        FROM tbl_distibute_items2 h2
+        LEFT JOIN tbl_users u2 ON u2.id = h2.StoreExeId
+        WHERE h2.Status='1'
+          AND h2.Narration LIKE '%DistId(s):%'
+          AND h2.Narration REGEXP CONCAT('(^|[^0-9])', '$didInt', '([^0-9]|$)')
+        ORDER BY h2.id DESC
+        LIMIT 1
+    ");
+    if (!empty($alreadyAssigned['id'])) {
+        $officer = isset($alreadyAssigned['OfficerName']) ? trim((string) $alreadyAssigned['OfficerName']) : '';
+        $msg = 'Store assignment #' . $didInt . ' is already assigned to dispatch';
+        if ($officer !== '') {
+            $msg .= ' (' . $officer . ')';
+        }
+        $msg .= '.';
+        echo "<script>alert(" . json_encode($msg) . ");window.location.href='view-distribute-item-store.php';</script>";
+        exit;
+    }
+}
+
 $branchIds = array_unique(array_map(function ($h) {
     return (int) $h['BranchId'];
 }, $headers));
@@ -67,7 +91,7 @@ foreach ($headers as $h) {
 }
 
 $CreatedDateEsc = mysqli_real_escape_string($conn, $CreatedDate);
-$Narration = 'Dispatch handoff from store assign Â· DistId(s): ' . implode(',', $distIds);
+$Narration = 'Dispatch handoff from store assign ¡¤ DistId(s): ' . implode(',', $distIds);
 $NarrationEsc = mysqli_real_escape_string($conn, $Narration);
 $VehicalDateSql = ($VehicalDate !== null && $VehicalDate !== '') ? "'" . mysqli_real_escape_string($conn, $VehicalDate) . "'" : 'NULL';
 $VehicalNoEsc = mysqli_real_escape_string($conn, $VehicalNo);
