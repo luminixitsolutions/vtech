@@ -1,5 +1,5 @@
 <?php
 if(!isset($_SESSION['Admin'])){
-  header('Location:https://vtechsolar.in/vtechnewcode/admin_new/index.php');
+  header('Location:http://localhost/vtech/admin_new/index.php');
 }
 ?>

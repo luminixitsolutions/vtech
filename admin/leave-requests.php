@@ -169,7 +169,9 @@ if ($sumR) {
                     <th>From</th>
                     <th>To</th>
                     <th>Days (range)</th>
+                    <th>Session</th>
                     <th>Reason</th>
+                    <th>Attachment</th>
                     <th>Status</th>
                     <th>Created</th>
                     <th>Approval comment</th>
@@ -188,8 +190,24 @@ if ($sumR) {
                     <td><?php echo htmlspecialchars($r['Phone'] ?? ''); ?></td>
                     <td><?php echo htmlspecialchars($r['FromDate'] ?? ''); ?></td>
                     <td><?php echo htmlspecialchars($r['ToDate'] ?? ''); ?></td>
-                    <td><?php echo (int) ($r['LeaveDays'] ?? 0); ?></td>
+                    <td><?php
+                        $ld = isset($r['LeaveDays']) ? (float) $r['LeaveDays'] : 0;
+                        echo htmlspecialchars(rtrim(rtrim(sprintf('%.2f', $ld), '0'), '.'));
+                    ?></td>
+                    <td><?php
+                        $hs = trim((string) ($r['HalfSession'] ?? ''));
+                        echo $hs !== '' ? htmlspecialchars($hs, ENT_QUOTES, 'UTF-8') : '—';
+                    ?></td>
                     <td><?php echo $reasonCell; ?></td>
+                    <td><?php
+                        $at = trim((string) ($r['Attachment'] ?? ''));
+                        if ($at !== '') {
+                            $u = '../uploads/' . rawurlencode($at);
+                            echo '<a href="' . htmlspecialchars($u, ENT_QUOTES, 'UTF-8') . '" target="_blank" rel="noopener">View</a>';
+                        } else {
+                            echo '—';
+                        }
+                    ?></td>
                     <td>
                         <span class="<?php
                         if ($r['Status'] === 'Approved') {

@@ -145,6 +145,17 @@ require_once 'auth.php';
                                 </a>
                                 <p class="text-secondary"><small style="font-size: 12px;font-weight: 700;font-family: Sans-serif;text-transform: uppercase;color:#000;"> Expenses</small></p>
                             </div>
+
+                            <div class="col-4 col-md-2 mb-3">
+                                <a href="view-leave-requests.php">
+                                    <div class="avatar avatar-70 mb-1 rounded">
+                                        <div class="background">
+                                            <img src="mob_icons/4.jpg" alt="">
+                                        </div>
+                                    </div>
+                                </a>
+                                <p class="text-secondary"><small style="font-size: 12px;font-weight: 700;font-family: Sans-serif;text-transform: uppercase;color:#000;">Leave Request</small></p>
+                            </div>
                             
                             <div class="col-4 col-md-2 mb-3">
                                 <a href="view-tasks.php">

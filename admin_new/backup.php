@@ -70,5 +70,5 @@ header('Content-Length: '. (function_exists('mb_strlen') ? mb_strlen($content, '
 header("Content-disposition: attachment; filename=\"".$backup_name."\""); 
 echo $content; exit;
 }
-dbbackup("localhost", "vtechsolar_newcode", "GRImfzV7Ub4K", "vtechsolar_newcode" );
+dbbackup("localhost", "root", "", "vtechsolar_newcode" );
 ?>

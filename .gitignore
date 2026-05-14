@@ -1,0 +1,10 @@
+# Local DB credentials and app connection settings — keep out of Git
+**/database.php
+**/dbconfig.php
+**/dbcontroller.php
+**/exe-database.php
+**/config.php
+# Third-party SDK configs (not app DB config)
+!mobapp/PaytmKit/lib/config.php
+!mobapp/PaytmKit2/lib/config.php
+!mobapp/instamojo/config.php
