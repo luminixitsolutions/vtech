@@ -46,6 +46,7 @@ if ($Roll == 27) $where = "(t.FromBranchId='$BranchId' OR t.ToBranchId='$BranchI
                                         <th>To Store</th>
                                         <th>Items / Qty</th>
                                         <th>Narration</th>
+                                        <th style="width:100px;">View Items</th>
                                     </tr>
                                     </thead>
                                     <tbody>
@@ -65,9 +66,16 @@ if ($Roll == 27) $where = "(t.FromBranchId='$BranchId' OR t.ToBranchId='$BranchI
                                             <td><?php echo htmlspecialchars($row['ToStoreName']); ?></td>
                                             <td><?php echo $cnt['c']; ?> line(s), <?php echo $tot['t']; ?> unit(s)</td>
                                             <td><?php echo htmlspecialchars($row['Narration']); ?></td>
+                                            <td>
+                                                <?php if ((int)$cnt['c'] > 0) { ?>
+                                                <button type="button" class="btn btn-sm btn-info btn-view-transfer-items" data-transfer-id="<?php echo (int)$tid; ?>">View</button>
+                                                <?php } else { ?>
+                                                <span class="text-muted small">—</span>
+                                                <?php } ?>
+                                            </td>
                                         </tr>
                                         <?php $i++; }
-                                    if ($i == 1) echo '<tr><td colspan="6" class="text-muted">No transfers found.</td></tr>';
+                                    if ($i == 1) echo '<tr><td colspan="7" class="text-muted">No transfers found.</td></tr>';
                                     ?>
                                     </tbody>
                                 </table>
@@ -83,9 +91,107 @@ if ($Roll == 27) $where = "(t.FromBranchId='$BranchId' OR t.ToBranchId='$BranchI
         </div>
     </div>
 </div>
+<div class="modal fade" id="viewItemsModal" tabindex="-1" role="dialog" aria-hidden="true">
+    <div class="modal-dialog modal-lg" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title mb-0">Transfer #<span id="viewItemsModalTransferId"></span> – Items</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+            </div>
+            <div class="modal-body">
+                <p class="small text-muted mb-2" id="viewItemsModalMeta"></p>
+                <div class="table-responsive">
+                    <table class="table table-bordered table-hover table-sm w-100" id="modalViewItemsTable">
+                        <thead>
+                        <tr>
+                            <th>#</th>
+                            <th>Product</th>
+                            <th>Qty</th>
+                            <th>Serial No</th>
+                            <th>Unit</th>
+                            <th>Model No</th>
+                        </tr>
+                        </thead>
+                        <tbody id="modalViewItemsTbody">
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+
 <?php include_once '../footer_script.php'; ?>
 <script>
-$(document).ready(function() { $('#example').DataTable({ pageLength: 25, order: [[1, 'desc']] }); });
+$(document).ready(function() {
+    $('#example').DataTable({
+        pageLength: 25,
+        order: [[1, 'desc']],
+        columnDefs: [
+            { targets: 6, orderable: false, searchable: false }
+        ]
+    });
+
+    var viewItemsDt = null;
+
+    function destroyViewItemsTable() {
+        if ($.fn.DataTable.isDataTable('#modalViewItemsTable')) {
+            $('#modalViewItemsTable').DataTable().destroy();
+        }
+        $('#modalViewItemsTbody').empty();
+        viewItemsDt = null;
+    }
+
+    $('#viewItemsModal').on('hidden.bs.modal', function() {
+        destroyViewItemsTable();
+    });
+
+    $(document).on('click', '.btn-view-transfer-items', function() {
+        var tid = $(this).data('transfer-id');
+        if (!tid) return;
+        destroyViewItemsTable();
+        $.getJSON('item_transfer_workflow/ajax-store-to-store-transfer-lines.php', { transfer_id: tid })
+            .done(function(resp) {
+                if (!resp || !resp.ok) {
+                    alert((resp && resp.message) ? resp.message : 'Could not load transfer items.');
+                    return;
+                }
+                if (!resp.lines || !resp.lines.length) {
+                    alert('No items found on this transfer.');
+                    return;
+                }
+                $('#viewItemsModalTransferId').text(resp.transferId);
+                var meta = (resp.transferDate || '') + ' · ' + (resp.fromStore || '') + ' → ' + (resp.toStore || '');
+                $('#viewItemsModalMeta').text(meta);
+                var $tb = $('#modalViewItemsTbody');
+                resp.lines.forEach(function(ln, idx) {
+                    var tr = $('<tr>');
+                    tr.append($('<td>').text(idx + 1));
+                    tr.append($('<td>').text(ln.ProductName || ''));
+                    tr.append($('<td>').text(ln.Qty != null ? String(ln.Qty) : ''));
+                    tr.append($('<td>').text(ln.SerialNo || ''));
+                    tr.append($('<td>').text(ln.Unit || ''));
+                    tr.append($('<td>').text(ln.ModelNo || ''));
+                    $tb.append(tr);
+                });
+                viewItemsDt = $('#modalViewItemsTable').DataTable({
+                    pageLength: 12,
+                    lengthMenu: [[12, 25, 50, 100, -1], [12, 25, 50, 100, 'All']],
+                    order: [[1, 'asc']],
+                    columnDefs: [
+                        { targets: 0, orderable: false, searchable: false }
+                    ]
+                });
+                $('#viewItemsModal').modal('show');
+            })
+            .fail(function() {
+                alert('Could not load transfer items.');
+            });
+    });
+});
 </script>
 </body>
 </html>

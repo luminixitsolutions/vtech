@@ -181,8 +181,31 @@ $Projectname = $row['Name'];
             $sql2 = "SELECT * FROM tbl_users WHERE FieldSurveyDetails='$val2' AND ProjectType=1 AND District='$dist' AND ProjectId='".$_GET['projid']."' AND ProjectSubHeadId='".$_GET['SubHeadProjectId']."'";
             $rncnt2 = getRow($sql2);
         }
+        if($val == 'deliverychallan'){
+            $sql2 = "SELECT COUNT(DISTINCT ts.CustId) AS cnt FROM tbl_sell ts INNER JOIN tbl_users tu ON tu.id=ts.CustId WHERE ts.SellType='Challan' AND tu.ProjectType=1 AND tu.District='$dist' AND tu.ProjectId='".$_GET['projid']."' AND tu.ProjectSubHeadId='".$_GET['SubHeadProjectId']."'";
+            $row2 = getRecord($sql2);
+            $rncnt2 = (int) ($row2['cnt'] ?? 0);
+        }
         if($val == 'dispatch'){
-            $sql2 = "SELECT * FROM tbl_sell ts INNER JOIN tbl_users tu ON tu.id=ts.CustId WHERE tu.ProjectType=1 AND tu.District='$dist' AND tu.ProjectId='".$_GET['projid']."' AND tu.ProjectSubHeadId='".$_GET['SubHeadProjectId']."' AND ts.Inst_Dispatcher_Otp_Verify=1";
+            $sql2 = "SELECT COUNT(DISTINCT tu.id) AS cnt FROM tbl_sell ts INNER JOIN tbl_users tu ON tu.id=ts.CustId WHERE tu.ProjectType=1 AND tu.District='$dist' AND tu.ProjectId='".$_GET['projid']."' AND tu.ProjectSubHeadId='".$_GET['SubHeadProjectId']."'";
+            $row2 = getRecord($sql2);
+            $rncnt2 = (int) ($row2['cnt'] ?? 0);
+        }
+        if($val == 'dispatchpending'){
+            $sql2 = "
+SELECT tu.id
+FROM tbl_users tu
+LEFT JOIN tbl_sell ts 
+    ON tu.id = ts.CustId 
+    AND ts.Inst_Dispatcher_Otp_Verify = 1
+WHERE tu.ProjectId='".$_GET['projid']."'
+AND tu.ProjectSubHeadId='".$_GET['SubHeadProjectId']."'
+AND tu.Roll=5
+AND tu.FieldSurveyDetails=1
+AND tu.ProjectType=1
+AND tu.District='$dist'
+AND ts.CustId IS NULL
+";
             $rncnt2 = getRow($sql2);
         }
         if($val == 'installation'){
@@ -246,6 +269,7 @@ $Projectname = $row['Name'];
                     <th class="whitecolor">Survey Dicrepancy</th>
                     <th class="whitecolor">Rejected</th>
                     <th class="whitecolor">Survey Pending</th>
+                    <th class="whitecolor">Delivery Challan</th>
                     <th class="whitecolor">Material Dispatch</th>
                     <th class="whitecolor">Installation Done</th>
                     <th class="whitecolor">Installation Pending</th>
@@ -273,6 +297,24 @@ $Projectname = $row['Name'];
                            $sql.=" AND District IN('$ReplaceDistrict')";
                         }
                     }
+                    if($_REQUEST['projid']!=''){
+                        $ProjectId = $_REQUEST['projid'];
+                        if($ProjectId == 'all'){
+                            $sql.="";
+                        }
+                        else{
+                           $sql.=" AND ProjectId='$ProjectId'";
+                        }
+                    }
+                    if($_REQUEST['SubHeadProjectId']!=''){
+                        $ProjectSubHeadId = $_REQUEST['SubHeadProjectId'];
+                        if($ProjectSubHeadId == 'all'){
+                            $sql.="";
+                        }
+                        else{
+                           $sql.=" AND ProjectSubHeadId='$ProjectSubHeadId'";
+                        }
+                    }
                     $sql.=" ORDER BY District ASC";
                     // /echo $sql;
                     $row = getList($sql);
@@ -284,13 +326,14 @@ $Projectname = $row['Name'];
                         $totsurveydone+=getDetails('surveydone',$result['District'],'1');
                         $totsurveyreject+=getDetails('surveyrejected',$result['District'],'2');
                         $totsurveypending+=getDetails('surveypending',$result['District'],'0');
+                        $totdeliverychallan+=getDetails('deliverychallan',$result['District'],'');
                         $totdispatch+=getDetails('dispatch',$result['District'],'');
                         $totinstallationdone+=getDetails('installation',$result['District'],'Yes');
-                        $totinstallationpending+=getDetails('installation',$result['District'],'No');
+                        $totinstallationpending+=getDetails('dispatch',$result['District'],'') - getDetails('installation',$result['District'],'Yes')+getDetails('dispatchpending',$result['District'],'');
                         $totdatauploadone+=getDetails('dataupload',$result['District'],'Yes');
-                        $totdatauploapending+=getDetails('dataupload',$result['District'],'No');
+                        $totdatauploapending+=getDetails('installation',$result['District'],'Yes') - getDetails('dataupload',$result['District'],'Yes');
                         $totinspectiondone+=getDetails('inspection',$result['District'],'Yes');
-                        $totinspectionpending+=getDetails('inspection',$result['District'],'No');
+                        $totinspectionpending+=getDetails('dataupload',$result['District'],'Yes') - getDetails('inspection',$result['District'],'Yes');
                         $totinspectiondis+=getDetails('inspectiondis',$result['District'],'Yes');
                         
                         $totdcrpending+=getDetails('dcr',$result['District'],'No');
@@ -308,14 +351,15 @@ $Projectname = $row['Name'];
                         <td><?php echo getDetails('surveyrejected',$result['District'],'2');?></td>
                         <td style="background-color:#fee2d6;"><?php echo getDetails('surveypending',$result['District'],'0');?></td>
                         
+                        <td><?php echo getDetails('deliverychallan',$result['District'],'');?></td>
                         <td><?php echo getDetails('dispatch',$result['District'],'');?></td>
                         <td><?php echo getDetails('installation',$result['District'],'Yes');?></td>
-                        <td style="background-color:#fee2d6;"><?php echo getDetails('installation',$result['District'],'No');?></td>
+                        <td style="background-color:#fee2d6;"><?php echo getDetails('dispatch',$result['District'],'') - getDetails('installation',$result['District'],'Yes')+getDetails('dispatchpending',$result['District'],'');?></td>
                         <td><?php echo getDetails('dataupload',$result['District'],'Yes');?></td>
-                        <td style="background-color:#fee2d6;"><?php echo getDetails('dataupload',$result['District'],'No');?></td>
+                        <td style="background-color:#fee2d6;"><?php echo getDetails('installation',$result['District'],'Yes') - getDetails('dataupload',$result['District'],'Yes');?></td>
                         <td><?php echo getDetails('inspection',$result['District'],'Yes');?></td>
                         <td><?php echo getDetails('inspectiondis',$result['District'],'Yes');?></td>
-                        <td style="background-color:#fee2d6;"><?php echo getDetails('inspection',$result['District'],'No');?></td>
+                        <td style="background-color:#fee2d6;"><?php echo getDetails('dataupload',$result['District'],'Yes') - getDetails('inspection',$result['District'],'Yes');?></td>
                     <td><?php echo getDetails('dcr',$result['District'],'No');?></td>
                     <td><?php echo getDetails('dcr',$result['District'],'Yes');?></td>
                     </tr>
@@ -331,6 +375,7 @@ $Projectname = $row['Name'];
                         <th></th>
                         <th><?php echo $totsurveyreject;?></th>
                         <th><?php echo $totsurveypending;?></th>
+                        <th><?php echo $totdeliverychallan;?></th>
                         <th><?php echo $totdispatch;?></th>
                         <th><?php echo $totinstallationdone;?></th>
                         <th><?php echo $totinstallationpending;?></th>

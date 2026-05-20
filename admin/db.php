@@ -1,5 +1,5 @@
 <?php
 /**
- * Database include — reuses the main mysqli connection from config.php ($conn).
+ * Database include — config.php → db-local.php; exposes $conn.
  */
 require_once __DIR__ . '/config.php';

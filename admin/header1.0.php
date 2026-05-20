@@ -556,9 +556,70 @@ $ImmediateBoss = $row77['ImmediateBoss'];
 <?php } ?>
 </a>
 </li>
+<li class="sidenav-item <?php if($Page=='Service-Abstract') {?> active <?php } ?>">
+<a href="service-abstract.php" class="sidenav-link">
+<div> Service Abstract</div>
+<?php if($Page=='Service-Abstract') {?>
+<div class="pl-1 ml-auto">
+<span class="badge badge-dot badge-primary"></span>
+</div>
+<?php } ?>
+</a>
+</li>
 </ul>
 </li>
-<?php } if(in_array("93", $Options)) {?>
+<?php } ?>
+
+<li class="sidenav-item <?php if($MainPage=='Insurance') {?> open active <?php } ?>">
+<a href="javascript:" class="sidenav-link sidenav-toggle">
+<i class="sidenav-icon feather icon-shield"></i>
+<div>Insurance Site</div>
+</a>
+<ul class="sidenav-menu">
+<li class="sidenav-item <?php if($Page=='Insurance-Dashboard') {?> active <?php } ?>">
+<a href="insurance-dashboard.php" class="sidenav-link">
+<div>Dashboard</div>
+<?php if($Page=='Insurance-Dashboard') {?>
+<div class="pl-1 ml-auto">
+<span class="badge badge-dot badge-primary"></span>
+</div>
+<?php } ?>
+</a>
+</li>
+<li class="sidenav-item <?php if($Page=='Pending-Insurance') {?> active <?php } ?>">
+<a href="pending-insurance.php" class="sidenav-link">
+<div>Pending Insurance</div>
+<?php if($Page=='Pending-Insurance') {?>
+<div class="pl-1 ml-auto">
+<span class="badge badge-dot badge-primary"></span>
+</div>
+<?php } ?>
+</a>
+</li>
+<li class="sidenav-item <?php if($Page=='Completed-Insurance') {?> active <?php } ?>">
+<a href="completed-insurance.php" class="sidenav-link">
+<div>Completed Insurance</div>
+<?php if($Page=='Completed-Insurance') {?>
+<div class="pl-1 ml-auto">
+<span class="badge badge-dot badge-primary"></span>
+</div>
+<?php } ?>
+</a>
+</li>
+<li class="sidenav-item <?php if($Page=='Renewal-Insurance') {?> active <?php } ?>">
+<a href="renewal-insurance.php" class="sidenav-link">
+<div>Renewal Insurance</div>
+<?php if($Page=='Renewal-Insurance') {?>
+<div class="pl-1 ml-auto">
+<span class="badge badge-dot badge-primary"></span>
+</div>
+<?php } ?>
+</a>
+</li>
+</ul>
+</li>
+
+<?php if(in_array("93", $Options)) {?>
 <li class="sidenav-item">
             <a href="update-dispatch-calling-status.php" class="sidenav-link">
                 <i class="sidenav-icon feather icon-activity"></i>

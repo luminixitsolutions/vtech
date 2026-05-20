@@ -79,9 +79,11 @@ if($_REQUEST["action"]=="delete")
         <tbody>
             <?php 
             $i=1;
-            $sql = "SELECT tp.* FROM tbl_quotation tp 
-            
-            ORDER BY tp.CreatedDate DESC";
+            $sql = "SELECT tp.* FROM tbl_quotation tp WHERE 1";
+            if($_REQUEST['val']=='today'){
+                $sql.=" AND tp.InvoiceDate='".date('Y-m-d')."'";
+            }
+            $sql.=" ORDER BY tp.CreatedDate DESC";
             $res = $conn->query($sql);
             while($row = $res->fetch_assoc())
             {

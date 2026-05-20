@@ -126,71 +126,63 @@ else{
         <tbody>
             <?php 
             $i=1;
-            $sql = "SELECT ts.*,tb.Name As Branch,tp.ProductName AS Product_Name FROM tbl_stocks ts 
-                    INNER JOIN tbl_products tp ON ts.ProductId=tp.id 
-                    LEFT JOIN tbl_branch tb ON ts.BranchId=tb.id WHERE ts.Status=1 AND tp.ProductName!='' 
-                    ";
-             
+            $TotStock = 0;
+            $SellStock = 0;
+            $BalStock = 0;
+            $sql = "SELECT p.ProductId, p.BranchId, tb.Name AS Branch, tp.ProductName AS Product_Name
+                    FROM (
+                        SELECT ProductId, BranchId FROM tbl_distibute_item_details
+                        UNION
+                        SELECT ProductId, BranchId FROM tbl_stocks WHERE Status=1 AND CrDr='dr'
+                    ) p
+                    INNER JOIN tbl_products tp ON p.ProductId=tp.id
+                    LEFT JOIN tbl_branch tb ON p.BranchId=tb.id
+                    WHERE tp.ProductName!=''";
 
             if($_POST['BranchId']){
                 $BranchId = $_POST['BranchId'];
-                if($BranchId == 'all'){
-                    $sql.= " ";
-                }
-                else{
-                $sql.= " AND ts.BranchId='$BranchId'";
+                if($BranchId != 'all'){
+                    $sql.= " AND p.BranchId='$BranchId'";
                 }
             }
             
             if($_POST['ProductId']){
                 $ProductId = $_POST['ProductId'];
-                if($ProductId == 'all'){
-                    $sql.= " ";
-                }
-                else{
-                $sql.= " AND ts.ProductId='$ProductId'";
+                if($ProductId != 'all'){
+                    $sql.= " AND p.ProductId='$ProductId'";
                 }
             }
-            if($_POST['FromDate']){
-                $FromDate = $_POST['FromDate'];
-                $sql.= " AND ts.InvoiceDate>='$FromDate'";
-            }
-            if($_POST['ToDate']){
-                $ToDate = $_POST['ToDate'];
-                $sql.= " AND ts.InvoiceDate<='$ToDate'";
-            }
-            $sql.=" GROUP BY ts.ProductId,ts.BranchId ORDER BY ts.id DESC";    
+            $sql.=" GROUP BY p.ProductId, p.BranchId ORDER BY tp.ProductName ASC";
             //echo $sql;
             $res = $conn->query($sql);
             while($row = $res->fetch_assoc())
             {
-                
+                $bid = (int) $row['BranchId'];
+                $pid = (int) $row['ProductId'];
 
-                $sql2 = "SELECT SUM(Qty) AS TotStock FROM tbl_stocks WHERE BranchId='".$row['BranchId']."' AND ProductId='".$row['ProductId']."' AND CrDr='cr'";
+                $sql2 = "SELECT SUM(Qty) AS TotStock FROM tbl_distibute_item_details WHERE BranchId='$bid' AND ProductId='$pid'";
                 $row2 = getRecord($sql2);
 
-                $sql3 = "SELECT SUM(Qty) AS SellStock FROM tbl_stocks WHERE BranchId='".$row['BranchId']."' AND ProductId='".$row['ProductId']."' AND CrDr='dr'";
+                $sql3 = "SELECT SUM(Qty) AS SellStock FROM tbl_stocks WHERE Status=1 AND BranchId='$bid' AND ProductId='$pid' AND CrDr='dr'";
                 $row3 = getRecord($sql3);
                 
-                if($row2['TotStock']==''){
-                    $Tot_Stock = 0;
-                }
-                else{
-                    $Tot_Stock = $row2['TotStock'];
-                }
-                
-                if($row3['SellStock']==''){
-                    $Tot_SellStock = 0;
-                }
-                else{
-                    $Tot_SellStock = $row3['SellStock'];
+                $Tot_Stock = isset($row2['TotStock']) && $row2['TotStock'] !== '' ? (float) $row2['TotStock'] : 0;
+                $Tot_SellStock = isset($row3['SellStock']) && $row3['SellStock'] !== '' ? (float) $row3['SellStock'] : 0;
+
+                if ($Tot_Stock <= 0 && $Tot_SellStock <= 0) {
+                    continue;
                 }
                 
-                $TotStock+=$Tot_Stock;
-                $SellStock+=$Tot_SellStock;
-                $BalStock+=$Tot_Stock - $Tot_SellStock;
-                
-               
+                $TotStock += $Tot_Stock;
+                $SellStock += $Tot_SellStock;
+                $BalStock += $Tot_Stock - $Tot_SellStock;
+
+                $qParamsDetail = array(
+                    'BranchId' => $bid,
+                    'ProductId' => $pid,
+                );
+                $stockHref = 'store-stock-report-2-credit-detail.php?' . http_build_query($qParamsDetail);
+                $sellHref = 'stock-report-sell-detail.php?' . http_build_query($qParamsDetail);
 
              ?>
             <tr>
@@ -200,8 +192,8 @@ else{
           
                <td><?php echo $row['Product_Name']; ?></td>
             
-                <td><?php echo $Tot_Stock; ?></td>
-               <td><?php echo $Tot_SellStock; ?></td>
+                <td><?php if ($Tot_Stock > 0) { ?><a href="<?php echo htmlspecialchars($stockHref, ENT_QUOTES, 'UTF-8'); ?>" target="_blank" rel="noopener"><?php echo htmlspecialchars((string) $Tot_Stock); ?></a><?php } else { echo '0'; } ?></td>
+               <td><?php if ($Tot_SellStock > 0) { ?><a href="<?php echo htmlspecialchars($sellHref, ENT_QUOTES, 'UTF-8'); ?>" target="_blank" rel="noopener"><?php echo htmlspecialchars((string) $Tot_SellStock); ?></a><?php } else { echo '0'; } ?></td>
                <td><?php echo $Tot_Stock - $Tot_SellStock; ?></td>
                  
             

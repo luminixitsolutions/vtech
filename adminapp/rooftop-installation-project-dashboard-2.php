@@ -145,13 +145,7 @@ $_SESSION['User'] = $row;
                   <h5 class="card-header fancy-heading">
   <?php echo strtoupper($_GET['name']);?> PROJECT DASHBOARD
 </h5>
-               <?php if($_GET['prjid'] == 102){ include_once 'inc-rooftop-meda-project-dashboard.php'; } 
-if($_GET['prjid'] == 103){ 
-    include_once 'inc-rooftop-msedl-project-dashboard.php'; 
-    } 
-if($_GET['prjid'] == 107){ //include_once 'inc-creda-project-dashboard.php'; 
-} 
-?>
+               <?php include_once 'inc-rooftop-msedl-project-dashboard.php'; ?>
 
             </div>
 

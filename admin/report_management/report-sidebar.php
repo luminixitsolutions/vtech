@@ -226,6 +226,17 @@
 <?php } ?>
 </a>
 </li>
+<li class="sidenav-item">
+<a href="serial-location-report.php" class="sidenav-link">
+      <i class="sidenav-icon feather icon-activity"></i>
+<div> Serial Location Report</div>
+<?php if($Page=='Serial-Location-Report') {?>
+<div class="pl-1 ml-auto">
+<span class="badge badge-dot badge-primary"></span>
+</div>
+<?php } ?>
+</a>
+</li>
 <?php } if(in_array("102", $Options)) {?>
 <li class="sidenav-item">
 <a href="store-item-report.php" class="sidenav-link">

@@ -4,9 +4,9 @@ require_once 'config.php';
 require_once 'auth.php';
 $PageName = "Home";
 
-$uid = $_REQUEST['uid'];    
+$uid = $_REQUEST['uid'] ?? '';    
 //$_SESSION['Location'] = $city_id;
-if($_REQUEST['uid'] == ''){
+if($uid == ''){
   $uid = $_SESSION['User']['id'];
 }
 else{
@@ -14,6 +14,17 @@ $uid = $_REQUEST['uid'];
 $sql11 = "SELECT * FROM tbl_users WHERE id='$uid'";
 $row = getRecord($sql11);
 $_SESSION['User'] = $row;
+}
+
+$projid = $_GET['projid'] ?? '';
+$subheadid = $_GET['subheadid'] ?? '';
+$pageTitle = $_GET['title'] ?? 'Project';
+
+if(isset($_POST['submit'])){
+    $SubHeadProjectId = implode(",", $_POST['SubHeadProjectId'] ?? ['all']);
+    $projid = $_POST['projid'] ?? $projid;
+    echo "<script>window.location.href='print-project-abstract-of-abstract.php?projid=$projid&SubHeadProjectId=$SubHeadProjectId';</script>";
+    exit;
 }
 
 ?>
@@ -116,58 +127,69 @@ $_SESSION['User'] = $row;
   color: #1976d2; /* You can alternate for different cards if needed */
 }
 
+.fancy-heading {
+  text-align: center;
+  font-size: 22px;
+  font-weight: 700;
+  letter-spacing: 1px;
+  background: linear-gradient(to right, #f97316, #fb923c);
+  color: #fff;
+  padding: 15px;
+  border-radius: 8px;
+  margin-bottom: 20px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  text-transform: uppercase;
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+@media (max-width: 576px) {
+  .fancy-heading {
+    font-size: 16px;
+    padding: 10px;
+  }
+}
+
 
 </style>
-<?php  
-                if(isset($_POST['submit'])){
-                     $SubHeadProjectId = implode(",",$_POST['SubHeadProjectId']);
-                    $projid = $_POST['projid'];
-                    echo "<script>window.location.href='print-project-abstract-of-abstract.php?projid=$projid&SubHeadProjectId=$SubHeadProjectId';</script>";
-                    
-                }
-
-               ?>
-        <div class="main-container  text-center" style="background-color:#fff;">
+        <div class="main-container text-center" style="background-color:#fff;">
 
              <div class="container ">
-                
+                <h5 class="card-header fancy-heading">
+  <?php echo htmlspecialchars($pageTitle); ?> PROJECT ABSTRACT OF ABSTRACTS
+</h5>
               <form id="validation-form" method="post" enctype="multipart/form-data" action="">
                                                 <div class="form-row">
-
-
-                                                  
-
-                                                  
                                              <div class="form-group col-md-10">      
                                         <label class="form-label">Project Sub Head </label>
-                                            <select class="select2-demo form-control" id="SubHeadProjectId" name="SubHeadProjectId[]" required="">
-<option selected="" value="all">All Project Sub Head</option>
+                                            <select class="form-control" id="SubHeadProjectId" name="SubHeadProjectId[]" required="">
+<option value="all" <?php if($subheadid == ''){ ?> selected <?php } ?>>All Project Sub Head</option>
  <?php 
-        $CountryId = $row7['CountryId'];
-        $q = "SELECT * FROM tbl_project_sub_head WHERE UnderBy='".$_GET['projid']."' ORDER BY Name ASC";
+        $q = "SELECT * FROM tbl_project_sub_head WHERE UnderBy='".$projid."' ORDER BY Name ASC";
         $r = $conn->query($q);
         while($rw = $r->fetch_assoc())
     {
+        $selectedSubHeads = $_POST['SubHeadProjectId'] ?? [];
+        if(!is_array($selectedSubHeads)){
+            $selectedSubHeads = [$selectedSubHeads];
+        }
 ?>
-                <option <?php if($_POST['SubHeadProjectId']==$rw['id']){ ?> selected <?php } ?> value="<?php echo $rw['id']; ?>"><?php echo $rw['Name']; ?></option>
+                <option <?php if(in_array($rw['id'], $selectedSubHeads) || ($subheadid != '' && $subheadid == $rw['id'])){ ?> selected <?php } ?> value="<?php echo $rw['id']; ?>"><?php echo $rw['Name']; ?></option>
               <?php } ?>
 </select>
                                            
                                             <div class="clearfix"></div>
                                         </div>
 
-                                                   
-                                                  <input type="hidden" id="ProjectId" name="projid" value="<?php echo $_GET['projid'];?>">
-                                                  <input type="hidden" id="SubHeadProjectId" name="SubHeadProjectId" value="<?php echo $_GET['subheadid'];?>">
+                                                  <input type="hidden" name="projid" value="<?php echo htmlspecialchars($projid);?>">
                                                     
                                                     <input type="hidden" name="Search" value="Search">
-                                                    <div class="form-group col-md-1" style="padding-top:25px;">
-                                                        <button type="submit" name="submit" id="submit" class="btn btn-primary btn-finish">Search</button>
+                                                    <div class="form-group col-md-2" style="padding-top:25px;">
+                                                        <button type="submit" name="submit" id="submit" class="btn btn-primary btn-finish btn-block">Search</button>
                                                     </div>
                                                     <?php if (isset($_POST['Search'])) { ?>
                                                         <div class="form-group col-md-1">
                                                             <label class="form-label">&nbsp;</label>
-                                                            <a href="<?php echo $_SERVER['PHP_SELF']; ?>" class="btn btn-info btn-block" data-toggle="tooltip" data-placement="top" data-original-title="Clear Filter">X</a>
+                                                            <a href="<?php echo $_SERVER['PHP_SELF']; ?>?projid=<?php echo urlencode($projid); ?>&title=<?php echo urlencode($pageTitle); ?>" class="btn btn-info btn-block" data-toggle="tooltip" data-placement="top" data-original-title="Clear Filter">X</a>
                                                         </div>
                                                     <?php } ?>
                                                 </div>

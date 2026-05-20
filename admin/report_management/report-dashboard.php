@@ -185,7 +185,16 @@ $Options = explode(',',$row77['Options']);
                                         <i class="lnr lnr-users hov-icon"></i>
                                      </div>
                                 </div></a>
-                            </div>  
+                            </div>
+                        <div class="col-sm-6 col-xl-2">
+                                <a href="serial-location-report.php">
+                               <div class="card bg-warning text-white ui-hover-icon mb-4 bg-pattern-3">
+                                        <div class="card-body text-center">
+                                        <h6 class="mb-0">Serial Location Report</h6>
+                                        <i class="lnr lnr-users hov-icon"></i>
+                                     </div>
+                                </div></a>
+                            </div>
 
                       <?php } if(in_array("102", $Options)) {?>   
                       
@@ -265,7 +274,18 @@ $Options = explode(',',$row77['Options']);
                                         <i class="lnr lnr-users hov-icon"></i>
                                      </div>
                                 </div></a>
-                            </div> 
+                            </div>
+                        <?php if (!in_array("101", $Options)) { ?>
+                        <div class="col-sm-6 col-xl-2">
+                                <a href="serial-location-report.php">
+                               <div class="card bg-warning text-white ui-hover-icon mb-4 bg-pattern-3">
+                                        <div class="card-body text-center">
+                                        <h6 class="mb-0">Serial Location Report</h6>
+                                        <i class="lnr lnr-users hov-icon"></i>
+                                     </div>
+                                </div></a>
+                            </div>
+                        <?php } ?>
 <?php } if(in_array("110", $Options)) {?>
 <div class="col-sm-6 col-xl-2">
                                 <a href="before-installation-calling-report.php">

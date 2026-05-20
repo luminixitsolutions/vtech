@@ -3,172 +3,46 @@ session_start();
 include_once 'config.php';
 require_once 'exe-database.php';
 include_once 'auth.php';
+require_once __DIR__ . '/inc-under-production-beneficiary-stock-data.php';
 $user_id = $_SESSION['Admin']['id'];
 $MainPage = 'Under-Production-Beneficiary';
 $Page = 'Under-Production-Required-Stock';
 
-$uid = isset($_GET['uid']) ? (int) $_GET['uid'] : 0;
+$rawIds = [];
+if (!empty($_GET['uids'])) {
+    foreach (explode(',', (string) $_GET['uids']) as $part) {
+        $id = (int) trim($part);
+        if ($id > 0) {
+            $rawIds[] = $id;
+        }
+    }
+} elseif (isset($_GET['uid'])) {
+    $uid = (int) $_GET['uid'];
+    if ($uid > 0) {
+        $rawIds[] = $uid;
+    }
+}
+
+$custIds = upb_validate_stock_report_customer_ids($conn, $rawIds);
+$isCombined = count($custIds) > 1;
 $cust = null;
+$customers = [];
 $hasDeliveryChallan = 0;
-if ($uid > 0) {
+$lines = [];
+
+if (count($custIds) === 1) {
+    $uid = (int) $custIds[0];
     $sqlCust = "SELECT * FROM tbl_users WHERE id='" . $uid . "' AND SurveyMatch=1 AND ProjectType=1 AND UnderProdStatus='1' LIMIT 1";
     $cust = getRecord($sqlCust);
     if ($cust && !empty($cust['id'])) {
         $hasDeliveryChallan = getRow("SELECT id FROM tbl_sell WHERE CustId='" . $uid . "' AND SellType='Challan' AND Status=1 LIMIT 1");
-    }
-}
-
-/**
- * Net qty from stock ledger for bulk items (ProdType 0) at optional branch.
- */
-function upb_stock_net($conn, $productId, $branchId = null)
-{
-    $productId = (int) $productId;
-    if ($productId <= 0) {
-        return 0;
-    }
-    $where = "Status=1 AND ProductId='" . $productId . "' AND ProdType=0";
-    if ($branchId !== null && $branchId !== '' && $branchId !== 'all') {
-        $bid = (int) $branchId;
-        $where .= " AND BranchId='" . $bid . "'";
-    }
-    $row = getRecord(
-        "SELECT SUM(CASE WHEN CrDr='cr' THEN Qty ELSE 0 END) AS crq,
-                SUM(CASE WHEN CrDr='dr' THEN Qty ELSE 0 END) AS drq
-         FROM tbl_stocks WHERE " . $where
-    );
-    $cr = isset($row['crq']) ? (float) $row['crq'] : 0;
-    $dr = isset($row['drq']) ? (float) $row['drq'] : 0;
-    return (int) max(0, round($cr - $dr));
-}
-
-/**
- * Per-store net qty for a product (bulk / ProdType 0) from stock ledger only.
- */
-function upb_stock_by_branch($conn, $productId)
-{
-    $productId = (int) $productId;
-    if ($productId <= 0) {
-        return [];
-    }
-    $sql = "SELECT ts.BranchId,
-                   COALESCE(
-                       NULLIF(TRIM(MAX(tb.Name)), ''),
-                       IF(ts.BranchId = 0, 'Main / central stock (ledger, not assigned to a store)',
-                          CONCAT('Branch #', ts.BranchId, ' (no name in master)'))
-                   ) AS StoreName,
-                   SUM(CASE WHEN ts.CrDr='cr' THEN ts.Qty ELSE 0 END) -
-                   SUM(CASE WHEN ts.CrDr='dr' THEN ts.Qty ELSE 0 END) AS AvailQty
-            FROM tbl_stocks ts
-            LEFT JOIN tbl_branch tb ON tb.id = ts.BranchId
-            WHERE ts.Status=1 AND ts.ProductId='" . $productId . "' AND ts.ProdType=0
-            GROUP BY ts.BranchId
-            HAVING AvailQty > 0
-            ORDER BY AvailQty DESC";
-    $list = getList($sql);
-    return is_array($list) ? $list : [];
-}
-
-/**
- * Where bulk qty sits: same idea as item_transfer_workflow/stock-location-report.php —
- * store net (tbl_distibute_item_details minus tbl_distibute_item_details2 at branch),
- * then dispatch officer lines on details2, then ledger (tbl_stocks) if nothing in distribute.
- *
- * @return list of [ 'StoreName' => string, 'AvailQty' => float|int ]
- */
-function upb_available_locations($conn, $productId)
-{
-    $productId = (int) $productId;
-    if ($productId <= 0) {
-        return [];
-    }
-
-    $hasDispatchTransferTbl = false;
-    $hasDetail2IdCol = false;
-    $t1 = $conn->query("SHOW TABLES LIKE 'tbl_dispatch_to_store_transfer_details'");
-    if ($t1 && $t1->num_rows > 0) {
-        $hasDispatchTransferTbl = true;
-        $c = $conn->query("SHOW COLUMNS FROM tbl_dispatch_to_store_transfer_details LIKE 'Detail2Id'");
-        if ($c && $c->num_rows > 0) {
-            $hasDetail2IdCol = true;
+        if ($hasDeliveryChallan <= 0) {
+            $lines = upb_fetch_required_lines_for_customer($conn, $uid);
         }
     }
-    $d2JoinOpen = ($hasDispatchTransferTbl && $hasDetail2IdCol)
-        ? "LEFT JOIN (SELECT DISTINCT Detail2Id FROM tbl_dispatch_to_store_transfer_details WHERE Detail2Id IS NOT NULL) td_open ON td_open.Detail2Id = d2.id"
-        : '';
-    $d2WhereOpen = ($hasDispatchTransferTbl && $hasDetail2IdCol) ? 'AND td_open.Detail2Id IS NULL' : '';
-
-    $out = [];
-
-    $sqlStore = "SELECT d.BranchId, MAX(b.Name) AS BranchName,
-        (COALESCE(SUM(d.Qty),0) - COALESCE((SELECT SUM(x.Qty) FROM tbl_distibute_item_details2 x
-            WHERE x.BranchId = d.BranchId AND x.ProductId = d.ProductId AND x.ProdType = 0), 0)) AS AvailQty
-        FROM tbl_distibute_item_details d
-        INNER JOIN tbl_distibute_items h ON h.id = d.DistId AND h.Status = 1
-        INNER JOIN tbl_branch b ON b.id = d.BranchId
-        WHERE d.ProdType = 0 AND d.ProductId='" . $productId . "'
-        GROUP BY d.BranchId
-        HAVING AvailQty > 0.0001
-        ORDER BY MAX(b.Name)";
-    foreach (getList($sqlStore) as $r) {
-        $bn = isset($r['BranchName']) ? trim((string) $r['BranchName']) : '';
-        if ($bn === '') {
-            continue;
-        }
-        $out[] = [
-            'StoreName' => 'Store (balance): ' . $bn,
-            'AvailQty' => $r['AvailQty'],
-            'row_kind' => 'store',
-            'branch_id' => (int) ($r['BranchId'] ?? 0),
-            'store_exe_id' => 0,
-        ];
-    }
-
-    $sqlDisp = "SELECT d2.StoreExeId, d2.BranchId,
-        COALESCE(u.Fname, CONCAT('User #', d2.StoreExeId)) AS officer_name,
-        COALESCE(NULLIF(TRIM(b.Name), ''), 'branch not set') AS assign_branch_name,
-        SUM(d2.Qty) AS AvailQty
-        FROM tbl_distibute_item_details2 d2
-        INNER JOIN tbl_distibute_items2 h ON h.id = d2.DistId AND h.Status = 1
-        LEFT JOIN tbl_users u ON u.id = d2.StoreExeId
-        LEFT JOIN tbl_branch b ON b.id = d2.BranchId
-        " . $d2JoinOpen . "
-        WHERE d2.ProdType = 0 AND d2.StoreExeId > 0 AND d2.ProductId='" . $productId . "' " . $d2WhereOpen . "
-        GROUP BY d2.StoreExeId, d2.BranchId, u.Fname, b.Name
-        HAVING SUM(d2.Qty) > 0.0001
-        ORDER BY officer_name, assign_branch_name";
-    foreach (getList($sqlDisp) as $r) {
-        $on = isset($r['officer_name']) ? trim((string) $r['officer_name']) : '';
-        $br = isset($r['assign_branch_name']) ? trim((string) $r['assign_branch_name']) : '';
-        if ($br === '') {
-            $br = 'branch not set';
-        }
-        $out[] = [
-            'StoreName' => 'Dispatch officer: ' . $on . ' (store: ' . $br . ')',
-            'AvailQty' => $r['AvailQty'],
-            'row_kind' => 'dispatch',
-            'branch_id' => (int) ($r['BranchId'] ?? 0),
-            'store_exe_id' => (int) ($r['StoreExeId'] ?? 0),
-        ];
-    }
-
-    if (count($out) > 0) {
-        return $out;
-    }
-
-    $ledger = upb_stock_by_branch($conn, $productId);
-    if (!is_array($ledger)) {
-        return [];
-    }
-    $wrapped = [];
-    foreach ($ledger as $row) {
-        $wrapped[] = array_merge($row, [
-            'row_kind' => 'ledger',
-            'branch_id' => isset($row['BranchId']) ? (int) $row['BranchId'] : 0,
-            'store_exe_id' => 0,
-        ]);
-    }
-    return $wrapped;
+} elseif ($isCombined) {
+    $customers = upb_fetch_stock_report_customers($conn, $custIds);
+    $lines = upb_fetch_combined_required_lines($conn, $custIds);
 }
 ?>
 <!DOCTYPE html>
@@ -239,6 +113,11 @@ function upb_available_locations($conn, $productId)
         #modalAvlByStore .modal-body .table th:first-child {
             padding-left: 1rem;
         }
+        .upb-customer-list {
+            max-height: 120px;
+            overflow-y: auto;
+            font-size: 0.9rem;
+        }
     </style>
 </head>
 <body>
@@ -252,7 +131,34 @@ function upb_available_locations($conn, $productId)
 <div class="layout-content">
 <div class="container-fluid flex-grow-1 container-p-y">
 
-<?php if (!$cust || empty($cust['id'])) { ?>
+<?php if (count($custIds) === 0) { ?>
+    <h4 class="font-weight-bold py-3 mb-0">Required stock</h4>
+    <div class="alert alert-warning">No valid customer was selected, or the link is invalid.</div>
+    <a href="under-production-beneficiary-stock-report.php" class="btn btn-primary">Back to report</a>
+<?php } elseif ($isCombined) { ?>
+    <?php
+    $totalReq = 0;
+    foreach ($lines as $ln) {
+        $totalReq += (int) round((float) $ln['ReqQty']);
+    }
+    $reqQtyLabel = 'Combined required qty';
+    ?>
+    <h4 class="font-weight-bold py-3 mb-0">Combined required stock — <?php echo count($customers); ?> customer(s)</h4>
+    <p class="mb-2"><strong>Total required qty (all items):</strong> <?php echo (int) $totalReq; ?></p>
+    <div class="upb-customer-list mb-2 text-muted">
+        <?php foreach ($customers as $c) { ?>
+            <div><?php echo htmlspecialchars((string) $c['Fname']); ?> (<?php echo htmlspecialchars((string) $c['BeneficiaryId']); ?>)</div>
+        <?php } ?>
+    </div>
+    <p class="mb-3"><a href="under-production-beneficiary-stock-report.php" class="btn btn-sm btn-secondary">Back to done list</a></p>
+
+    <?php if (count($lines) === 0) { ?>
+        <div class="alert alert-info">No required materials were found for the selected customer(s).</div>
+    <?php } else {
+        include __DIR__ . '/inc-under-production-beneficiary-required-stock-table.php';
+    } ?>
+
+<?php } elseif (!$cust || empty($cust['id'])) { ?>
     <h4 class="font-weight-bold py-3 mb-0">Required stock</h4>
     <div class="alert alert-warning">This customer was not found, is not marked <strong>Done</strong> under production, or the link is invalid.</div>
     <a href="under-production-beneficiary-stock-report.php" class="btn btn-primary">Back to report</a>
@@ -261,43 +167,7 @@ function upb_available_locations($conn, $productId)
     <div class="alert alert-info">A delivery challan is already created for this customer, so they are not shown on the required stock report.</div>
     <a href="under-production-beneficiary-stock-report.php" class="btn btn-primary">Back to report</a>
 <?php } else {
-
-    $cid = (int) $cust['id'];
-    // Pump / beneficiary BOM is stored on the customer record (Add Pump Customer), not in tbl_quotation.
-    $lines = getList(
-        "SELECT cps.ProdId AS ProductId,
-                MAX(COALESCE(
-                    NULLIF(TRIM(cps.ProdName), ''),
-                    NULLIF(TRIM(tp.ProductName), ''),
-                    CONCAT('Product #', cps.ProdId)
-                )) AS ProductName,
-                SUM(COALESCE(CAST(NULLIF(TRIM(cps.Qty), '') AS DECIMAL(12,2)), 0)) AS ReqQty
-         FROM tbl_cust_product_specification cps
-         LEFT JOIN tbl_products tp ON tp.id = cps.ProdId
-         WHERE cps.CustId = '" . $cid . "'
-         GROUP BY cps.ProdId
-         HAVING SUM(COALESCE(CAST(NULLIF(TRIM(cps.Qty), '') AS DECIMAL(12,2)), 0)) > 0
-         ORDER BY MAX(COALESCE(
-                    NULLIF(TRIM(cps.ProdName), ''),
-                    NULLIF(TRIM(tp.ProductName), ''),
-                    CONCAT('Product #', cps.ProdId)
-                )) ASC"
-    );
-    if (!is_array($lines)) {
-        $lines = [];
-    }
-    if (count($lines) === 0) {
-        $lines = getList(
-            "SELECT qop.ProductId, qop.ProductName, SUM(COALESCE(qop.Qty,0)) AS ReqQty
-             FROM tbl_quotation_order_products qop
-             INNER JOIN tbl_quotation q ON q.id = qop.SellId AND q.CustId = '" . $cid . "'
-             GROUP BY qop.ProductId, qop.ProductName
-             ORDER BY qop.ProductName ASC"
-        );
-        if (!is_array($lines)) {
-            $lines = [];
-        }
-    }
+    $reqQtyLabel = 'Required qty';
     ?>
     <h4 class="font-weight-bold py-3 mb-0">Required stock — <?php echo htmlspecialchars((string) $cust['Fname']); ?></h4>
     <p class="mb-2">
@@ -308,79 +178,9 @@ function upb_available_locations($conn, $productId)
 
     <?php if (count($lines) === 0) { ?>
         <div class="alert alert-info">No required materials were found for this customer: there are no rows in <code>tbl_cust_product_specification</code> (BOS / structure lines from <strong>Add Pump Customer</strong>) and no lines on a <code>tbl_quotation</code> for this <code>CustId</code>. Save the customer form with product specs, or add a quotation.</div>
-    <?php } else { ?>
-        <div class="card" style="padding: 10px;">
-            <div class="upb-stock-card-inner">
-                <table id="tblRequiredStock" class="table table-striped table-bordered table-sm nowrap" style="width:100%" cellspacing="0">
-                    <thead class="thead-light">
-                        <tr>
-                            <th>#</th>
-                            <th style="min-width:220px">Item</th>
-                            <th class="text-right" style="min-width:110px">Required qty</th>
-                            <th class="text-right" style="min-width:140px">Total available (all stores)</th>
-                            <th style="min-width:120px">Available by store</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <?php
-                        $n = 1;
-                        foreach ($lines as $ln) {
-                            $pid = (int) $ln['ProductId'];
-                            $req = (int) round((float) $ln['ReqQty']);
-                            $name = (string) $ln['ProductName'];
-                            $totalAvail = upb_stock_net($conn, $pid, null);
-                            $byBranch = upb_available_locations($conn, $pid);
-                            $short = ($pid > 0 && $req > $totalAvail);
-                            ?>
-                            <tr class="<?php echo $short ? 'table-warning' : ''; ?>">
-                                <td><?php echo $n++; ?></td>
-                                <td><?php echo htmlspecialchars($name); ?><?php if ($pid <= 0) {
-                                    echo ' <span class="text-muted">(no product id)</span>';
-                                } ?></td>
-                                <td class="text-right"><?php echo $req; ?></td>
-                                <td class="text-right"><?php echo $pid > 0 ? $totalAvail : '—'; ?></td>
-                                <td>
-                                    <?php
-                                    if ($pid <= 0) {
-                                        echo '<span class="text-muted">Map a product id on the customer BOM / quotation to show store stock.</span>';
-                                    } elseif (count($byBranch) === 0) {
-                                        echo '<span class="text-muted">No positive balance in any store (ledger).</span>';
-                                    } else {
-                                        $locPayload = [];
-                                        foreach ($byBranch as $b) {
-                                            $bid = isset($b['branch_id']) ? (int) $b['branch_id'] : (isset($b['BranchId']) ? (int) $b['BranchId'] : 0);
-                                            $locPayload[] = [
-                                                'StoreName' => (string) ($b['StoreName'] ?? ''),
-                                                'AvailQty' => isset($b['AvailQty']) ? (float) $b['AvailQty'] : 0,
-                                                'BranchId' => $bid,
-                                                'row_kind' => (string) ($b['row_kind'] ?? 'ledger'),
-                                                'branch_id' => $bid,
-                                                'store_exe_id' => (int) ($b['store_exe_id'] ?? 0),
-                                            ];
-                                        }
-                                        $locJson = htmlspecialchars(json_encode($locPayload, JSON_UNESCAPED_UNICODE), ENT_QUOTES, 'UTF-8');
-                                        $itemTitle = htmlspecialchars($name, ENT_QUOTES, 'UTF-8');
-                                        ?>
-                                        <button type="button" class="btn btn-sm btn-primary btn-view-store-avl"
-                                            data-toggle="modal" data-target="#modalAvlByStore"
-                                            data-product-id="<?php echo (int) $pid; ?>"
-                                            data-item-name="<?php echo $itemTitle; ?>"
-                                            data-required="<?php echo (int) $req; ?>"
-                                            data-total-avail="<?php echo (int) $totalAvail; ?>"
-                                            data-locations="<?php echo $locJson; ?>">View</button>
-                                        <?php
-                                    }
-                                    ?>
-                                </td>
-                            </tr>
-                            <?php
-                        }
-                        ?>
-                    </tbody>
-                </table>
-            </div>
-        </div>
-    <?php } ?>
+    <?php } else {
+        include __DIR__ . '/inc-under-production-beneficiary-required-stock-table.php';
+    } ?>
 
 <?php } ?>
 

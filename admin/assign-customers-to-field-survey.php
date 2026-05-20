@@ -33,6 +33,14 @@ $Page = "Assign-Customers-Field-Survey";
 <link rel="stylesheet" href="<?php echo $SiteUrl;?>/assets/libs/datatables/datatables.css">
 <link rel="stylesheet" href="<?php echo $SiteUrl;?>/assets/libs/bootstrap-select/bootstrap-select.css">
     <link rel="stylesheet" href="<?php echo $SiteUrl;?>/assets/libs/select2/select2.css">
+    <style>
+        #example tbody tr.import-matched td {
+            background-color: #fff8e1 !important;
+        }
+        #example tbody tr.import-matched[style*="b9efb9"] td {
+            background-color: #d4edda !important;
+        }
+    </style>
 </head>
 <body>
 
@@ -94,8 +102,18 @@ if(isset($_POST['submit'])){
 <div class="layout-content">
 
 <div class="container-fluid flex-grow-1 container-p-y">
-<h4 class="font-weight-bold py-3 mb-0">Assign Customers To Field Survey
-</h4><br>
+<div class="d-flex flex-wrap justify-content-between align-items-center py-3 mb-0">
+    <h4 class="font-weight-bold mb-0">Assign Customers To Field Survey</h4>
+    <div class="btn-group" id="fieldSurveyImportDropdown">
+        <button type="button" class="btn btn-primary btn-finish dropdown-toggle" id="btnFieldSurveyImportDropdownToggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">Import</button>
+        <div class="dropdown-menu dropdown-menu-right">
+            <a class="dropdown-item" href="#" id="btnFieldSurveyImportExcel">Import Excel</a>
+            <a class="dropdown-item" href="download-coordinator-assign-sample-excel.php">Sample Excel</a>
+        </div>
+    </div>
+</div>
+<input type="file" id="fieldSurveyImportFile" accept=".xlsx,.xls,.csv" style="display:none">
+<br>
 
 <div class="card" style="padding:10px;">
     <div id="accordion2">
@@ -287,20 +305,16 @@ if(isset($_POST['submit'])){
             $res = $conn->query($sql);
             while($row = $res->fetch_assoc())
             {
-               
-                $sql22 = "SELECT * FROM tbl_users WHERE FieldSurveyStatus=1 AND id='".$row['id']."'";
-                $rncnt22 = getRow($sql22);
-                if($rncnt22 > 0){
-                     $bcolor = "background-color: #b9efb9;";
-                }
-                else{
+                $isAssigned = ((int) $row['FieldSurveyStatus'] === 1);
+                if ($isAssigned) {
+                    $bcolor = "background-color: #b9efb9;";
+                } else {
                     $bcolor = "";
                 }
-                
 
              ?>
-            <tr style="<?php echo $bcolor;?>">
-                <td><?php if($rncnt22 > 0){} else{?>
+            <tr style="<?php echo $bcolor;?>" data-beneficiary-id="<?php echo htmlspecialchars($row['BeneficiaryId'], ENT_QUOTES, 'UTF-8'); ?>" data-cust-id="<?php echo (int) $row['id']; ?>" data-has-checkbox="<?php echo $isAssigned ? '0' : '1'; ?>">
+                <td><?php if (!$isAssigned) { ?>
                     <label class="custom-control custom-checkbox">
                     <input type="checkbox" id="Check_Id<?php echo $row['id']; ?>" value="0" class="custom-control-input is-valid" onclick="featured(<?php echo $row['id']; ?>)">
                     <span class="custom-control-label">&nbsp;</span>
@@ -368,6 +382,8 @@ $sql12 = "SELECT * FROM tbl_users WHERE Status='1' AND Roll IN(40)";
 
 
     <script src="<?php echo $SiteUrl;?>/assets/js/jquery.min.js"></script>
+    <script src="<?php echo $SiteUrl;?>/assets/libs/popper/popper.js"></script>
+    <script src="<?php echo $SiteUrl;?>/assets/js/bootstrap.js"></script>
     <script src="<?php echo $SiteUrl;?>/assets/js/datatables.min.js"></script>
     <script src="<?php echo $SiteUrl;?>/assets/js/pace.js"></script>
     <script src="<?php echo $SiteUrl;?>/assets/js/sidenav.js"></script>
@@ -398,11 +414,179 @@ function search(){
             }
         }
 
-    $(document).ready(function() {
-    $('#example').DataTable({
-        "scrollX": true
+    var fieldSurveyTable = null;
+
+    function initFieldSurveyTable() {
+        if ($.fn.DataTable && $.fn.DataTable.isDataTable('#example')) {
+            $('#example').DataTable().destroy();
+        }
+        fieldSurveyTable = $('#example').DataTable({
+            scrollX: true,
+            pageLength: 10,
+            order: [],
+            stateSave: false
+        });
+    }
+
+    function setRowChecked($tr, checked) {
+        var custId = $tr.attr('data-cust-id');
+        var $cb = $tr.find('input[type="checkbox"][id="Check_Id' + custId + '"]');
+        if (!$cb.length) {
+            return false;
+        }
+        $cb.prop('checked', checked);
+        if ($cb[0]) {
+            $cb[0].checked = checked;
+        }
+        $('#CheckId' + custId).val(checked ? 1 : 0);
+        return true;
+    }
+
+    function applyImportedBeneficiaryIds(ids) {
+        var lookup = {};
+        var i;
+        for (i = 0; i < ids.length; i++) {
+            var key = String(ids[i]).trim().toUpperCase();
+            if (key !== '') {
+                lookup[key] = true;
+            }
+        }
+
+        if (fieldSurveyTable) {
+            fieldSurveyTable.destroy();
+            fieldSurveyTable = null;
+        }
+
+        var matched = 0;
+        var skippedAssigned = 0;
+        var foundInTable = {};
+        var rowsChecked = [];
+        var rowsBelow = [];
+
+        $('#example tbody tr').each(function() {
+            var $tr = $(this);
+            var bid = String($tr.attr('data-beneficiary-id') || '').trim().toUpperCase();
+
+            if (bid && lookup[bid]) {
+                foundInTable[bid] = true;
+                $tr.addClass('import-matched');
+                var hasCheckbox = String($tr.attr('data-has-checkbox')) === '1';
+
+                if (hasCheckbox && setRowChecked($tr, true)) {
+                    matched++;
+                    rowsChecked.push(this);
+                } else {
+                    skippedAssigned++;
+                    setRowChecked($tr, false);
+                    rowsBelow.push(this);
+                }
+            } else {
+                $tr.removeClass('import-matched');
+                setRowChecked($tr, false);
+                rowsBelow.push(this);
+            }
+        });
+
+        var notInList = 0;
+        for (var k in lookup) {
+            if (lookup.hasOwnProperty(k) && !foundInTable[k]) {
+                notInList++;
+            }
+        }
+
+        var $tbody = $('#example tbody');
+        $tbody.empty();
+        rowsChecked.forEach(function(row) {
+            $tbody.append(row);
+        });
+        rowsBelow.forEach(function(row) {
+            $tbody.append(row);
+        });
+
+        initFieldSurveyTable();
+        fieldSurveyTable.page(0).draw(false);
+
+        var msg = matched + ' record(s) selected and shown at the top.';
+        if (notInList > 0) {
+            msg += ' ' + notInList + ' ID(s) from Excel were not found in this list.';
+        }
+        if (skippedAssigned > 0) {
+            msg += ' ' + skippedAssigned + ' matched ID(s) are already assigned (no checkbox). Use filter "Not Assign" only.';
+        }
+        if (matched === 0 && skippedAssigned === 0) {
+            msg = 'No matching beneficiary IDs found in the current list. Check filters or IDs in the file.';
+        }
+        alert(msg);
+    }
+
+    $('#btnFieldSurveyImportDropdownToggle').on('click', function(e) {
+        e.preventDefault();
+        e.stopPropagation();
+        var $menu = $('#fieldSurveyImportDropdown .dropdown-menu');
+        var open = $menu.hasClass('show');
+        $('.dropdown-menu.show').removeClass('show');
+        if (!open) {
+            $menu.addClass('show');
+        }
     });
-});
+    $(document).on('click', function() {
+        $('#fieldSurveyImportDropdown .dropdown-menu').removeClass('show');
+    });
+    $('#fieldSurveyImportDropdown .dropdown-menu').on('click', function(e) {
+        e.stopPropagation();
+    });
+
+    $('#btnFieldSurveyImportExcel').on('click', function(e) {
+        e.preventDefault();
+        $('#fieldSurveyImportDropdown .dropdown-menu').removeClass('show');
+        $('#fieldSurveyImportFile').val('').trigger('click');
+    });
+
+    $('#fieldSurveyImportFile').on('change', function() {
+        var file = this.files[0];
+        if (!file) {
+            return;
+        }
+        var formData = new FormData();
+        formData.append('file', file);
+        $.ajax({
+            url: 'ajax-coordinator-assign-import-excel.php',
+            type: 'POST',
+            data: formData,
+            processData: false,
+            contentType: false,
+            dataType: 'json',
+            success: function(res) {
+                if (res.success && res.beneficiary_ids) {
+                    applyImportedBeneficiaryIds(res.beneficiary_ids);
+                } else {
+                    alert(res.message || 'Import failed.');
+                }
+            },
+            error: function(xhr) {
+                var msg = 'Could not upload file. Please try again.';
+                if (xhr.responseText) {
+                    try {
+                        var err = JSON.parse(xhr.responseText);
+                        if (err.message) {
+                            msg = err.message;
+                        }
+                    } catch (e2) {
+                        if (xhr.status === 0) {
+                            msg = 'Network error. Check your connection and try again.';
+                        } else if (xhr.status === 404) {
+                            msg = 'Import script not found. Contact administrator.';
+                        }
+                    }
+                }
+                alert(msg);
+            }
+        });
+    });
+
+    $(document).ready(function() {
+        initFieldSurveyTable();
+    });
 </script>
 
 </body>

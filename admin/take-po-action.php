@@ -395,6 +395,9 @@ if(isset($_POST['submit5'])){
         $sheetCount = count($Reader->sheets());
          $sql = "DELETE FROM tbl_stocks WHERE SellId='$id' AND ProdType='1' AND SellType='Purchase'";
 $conn->query($sql);
+        $skippedSerials = [];
+        $seenInFile = [];
+        $importedCount = 0;
         /*$Qx = "TRUNCATE TABLE sheet1";
         $conn->query($Qx);*/
         for($i=0;$i<$sheetCount;$i++)
@@ -479,15 +482,31 @@ $OemVedName = "";
                
                  if (!empty($SrNo) || !empty($ProductId) || !empty($ProductName) || !empty($SerialNo) || !empty($Qty) || !empty($ModelNo) || !empty($CompId) || !empty($PostId)) {
 
-                    $UnitSql = ($Unit !== '') ? $Unit : mysqli_real_escape_string($conn, '-');
-                      $sql22 = "INSERT INTO tbl_stocks SET VehicalDate='$VehicalDate',VehicalNo='$VehicalNo',CustomerId='$CustomerId',CompId='$CompId',SellId='$id',ProductId='$ProductId',ProductName='$ProductName',Qty='$Qty',Status='1',CrDr='cr',CreatedBy='$user_id',CreatedDate='$DeliveredDate',Narration='Stock Added',PostId='$PostId',BranchId='$BranchId',FromBranchId='$BranchId',SellType='Purchase',SerialNo='$SerialNo',ModelNo='$ModelNo',SrNo='$SrNo',ProdType='1',Unit='$UnitSql',BillNo='$BillNo',OemVedName='$OemVedName',BagId='0',Structure='0',BuyStatus='0'";
-                $conn->query($sql22);
-                
-               
-                    
+                    $shouldInsert = true;
+                    $serialPlain = isset($Row[3]) ? trim((string) $Row[3]) : '';
+                    if ($serialPlain !== '' && strcasecmp($serialPlain, 'N/A') !== 0 && strcasecmp($serialPlain, 'Serial No') !== 0 && strcasecmp($serialPlain, 'SerialNo') !== 0) {
+                        $serialKey = strtoupper($serialPlain);
+                        if (isset($seenInFile[$serialKey])) {
+                            $skippedSerials[] = $serialPlain;
+                            $shouldInsert = false;
+                        } else {
+                            $snChk = mysqli_real_escape_string($conn, $serialPlain);
+                            $chkSql = "SELECT id FROM tbl_stocks WHERE ProdType='1' AND SerialNo!='' AND SerialNo!='N/A' AND SerialNo='$snChk' LIMIT 1";
+                            if (getRow($chkSql) > 0) {
+                                $skippedSerials[] = $serialPlain;
+                                $shouldInsert = false;
+                            } else {
+                                $seenInFile[$serialKey] = true;
+                            }
+                        }
+                    }
 
-  
-                  
+                    if ($shouldInsert) {
+                        $UnitSql = ($Unit !== '') ? $Unit : mysqli_real_escape_string($conn, '-');
+                        $sql22 = "INSERT INTO tbl_stocks SET VehicalDate='$VehicalDate',VehicalNo='$VehicalNo',CustomerId='$CustomerId',CompId='$CompId',SellId='$id',ProductId='$ProductId',ProductName='$ProductName',Qty='$Qty',Status='1',CrDr='cr',CreatedBy='$user_id',CreatedDate='$DeliveredDate',Narration='Stock Added',PostId='$PostId',BranchId='$BranchId',FromBranchId='$BranchId',SellType='Purchase',SerialNo='$SerialNo',ModelNo='$ModelNo',SrNo='$SrNo',ProdType='1',Unit='$UnitSql',BillNo='$BillNo',OemVedName='$OemVedName',BagId='0',Structure='0',BuyStatus='0'";
+                        $conn->query($sql22);
+                        $importedCount++;
+                    }
                 }
              }
         
@@ -495,9 +514,20 @@ $OemVedName = "";
          
  $sql = "DELETE FROM tbl_stocks WHERE SrNo='SrNo' AND ProdType='1'";
 $conn->query($sql);
+$skippedUnique = array_values(array_unique($skippedSerials));
+if ($importedCount > 0) {
+    $alertMsg = 'Excel data imported successfully. ' . $importedCount . ' serial line(s) added.';
+} elseif (!empty($skippedUnique)) {
+    $alertMsg = 'No serial numbers were imported.';
+} else {
+    $alertMsg = 'Excel data imported successfully.';
+}
+if (!empty($skippedUnique)) {
+    $alertMsg .= "\n\nThe following serial number(s) were NOT imported because they already exist:\n" . implode("\n", $skippedUnique);
+}
 ?>
 <script>
-alert("Excel Data Imported into the Database");
+alert(<?php echo json_encode($alertMsg); ?>);
     window.location.href='take-po-action.php?id=<?php echo $id;?>';
 </script>
 <?php

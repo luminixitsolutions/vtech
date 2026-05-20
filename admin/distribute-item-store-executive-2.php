@@ -23,15 +23,14 @@ function RandomStringGenerator($n)
 } 
 
 
-$sql = "SELECT * FROM tbl_distibute_item_details WHERE code=''";
-$row = getList($sql);
-foreach($row as $result){
-    $id = $result['id'];
-    $n = 10;
-    $Code = RandomStringGenerator($n); 
-    $Code2 = $Code."".$id;
-    $sql = "UPDATE tbl_distibute_item_details SET code='$Code2' WHERE id='$id'";
-    $conn->query($sql);
+if (isset($_GET['backfill_codes']) && $_GET['backfill_codes'] === '1') {
+    $sql = "SELECT id FROM tbl_distibute_item_details WHERE code='' LIMIT 50";
+    $row = getList($sql);
+    foreach ($row as $result) {
+        $id = $result['id'];
+        $Code2 = RandomStringGenerator(10) . $id;
+        $conn->query("UPDATE tbl_distibute_item_details SET code='$Code2' WHERE id='$id'");
+    }
 }
 ?>
 <!DOCTYPE html>
@@ -111,7 +110,7 @@ if(isset($_POST['submit'])){
                                     
                                     <div class="form-group col-md-2">
 <label class="form-label"> Store<span class="text-danger">*</span></label>
- <select class="form-control" name="BranchId" id="BranchId" required onchange="getItems(this.value)">
+ <select class="form-control" name="BranchId" id="BranchId" required>
 <?php 
  if($Roll == 1 || $Roll == 7){?>
 <option selected="" value="">Select Store</option>
@@ -139,21 +138,20 @@ else{
 <div class="form-group col-md-4">
 <label class="form-label"> Dispatch Officier<span class="text-danger">*</span></label>
 <select class="select2-demo form-control" name="StoreExeId" id="StoreExeId" required>
-    <option selected="" value="">Select</option>
+    <option selected="" value="">Select store first</option>
     <?php
-        $BranchId = $_REQUEST['BranchId'];
-        if($BranchId==''){
-            $sql12 = "SELECT * FROM tbl_users WHERE Status='1' AND Roll=26";
-        }
-        else{
-        $sql12 = "SELECT * FROM tbl_users WHERE Status='1' AND Roll=26 AND MulBranchId IN ($BranchId)";
-        }
+        $BranchId = (int) ($_REQUEST['BranchId'] ?? 0);
+        if ($BranchId > 0) {
+        $sql12 = "SELECT id, Fname FROM tbl_users WHERE Status='1' AND Roll=26
+            AND (BranchId='$BranchId' OR FIND_IN_SET('$BranchId', REPLACE(IFNULL(TRIM(MulBranchId),''),' ','')))
+            ORDER BY Fname ASC";
         $row12 = getList($sql12);
         foreach ($row12 as $result) {
     ?>
         <option <?php if($_REQUEST["StoreExeId"] == $result['id']) {?> selected <?php } ?> value="<?php echo $result['id']; ?>">
-        <?php echo $result['Fname']; ?></option>
-        <?php } ?>
+        <?php echo htmlspecialchars($result['Fname']); ?></option>
+        <?php }
+        } ?>
 </select>
 
 <div class="clearfix"></div>
@@ -182,7 +180,7 @@ else{
 
 <div class="form-group col-md-4">
 <label class="form-label"> Dispatch Officier<span class="text-danger">*</span></label>
-<select class="select2-demo form-control" name="StoreExeId" id="StoreExeId" required onchange="getItems2(this.value)">
+<select class="select2-demo form-control" name="StoreExeId" id="StoreExeId" required>
     <option selected="" value="">Select</option>
     <?php
      /*$sql12 = "SELECT * FROM tbl_users WHERE Status='1' AND Roll=32 AND UnderUser='$user_id'";*/
@@ -210,215 +208,13 @@ else{
 
 </div>
 
-<?php if($_REQUEST['action'] == 'search'){?>
-<div class="form-row">
-  <label class="form-label" style="font-size: 18px;color: #0dc30d;"> Product Details</label>
-<table id="example2" class="table table-striped table-bordered" width="100%">
-     <thead>
-    <tr>
-        <th width="30%">Product</th>
-       <!--  <th>Serial No </th> -->
-        <th>Stock Qty </th>
-        <th>Qty </th>
-        <th>Unit</th>
-       <!--  <th>Rate</th>
-        <th>Amount</th> -->
-        <!-- <th></th> -->
-    </tr>
-     </thead>
-        <tbody id="dynamic_field" >
-            <?php 
-                $i=1;
-              $sql12 = "SELECT ts.*,tp.ProductName AS Product_Name,tp.ModelNo AS Model_No,tp.Unit FROM tbl_distibute_item_details ts INNER JOIN tbl_products tp ON ts.ProductId=tp.id WHERE ts.ProdType=0 AND ts.BranchId='".$_REQUEST['BranchId']."' GROUP BY ts.ProductId ORDER BY ts.ProductId";
-             $rncnt2 = getRow($sql12);
-             $row12 = getList($sql12);
-  foreach($row12 as $result){
-    $sql11 = "SELECT SUM(Qty) AS CrQty FROM tbl_distibute_item_details WHERE ProductId='".$result['ProductId']."' AND ProdType=0 AND BranchId='".$_REQUEST['BranchId']."'";
-    $row11 = getRecord($sql11);
-    $CrQty = $row11['CrQty'];
-
-    $sql12 = "SELECT SUM(Qty) AS DrQty FROM tbl_distibute_item_details2 WHERE ProductId='".$result['ProductId']."' AND ProdType=0 AND BranchId='".$_REQUEST['BranchId']."'";
-    $row12 = getRecord($sql12);
-    $DrQty = $row12['DrQty'];
-
-    $BalQty = $CrQty - $DrQty;
-    if($BalQty > 0){
-            ?>
-    <tr>
-        <td><?php echo $result['Product_Name'];?></td>
-<!-- <td><?php echo $result['SerialNo'];?></td> -->
-<input type="hidden" name="Rncnt" id="Rncnt" value="<?php echo $rncnt2;?>">
-<input type="hidden" name="ProductId[]" id="ProductId" value="<?php echo $result['ProductId'];?>">
-
-
- <input type="hidden" name="ProdType[]" id="ProdType1" value='0'>
-       <input type="hidden" name="ProductName[]" id="ProductName1" value='<?php echo $result['Product_Name'];?>'>
-        <input type="hidden" name="SerialNo[]" id="SerialNo1" value='<?php echo $result['SerialNo'];?>'>
- <input type="hidden" name="ModelNo[]" id="ModelNo1" value="<?php echo $result['Model_No'];?>">
-<td><input type="number" name="BalQty[]" id="BalQty1" class="form-control" placeholder="e.g.,1" value="<?php echo $BalQty;?>" autocomplete="off" min="1" readonly></td>
-<td><input type="number" name="Qty[]" id="Qty1" class="form-control" placeholder="e.g.,1" value="0" autocomplete="off" min="0"></td>
-        <td><input type="text" name="Purity[]" id="Purity1" class="form-control" placeholder="" value="<?php echo $result['Unit'];?>" autocomplete="off"></td>
-      
-      
-    </tr>
-<?php } $i++;} ?>
-    </tbody>
-
-    
-    </table>
-</div>
-
-<br>
-<?php 
-                                        $sql223 = "SELECT * FROM tbl_distibute_item_details WHERE ProdType='2' AND SerialNo!='' AND BranchId='".$_REQUEST['BranchId']."'";
-                                        $rncnt223 = getRow($sql223);
-                                        ?>
-                                        <input type="hidden" name="Rncnt3" id="Rncnt3" value="<?php echo $rncnt223;?>">
-  <div class="form-row"> 
- <label class="form-label d-flex align-items-center" style="font-size: 18px; color: #0dc30d;">
-  
-  Bag Serial No Products &nbsp;|&nbsp;&nbsp;&nbsp; <input type="checkbox" id="selectAll2" onclick="toggleAllCheckboxes2(this)" style="margin-right: 8px;">&nbsp;Select All 
-</label>
-<div class="col-lg-12">                                      
- <table id="example" class="table table-striped table-bordered" width="100%">
-     <thead>
-    <tr>
-       <th style="width: 10px;">
-      <input type="checkbox" id="selectAll2" onclick="toggleAllCheckboxes2(this)">
-    </th>
-        <th width="50%">Product</th>
-       <th>Serial No </th>
-     </tr>
-     </thead>
-     <tbody>
-
-  <?php $row223 = getList($sql223);
-    foreach($row223 as $result){
-    $sql33 = "SELECT * FROM tbl_distibute_item_details2 WHERE ProdType=2 AND SerialNo='".$result['SerialNo']."' AND BranchId='".$_REQUEST['BranchId']."'";
-    $rncnt33 = getRow($sql33);
-    if($rncnt33 > 0){}
-    else{?>
-<tr>
-    
-    <td>
-    <label class="custom-control custom-checkbox">
-      <input type="checkbox" id="Check_Id2<?php echo $result['id']; ?>" value="0" class="custom-control-input is-valid" onclick="featured(<?php echo $result['id']; ?>)">
-      <span class="custom-control-label"></span>
-    </label>
-  </td>
-  
-            <!--<td><label class="custom-control custom-checkbox">
-                    <input type="checkbox" id="Check_Id<?php echo $result['id']; ?>" value="0" class="custom-control-input is-valid" onclick="featured(<?php echo $result['id']; ?>)">
-                    <span class="custom-control-label"></span>
-                 </label></td>-->
-            <input type="hidden" name="SerialProd2[]" value="<?php echo $result['id'];?>">     
-            <input type="hidden" value="0" name="CheckId2[]" id="CheckId<?php echo $result['id']; ?>">      
-            <td><?php echo $result['ProductName'];?></td>
-            <td><?php echo $result['SerialNo'];?></td>
-         </tr>
-         <?php $i++;} } ?>
-     </tbody>
-</table>
-
-   
-</div>
-
+<div id="distribute-items-panel" class="w-100" style="display:none;">
+    <div id="distribute-items-loading" class="text-center py-4" style="display:none;">
+        <div class="spinner-border text-primary" role="status"></div>
+        <p class="mt-2 mb-0 text-muted">Loading store stock...</p>
     </div>
-    
-<br>
-<?php 
-                                        $sql22 = "SELECT * FROM tbl_distibute_item_details WHERE ProdType='1' AND SerialNo!='' AND BranchId='".$_REQUEST['BranchId']."'";
-                                        $rncnt22 = getRow($sql22);
-                                        ?>
-                                        <input type="hidden" name="Rncnt2" id="Rncnt2" value="<?php echo $rncnt22;?>">
-  <div class="form-row"> 
- <label class="form-label d-flex align-items-center" style="font-size: 18px; color: #0dc30d;">
-  
-  Serial No Products &nbsp;|&nbsp;&nbsp;&nbsp; <input type="checkbox" id="selectAll" onclick="toggleAllCheckboxes(this)" style="margin-right: 8px;">&nbsp;Select All 
-</label>
-<div class="col-lg-12">                                      
- <table id="example3" class="table table-striped table-bordered" width="100%">
-     <thead>
-    <tr>
-       <th style="width: 10px;">
-      <input type="checkbox" id="selectAll" onclick="toggleAllCheckboxes(this)">
-    </th>
-        <th width="50%">Product</th>
-       <th>Serial No </th>
-     </tr>
-     </thead>
-     <tbody>
-
-  <?php $row22 = getList($sql22);
-    foreach($row22 as $result){
-    $sql33 = "SELECT * FROM tbl_distibute_item_details2 WHERE ProdType=1 AND SerialNo='".$result['SerialNo']."' AND BranchId='".$_REQUEST['BranchId']."'";
-    $rncnt33 = getRow($sql33);
-    if($rncnt33 > 0){}
-    else{?>
-<tr>
-    
-    <td>
-    <label class="custom-control custom-checkbox">
-      <input type="checkbox" id="Check_Id<?php echo $result['id']; ?>" value="0" class="custom-control-input is-valid" onclick="featured(<?php echo $result['id']; ?>)">
-      <span class="custom-control-label"></span>
-    </label>
-  </td>
-  
-            <!--<td><label class="custom-control custom-checkbox">
-                    <input type="checkbox" id="Check_Id<?php echo $result['id']; ?>" value="0" class="custom-control-input is-valid" onclick="featured(<?php echo $result['id']; ?>)">
-                    <span class="custom-control-label"></span>
-                 </label></td>-->
-            <input type="hidden" name="SerialProd[]" value="<?php echo $result['id'];?>">     
-            <input type="hidden" value="0" name="CheckId[]" id="CheckId<?php echo $result['id']; ?>">      
-            <td><?php echo $result['ProductName'];?></td>
-            <td><?php echo $result['SerialNo'];?></td>
-         </tr>
-         <?php $i++;} } ?>
-     </tbody>
-</table>
-
-   
+    <div id="distribute-items-content"></div>
 </div>
-
-    </div>
-
-                                     
-
-   <div class="form-row">
-     
-
-<!-- <div class="form-group col-md-4">
-<label class="form-label">Warranty Period <span class="text-danger">*</span></label>
-  <select class="form-control" id="WarrantyPeriod" name="WarrantyPeriod" required="">
-<option selected="" disabled="" value="">Select Warranty Period</option>
-<option <?php if($row7['WarrantyPeriod'] == '1') {?> selected <?php } ?> value="1">For Government projects - Full Systems warranty
-</option>
-<option <?php if($row7['WarrantyPeriod'] == '2') {?> selected <?php } ?> value="2">For Retail Work - Warranty Should be given on the basis of products</option>
-
-
-</select>
-<div class="clearfix"></div>
-</div>-->
-
-<div class="form-group col-md-12">
-   <label class="form-label">Narration</label>
-     <input type="text" name="Narration" id="Narration" class="form-control" value="<?php echo $row7['Narration']; ?>">
-    <div class="clearfix"></div>
- </div>   
-
-
- 
-
-</div>
-
-                                   <div class="form-row">
-                                    <div class="form-group col-md-2">
-                                    <button type="submit" name="submit" class="btn btn-primary btn-finish" id="submit">Save</button>
-                                    </div>
-
-                
-                                    </div>
-                                    <?php } ?>
                                </div>
 
 
@@ -490,71 +286,170 @@ function saveCart(id){
  }
  
  
- // === Universal Checkbox Group Handler ===
+var distributeItemsXhr = null;
+
 function setupCheckboxGroup(groupPrefix, selectAllId) {
   const selectAll = document.getElementById(selectAllId);
-  const checkboxes = document.querySelectorAll(`input[type='checkbox'][id^='${groupPrefix}']`);
+  const checkboxes = document.querySelectorAll(`#distribute-items-content input[type='checkbox'][id^='${groupPrefix}']`);
+  if (!checkboxes.length) return;
 
-  // --- Select All handler ---
-  selectAll?.addEventListener('change', function () {
-    const isChecked = this.checked;
+  const headerSelectAll = document.getElementById(groupPrefix === 'Check_Id' ? 'selectAllHeader' : 'selectAll2Header');
+
+  function syncSelectAllState() {
+    const allChecked = [...checkboxes].every(x => x.checked);
+    if (selectAll) selectAll.checked = allChecked;
+    if (headerSelectAll) headerSelectAll.checked = allChecked;
+  }
+
+  function setGroupChecked(isChecked) {
     checkboxes.forEach(cb => {
       const id = cb.id.replace(groupPrefix, '');
       cb.checked = isChecked;
-      $(`#CheckId${id}`).val(isChecked ? 1 : 0);
-
+      $('#CheckId' + id).val(isChecked ? 1 : 0);
       if (isChecked) saveCart(id);
       else delete_prod(id);
     });
+    if (selectAll) selectAll.checked = isChecked;
+    if (headerSelectAll) headerSelectAll.checked = isChecked;
+  }
+
+  [selectAll, headerSelectAll].forEach(el => {
+    if (!el || el._boundDistribute) return;
+    el._boundDistribute = true;
+    el.addEventListener('change', function () {
+      setGroupChecked(this.checked);
+    });
   });
 
-  // --- Individual checkbox handler ---
   checkboxes.forEach(cb => {
+    if (cb._boundDistribute) return;
+    cb._boundDistribute = true;
     cb.addEventListener('change', function () {
       const id = this.id.replace(groupPrefix, '');
       const isChecked = this.checked;
-      $(`#CheckId${id}`).val(isChecked ? 1 : 0);
+      $('#CheckId' + id).val(isChecked ? 1 : 0);
       if (isChecked) saveCart(id);
       else delete_prod(id);
-
-      // update Select All state
-      const allChecked = [...checkboxes].every(x => x.checked);
-      if (selectAll) selectAll.checked = allChecked;
+      syncSelectAllState();
     });
   });
 }
 
-// === Initialize both groups ===
-setupCheckboxGroup('Check_Id', 'selectAll');   // For normal serial products
-setupCheckboxGroup('Check_Id2', 'selectAll2'); // For bag serial products
+var distributeSerialsXhr = null;
+var DT_ROW_LIMIT = 80;
 
-        /*function featured(id){
-            //alert(id);
-        if($('#Check_Id'+id).prop('checked') == true) {
-            $('#CheckId'+id).val(1);
-            saveCart(id);
-        }
-        else{
-           $('#CheckId'+id).val(0);
-          delete_prod(id);
-            }
-        }*/
- function getItems(BranchId){
-     
-     //var BranchId = $('#BranchId').val();
-   
-     var CreatedDate = $('#CreatedDate').val();
+function initDistributeDataTables() {
+  if (!$.fn.DataTable) return;
+  $('.distribute-serial-table').each(function () {
+    var $t = $(this);
+    var rowCount = $t.find('tbody tr').length;
+    if (rowCount === 0 || rowCount > DT_ROW_LIMIT) return;
+    if ($.fn.DataTable.isDataTable(this)) {
+      $t.DataTable().destroy();
+    }
+    $t.DataTable({
+      pageLength: 50,
+      lengthMenu: [[25, 50, 100], [25, 50, 100]],
+      scrollX: true,
+      deferRender: true
+    });
+  });
+}
 
-     window.location.href="distribute-item-store-executive-2.php?action=search&BranchId="+BranchId+"&CreatedDate="+CreatedDate;
- }
- 
- function getItems2(StoreExeId){
-     var BranchId = $('#BranchId').val();
-   var StoreInchId = $('#StoreInchId').val();
-     var CreatedDate = $('#CreatedDate').val();
+function bindSerialTableFilters() {
+  $(document).off('input.distributeSerialFilter', '.serial-table-filter');
+  $(document).on('input.distributeSerialFilter', '.serial-table-filter', function () {
+    var q = $(this).val().toLowerCase().trim();
+    var $rows = $($(this).data('target')).find('tbody tr');
+    $rows.each(function () {
+      var show = !q || $(this).text().toLowerCase().indexOf(q) >= 0;
+      $(this).toggle(show);
+    });
+  });
+}
 
-     window.location.href="distribute-item-store-executive-2.php?action=search&BranchId="+BranchId+"&StoreInchId="+StoreInchId+"&CreatedDate="+CreatedDate+"&StoreExeId="+StoreExeId;
- }
+function bindDistributeItemsPanel() {
+  setupCheckboxGroup('Check_Id', 'selectAll');
+  setupCheckboxGroup('Check_Id2', 'selectAll2');
+  bindSerialTableFilters();
+  setTimeout(initDistributeDataTables, 0);
+}
+
+function loadDistributeSerials(BranchId) {
+  if (distributeSerialsXhr) {
+    distributeSerialsXhr.abort();
+  }
+  $('#distribute-serials-loading').show();
+  $('#distribute-serials-content').empty();
+
+  distributeSerialsXhr = $.ajax({
+    url: 'ajax_distribute-item-store-executive-2-search.php',
+    method: 'POST',
+    timeout: 180000,
+    data: { action: 'searchItems', phase: 'serials', BranchId: BranchId },
+    success: function (html) {
+      $('#distribute-serials-loading').hide();
+      $('#distribute-serials-content').html(html);
+      bindDistributeItemsPanel();
+    },
+    error: function (xhr, status) {
+      if (status === 'abort') return;
+      $('#distribute-serials-loading').hide();
+      $('#distribute-serials-content').html('<div class="alert alert-warning">Could not load serial products. You can still save quantity items.</div>');
+    },
+    complete: function () {
+      distributeSerialsXhr = null;
+    }
+  });
+}
+
+function loadDistributeItems() {
+  var BranchId = $('#BranchId').val();
+  if (!BranchId) {
+    $('#distribute-items-panel').hide();
+    $('#distribute-items-content').empty();
+    return;
+  }
+  if (distributeSerialsXhr) {
+    distributeSerialsXhr.abort();
+    distributeSerialsXhr = null;
+  }
+  $('#distribute-items-panel').show();
+  $('#distribute-items-loading').show();
+  $('#distribute-items-content').empty();
+
+  if (distributeItemsXhr) {
+    distributeItemsXhr.abort();
+  }
+  distributeItemsXhr = $.ajax({
+    url: 'ajax_distribute-item-store-executive-2-search.php',
+    method: 'POST',
+    timeout: 60000,
+    data: { action: 'searchItems', phase: 'products', BranchId: BranchId },
+    success: function (html) {
+      $('#distribute-items-loading').hide();
+      $('#distribute-items-content').html(html);
+      loadDistributeSerials(BranchId);
+    },
+    error: function (xhr, status) {
+      if (status === 'abort') return;
+      $('#distribute-items-loading').hide();
+      $('#distribute-items-content').html('<div class="alert alert-danger">Failed to load items. Please try again.</div>');
+    },
+    complete: function () {
+      distributeItemsXhr = null;
+    }
+  });
+}
+
+function getItems(BranchId) {
+  loadDistributeItems();
+}
+
+function getItems2(StoreExeId) {
+  if (!StoreExeId) return;
+  loadDistributeItems();
+}
  function getVehicalNos(vehdate){
      var action = "getVehicalNos";
             $.ajax({
@@ -634,17 +529,7 @@ setupCheckboxGroup('Check_Id2', 'selectAll2'); // For bag serial products
 
     }
      $(document).ready(function() {
-$('#example').DataTable({
-    "pageLength":1000,
-        "scrollX": true,
-        "scrollY": "500px"
-    });
-
-$('#example3').DataTable({
-    "pageLength":1000,
-        "scrollX": true,
-        "scrollY": "500px"
-    });
+        var canLoadOnStoreOnly = <?php echo ($Roll == 1 || $Roll == 7) ? 'true' : 'false'; ?>;
         var i=1; 
     $('#add_more').click(function(){  
            i++;  
@@ -697,23 +582,39 @@ $('#example3').DataTable({
 
         });
 
-        $(document).on("change", "#BranchId", function(event) {
+        $(document).on("change", "#BranchId", function() {
             var val = this.value;
-            var action = "getStoreIncharge";
-            $.ajax({
-                url: "ajax_files/ajax_dropdown.php",
-                method: "POST",
-                data: {
-                    action: action,
-                    id: val
-                },
-                success: function(data) {
-                    //alert(data);
-                    $('#StoreInchId').html(data);
-                }
-            });
-
+            if (canLoadOnStoreOnly) {
+                $.ajax({
+                    url: "ajax_files/ajax_dropdown.php",
+                    method: "POST",
+                    data: { action: "getDispatchOfficersByBranch", id: val },
+                    success: function(data) {
+                        $('#StoreExeId').html(data);
+                    }
+                });
+                getItems(val);
+            }
         });
+
+        $(document).on("change", "#StoreExeId", function() {
+            if (!canLoadOnStoreOnly) {
+                getItems2(this.value);
+            }
+        });
+
+        if ($('#BranchId').val()) {
+            if (window.history && window.history.replaceState) {
+                var u = new URL(window.location.href);
+                u.searchParams.delete('action');
+                window.history.replaceState({}, '', u.pathname + (u.search || ''));
+            }
+            if (canLoadOnStoreOnly) {
+                getItems($('#BranchId').val());
+            } else if ($('#StoreExeId').val()) {
+                getItems2($('#StoreExeId').val());
+            }
+        }
 
     });
 

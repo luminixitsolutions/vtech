@@ -4,6 +4,13 @@
 **/dbcontroller.php
 **/exe-database.php
 **/config.php
+**/db-local.php
+
+# Local/test uploads and database dumps
+admin/uploads/_test_*
+admin/uploads/coordinator_import_*
+*.sql
+docs/
 # Third-party SDK configs (not app DB config)
 !mobapp/PaytmKit/lib/config.php
 !mobapp/PaytmKit2/lib/config.php

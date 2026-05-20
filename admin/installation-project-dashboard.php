@@ -52,14 +52,10 @@ foreach($row7 as $result){
     <meta name="keywords" content="">
     <meta name="author" content="" />
     <?php include_once 'header_script.php'; ?>
+    <link rel="stylesheet" href="css/installation-project-dashboard.css">
 </head>
 
 <body>
-    <style type="text/css">
-    .mr_5 {
-        margin-right: 3rem !important;
-    }
-    </style>
    <div class="layout-wrapper layout-2">
         <div class="layout-inner">
 
@@ -72,42 +68,35 @@ foreach($row7 as $result){
 
 
                 <div class="layout-content">
-                    <div class="container-fluid flex-grow-1 container-p-y">
-                        <div class="text-muted small mt-0 mb-4 d-block breadcrumb">
-                        </div>
+                    <div class="container-fluid flex-grow-1 container-p-y ipd-page">
 
                         <div class="row">
-
-                            <div class="col-xl-12 col-md-12">
-                                <div class="card ui-task mb-4">
-                                    <h5 class="card-header" style="text-align:center;">PROJECT DASHBOARD</h5>
-                                    <div class="card-body">
-                                      
-
-                            <div class="row">
+                            <div class="col-12">
+                                <div class="card ipd-shell mb-4">
+                                    <h5 class="card-header ipd-header">Project Dashboard</h5>
+                                    <div class="card-body ipd-body">
+                                        <div class="ipd-project-grid">
                             <?php 
                                 $sql = "SELECT * FROM tbl_common_master WHERE Status=1 AND Roll=24";
                                 $row = getList($sql);
+                                $tone = 0;
                                 foreach($row as $result){
-
+                                    $projId = (int)$result['id'];
+                                    $projName = htmlspecialchars($result['Name'], ENT_QUOTES, 'UTF-8');
+                                    $toneClass = 'ipd-tone-' . ($tone % 7);
+                                    $tone++;
                             ?>
-                           <div class="col-sm-6 col-xl-2">
-                                <a href="installation-project-sub-head-dashboard.php?id=<?php echo $result['id'];?>&name=<?php echo $result['Name'];?>">
-                               <div class="card bg-warning text-white ui-hover-icon mb-4 bg-pattern-3">
-                                        <div class="card-body text-center">
-                                       
-                                        <h6 class="mb-0"><?php echo $result['Name'];?></h6>
-                                        <i class="lnr lnr-users hov-icon"></i>
-                                     </div>
-                                </div></a>
-                            </div>
+                                            <a href="installation-project-sub-head-dashboard.php?id=<?php echo $projId; ?>&name=<?php echo urlencode($result['Name']); ?>" class="ipd-project-link">
+                                                <div class="ipd-project-card <?php echo $toneClass; ?>">
+                                                    <i class="feather icon-folder ipd-project-icon" aria-hidden="true"></i>
+                                                    <h6 class="ipd-project-name"><?php echo $projName; ?></h6>
+                                                </div>
+                                            </a>
                             <?php } ?>
-                        </div>
+                                        </div>
                                     </div>
                                 </div>
                             </div>
-
-
                          </div>
 
                         

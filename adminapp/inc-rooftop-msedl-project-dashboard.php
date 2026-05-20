@@ -225,7 +225,7 @@ $title     = $_GET['name'];
 <a href="#" class="project-card">
 <div class="card custom-card mb-4">
 <div class="card-body text-center">
-<div class="project-name">DISCOM Approval Pending</div>
+<div class="project-name">Data Updated On National Portal Done</div>
 <div class="project-count">
 <?php  
                                                             $sql4 = "SELECT * FROM tbl_users tu LEFT JOIN tbl_installations ti ON ti.CustId=tu.id WHERE tu.ProjectId='".$_GET['prjid']."' AND tu.ProjectSubHeadId='".$_GET['id']."' AND tu.Roll=5 AND ti.DataUploadNational='Yes' AND tu.ProjectType=2";

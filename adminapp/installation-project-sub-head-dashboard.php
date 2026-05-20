@@ -152,7 +152,7 @@ $sql = "SELECT * FROM tbl_project_sub_head WHERE UnderBy='".$_GET['id']."'";
 $row = getList($sql);
 foreach($row as $result){
     $subHeadId = $result['id'];
-    $sql4 = "SELECT * FROM tbl_users WHERE ProjectSubHeadId='".$result['id']."' AND ProjectType=1";
+    $sql4 = "SELECT * FROM tbl_users WHERE ProjectId='".$_GET['id']."' AND ProjectSubHeadId='".$result['id']."' AND ProjectType=1";
     $rncnt4 = getRow($sql4);
 ?>
 <div class="col-6 col-md-3">

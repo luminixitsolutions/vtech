@@ -5,6 +5,9 @@ include_once 'auth.php';
 $user_id = $_SESSION['Admin']['id'];
 $MainPage = "Purchase-Order";
 $Page = "View-Purchase-Order";
+$filterFromDate = $_POST['FromDate'] ?? $_GET['FromDate'] ?? '';
+$filterToDate = $_POST['ToDate'] ?? $_GET['ToDate'] ?? '';
+$filterSearchActive = isset($_POST['Search']) || isset($_GET['Search']);
 ?>
 <!DOCTYPE html>
 <html lang="en" class="default-style layout-fixed layout-navbar-fixed">
@@ -129,17 +132,17 @@ else{
 
 <div class="form-group col-md-3">
 <label class="form-label">From Date </label>
-<input type="date" name="FromDate" id="FromDate" class="form-control" value="<?php echo $_POST['FromDate'] ?>" autocomplete="off">
+<input type="date" name="FromDate" id="FromDate" class="form-control" value="<?php echo htmlspecialchars($filterFromDate, ENT_QUOTES, 'UTF-8'); ?>" autocomplete="off">
 </div>
 <div class="form-group col-md-3">
 <label class="form-label">To Date</label>
-<input type="date" name="ToDate" id="ToDate" class="form-control" value="<?php echo $_POST['ToDate'] ?>" autocomplete="off">
+<input type="date" name="ToDate" id="ToDate" class="form-control" value="<?php echo htmlspecialchars($filterToDate, ENT_QUOTES, 'UTF-8'); ?>" autocomplete="off">
 </div>
 <input type="hidden" name="Search" value="Search">
 <div class="form-group col-md-1" style="padding-top:20px;">
 <button type="submit" name="submit" class="btn btn-primary btn-finish">Search</button>
 </div>
-<?php if(isset($_POST['Search'])) {?>
+<?php if($filterSearchActive) {?>
 <div class="col-md-1">
 <label class="form-label d-none d-md-block">&nbsp;</label>
 <a href="<?php echo $_SERVER['PHP_SELF']; ?>" class="btn btn-info btn-block" data-toggle="tooltip" data-placement="top" data-original-title="Clear Filter">X</a>
@@ -214,12 +217,12 @@ else{
                 }
             }
 
-            if($_POST['FromDate']){
-                $FromDate = $_POST['FromDate'];
+            if($filterFromDate){
+                $FromDate = $filterFromDate;
                 $sql.= " AND ts.InvoiceDate>='$FromDate'";
             }
-            if($_POST['ToDate']){
-                $ToDate = $_POST['ToDate'];
+            if($filterToDate){
+                $ToDate = $filterToDate;
                 $sql.= " AND ts.InvoiceDate<='$ToDate'";
             }
             $sql.=" ORDER BY ts.id DESC";    

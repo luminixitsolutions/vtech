@@ -143,7 +143,7 @@ if($rncnt11 > 0){
 $sql = "SELECT * FROM tbl_rooftop_common_master WHERE Status=1 AND Roll=24";
 $row = getList($sql);
 foreach($row as $result){
-    $sql2 = "SELECT * FROM tbl_project_sub_head WHERE UnderBy='".$result['id']."'";
+    $sql2 = "SELECT * FROM tbl_rooftop_project_sub_head WHERE UnderBy='".$result['id']."'";
     $rncnt2 = getRow($sql2);
     if($rncnt2 > 0){
 ?>

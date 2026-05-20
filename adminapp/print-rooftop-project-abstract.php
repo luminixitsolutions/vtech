@@ -59,7 +59,7 @@ $_SESSION['User'] = $row;
 
   
 
-<body class="body-scroll d-flex flex-column h-100 menu-overlay" data-page="shop">
+<body class="body-scroll d-flex flex-column h-100 menu-overlay" data-page="shop" style="overflow-x:auto;">
     
     
     
@@ -76,20 +76,22 @@ $_SESSION['User'] = $row;
 <style>
   .table-container {
     overflow-x: auto;
-    margin: 20px 0;
+    overflow-y: visible;
+    -webkit-overflow-scrolling: touch;
+    margin: 20px 0 90px;
     border-radius: 10px;
     box-shadow: 0 0 10px rgba(0,0,0,0.1);
+    width: 100%;
   }
 
   .styled-table {
     border-collapse: collapse;
     font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
     font-size: 13px;
-    width: 100%;
-    min-width: 1200px;
+    width: max-content;
+    min-width: 100%;
     background-color: #fff;
     border-radius: 10px;
-    overflow: hidden;
   }
 
   .styled-table thead {
@@ -144,9 +146,13 @@ $_SESSION['User'] = $row;
 }
 </style>
 <?php 
-$sql = "SELECT * FROM tbl_project_sub_head WHERE id='".$_GET['SubHeadProjectId']."'";
+$sql = "SELECT * FROM tbl_rooftop_project_sub_head WHERE id='".$_GET['SubHeadProjectId']."'";
 $row = getRecord($sql);
-$Projectname = $row['Name'];
+$Projectname = $row['Name'] ?? 'Project';
+$capacityCols = getList("SELECT * FROM `tbl_rooftop_common_master` WHERE Roll=2 ORDER BY id ASC");
+if(!is_array($capacityCols)){
+    $capacityCols = [];
+}
 ?>
 
         <div class="main-container  text-center" style="background-color:#fff;">
@@ -161,6 +167,7 @@ $Projectname = $row['Name'];
 <?php 
     function getDetails($val,$dist,$val2){
         global $conn;
+        $rncnt2 = 0;
         if($val == 'totapp'){
             $sql2 = "SELECT * FROM tbl_users WHERE District='$dist' AND ProjectType=2 AND ProjectId='".$_GET['projid']."' AND ProjectSubHeadId='".$_GET['SubHeadProjectId']."'";
             $rncnt2 = getRow($sql2);
@@ -229,9 +236,7 @@ $Projectname = $row['Name'];
                     <th>Sr No</th>
                     <th>DISTRICT</th>
                     <th>Total<br> Application<br> Received</th>
-                    <?php $sql = "SELECT * FROM `tbl_rooftop_common_master` WHERE Roll=2";
-                    $row = getList($sql);
-                    foreach($row as $result){?>
+                    <?php foreach($capacityCols as $result){?>
                     <th><?php echo $result['Name'];?></th>
                     <?php } ?>
                    
@@ -251,120 +256,129 @@ $Projectname = $row['Name'];
                     <th>Inspection Pending</th>
                     <th>Complete Payment Received</th>
                     <th>Partial Payment Received</th>
+                </tr>
                 </thead>
                 
                 <tbody>
                     <?php 
                     $i=1;
-                    $sql = "select DISTINCT(District) As District from tbl_users WHERE District!='' AND ProjectType=2 ";
+                    $totapp = $totsurveydone = $totsurveyreject = $totsurveypending = 0;
+                    $totdispatch = $totinstallationdone = $totinstallationpending = 0;
+                    $totdatauploadone = $totdatauploapending = 0;
+                    $totmeterinstdone = $totmeterinstpending = 0;
+                    $totinspectiondone = $totinspectionpending = $totinspectiondis = 0;
+                    $totcompletepayment = $totpartialpayment = 0;
+                    $totCapacity = [];
+                    foreach($capacityCols as $capCol){
+                        $totCapacity[$capCol['id']] = 0;
+                    }
+
+                    $sql = "SELECT DISTINCT(District) AS District FROM tbl_users WHERE District!='' AND ProjectType=2";
                     if($_REQUEST['District']!=''){
                         $District = $_REQUEST['District'];
                         $ReplaceDistrict = str_replace(",","','",$District);
 
-                        if($District == 'all'){
-                            $sql.="";
-                        }
-                        else{
+                        if($District != 'all'){
                            $sql.=" AND District IN('$ReplaceDistrict')";
                         }
                     }
+                    if($_REQUEST['projid']!=''){
+                        $sql.=" AND ProjectId='".$_REQUEST['projid']."'";
+                    }
+                    if($_REQUEST['SubHeadProjectId']!=''){
+                        $sql.=" AND ProjectSubHeadId='".$_REQUEST['SubHeadProjectId']."'";
+                    }
                     $sql.=" ORDER BY District ASC";
-                    // /echo $sql;
                     $row = getList($sql);
+                    if(!is_array($row)){
+                        $row = [];
+                    }
                     foreach($row as $result){
-                        $totapp+=getDetails('totapp',$result['District'],'');
-                        $tot3hp+=getDetails('capacity',$result['District'],'18');
-                        $tot5hp+=getDetails('capacity',$result['District'],'19');
-                        $tot7hp+=getDetails('capacity',$result['District'],'20');
-                        $totsurveydone+=getDetails('surveydone',$result['District'],'1');
-                        $totsurveyreject+=getDetails('surveyrejected',$result['District'],'0');
-                        $totsurveypending+=getDetails('surveypending',$result['District'],'0');
-                        $totdispatch+=getDetails('dispatch',$result['District'],'');
-                        $totinstallationdone+=getDetails('installation',$result['District'],'Yes');
-                        $totinstallationpending+=getDetails('installation',$result['District'],'No');
-                        
-                        $totdatauploadone+=getDetails('dataupload',$result['District'],'Yes');
-                        $totdatauploapending+=getDetails('dataupload',$result['District'],'No');
-                        
-                        $totmeterinstdone+=getDetails('MeterInstDiscom',$result['District'],'Yes');
-                        $totmeterinstpending+=getDetails('MeterInstDiscom',$result['District'],'No');
-                        
-                        $totinspectiondone+=getDetails('inspection',$result['District'],'Yes');
-                        $totinspectionpending+=getDetails('inspection',$result['District'],'No');
-                        $totinspectiondis+=getDetails('inspectiondis',$result['District'],'Yes');
-                        
-                        $totcompletepayment+=getDetails('paymentstatus',$result['District'],'2');
-                        $totpartialpayment+=getDetails('paymentstatus',$result['District'],'1');
+                        $dist = $result['District'];
+                        $rowCounts = [];
+                        $rowCounts['totapp'] = getDetails('totapp',$dist,'');
+                        $rowCounts['surveydone'] = getDetails('surveydone',$dist,'1');
+                        $rowCounts['surveyrejected'] = getDetails('surveyrejected',$dist,'0');
+                        $rowCounts['surveypending'] = getDetails('surveypending',$dist,'0');
+                        $rowCounts['dispatch'] = getDetails('dispatch',$dist,'');
+                        $rowCounts['installation_yes'] = getDetails('installation',$dist,'Yes');
+                        $rowCounts['installation_no'] = getDetails('installation',$dist,'No');
+                        $rowCounts['dataupload_yes'] = getDetails('dataupload',$dist,'Yes');
+                        $rowCounts['dataupload_no'] = getDetails('dataupload',$dist,'No');
+                        $rowCounts['meter_yes'] = getDetails('MeterInstDiscom',$dist,'Yes');
+                        $rowCounts['meter_no'] = getDetails('MeterInstDiscom',$dist,'No');
+                        $rowCounts['inspection_yes'] = getDetails('inspection',$dist,'Yes');
+                        $rowCounts['inspection_no'] = getDetails('inspection',$dist,'No');
+                        $rowCounts['inspectiondis'] = getDetails('inspectiondis',$dist,'Yes');
+                        $rowCounts['payment_2'] = getDetails('paymentstatus',$dist,'2');
+                        $rowCounts['payment_1'] = getDetails('paymentstatus',$dist,'1');
+
+                        $totapp += $rowCounts['totapp'];
+                        $totsurveydone += $rowCounts['surveydone'];
+                        $totsurveyreject += $rowCounts['surveyrejected'];
+                        $totsurveypending += $rowCounts['surveypending'];
+                        $totdispatch += $rowCounts['dispatch'];
+                        $totinstallationdone += $rowCounts['installation_yes'];
+                        $totinstallationpending += $rowCounts['installation_no'];
+                        $totdatauploadone += $rowCounts['dataupload_yes'];
+                        $totdatauploapending += $rowCounts['dataupload_no'];
+                        $totmeterinstdone += $rowCounts['meter_yes'];
+                        $totmeterinstpending += $rowCounts['meter_no'];
+                        $totinspectiondone += $rowCounts['inspection_yes'];
+                        $totinspectionpending += $rowCounts['inspection_no'];
+                        $totinspectiondis += $rowCounts['inspectiondis'];
+                        $totcompletepayment += $rowCounts['payment_2'];
+                        $totpartialpayment += $rowCounts['payment_1'];
                     ?>
                     <tr>
                         <td><?php echo $i;?></td>
-                        <td style="font-weight:600;text-align:left;padding:3px;"><?php echo $result['District']; ?></td>
-                        <td><a href="#"><?php echo getDetails('totapp',$result['District'],'');?></a></td>
-                        
-                         <?php $sql22 = "SELECT * FROM `tbl_rooftop_common_master` WHERE Roll=2";
-                    $row22 = getList($sql22);
-                    foreach($row22 as $result22){?>
-                        <td><a href="#">
-                            <?php echo getDetails('capacity',$result['District'],$result22['id']);?></a></td>
+                        <td style="font-weight:600;text-align:left;padding:3px;"><?php echo $dist; ?></td>
+                        <td><?php echo $rowCounts['totapp'];?></td>
+                        <?php foreach($capacityCols as $result22){
+                            $capCount = getDetails('capacity',$dist,$result22['id']);
+                            $totCapacity[$result22['id']] += $capCount;
+                        ?>
+                        <td><?php echo $capCount;?></td>
                         <?php } ?>
-                       
-                        <td><a href="#"><?php echo getDetails('surveydone',$result['District'],'1');?></a></td>
-                        <!--<td></td>-->
-                        <td><a href="#"><?php echo getDetails('surveyrejected',$result['District'],'0');?></a></td>
-                        <td style="background-color:#fee2d6;"><a href="#"><?php echo getDetails('surveypending',$result['District'],'0');?></a></td>
-                        
-                        <td><a href="#"><?php echo getDetails('dispatch',$result['District'],'');?></a></td>
-                        <td><a href="#"><?php echo getDetails('installation',$result['District'],'Yes');?></a></td>
-                        <td style="background-color:#fee2d6;"><a href="#"><?php echo getDetails('installation',$result['District'],'No');?></a></td>
-                        
-                         <td><a href="#"><?php echo getDetails('MeterInstDiscom',$result['District'],'Yes');?></a></td>
-                        
-                        <td><a href="#"><?php echo getDetails('MeterInstDiscom',$result['District'],'No');?></a></td>
-                        
-                        <td><a href="#"><?php echo getDetails('dataupload',$result['District'],'Yes');?></a></td>
-                        
-                        <td style="background-color:#fee2d6;"><a href="#"><?php echo getDetails('dataupload',$result['District'],'No');?></a></td>
-                        <td><a href="#"><?php echo getDetails('inspection',$result['District'],'Yes');?></a></td>
-                        <td><a href="#"><?php echo getDetails('inspectiondis',$result['District'],'Yes');?></a></td>
-                        <td style="background-color:#fee2d6;"><a href="#"><?php echo getDetails('inspection',$result['District'],'No');?></a></td>
-                        
-                        <td style="background-color:#fee2d6;"><a href="#"><?php echo getDetails('paymentstatus',$result['District'],'2');?></a></td>
-                        
-                        <td style="background-color:#fee2d6;"><a href="#"><?php echo getDetails('paymentstatus',$result['District'],'1');?></a></td>
+                        <td><?php echo $rowCounts['surveydone'];?></td>
+                        <td><?php echo $rowCounts['surveyrejected'];?></td>
+                        <td style="background-color:#fee2d6;"><?php echo $rowCounts['surveypending'];?></td>
+                        <td><?php echo $rowCounts['dispatch'];?></td>
+                        <td><?php echo $rowCounts['installation_yes'];?></td>
+                        <td style="background-color:#fee2d6;"><?php echo $rowCounts['installation_no'];?></td>
+                        <td><?php echo $rowCounts['meter_yes'];?></td>
+                        <td><?php echo $rowCounts['meter_no'];?></td>
+                        <td><?php echo $rowCounts['dataupload_yes'];?></td>
+                        <td style="background-color:#fee2d6;"><?php echo $rowCounts['dataupload_no'];?></td>
+                        <td><?php echo $rowCounts['inspection_yes'];?></td>
+                        <td><?php echo $rowCounts['inspectiondis'];?></td>
+                        <td style="background-color:#fee2d6;"><?php echo $rowCounts['inspection_no'];?></td>
+                        <td style="background-color:#fee2d6;"><?php echo $rowCounts['payment_2'];?></td>
+                        <td style="background-color:#fee2d6;"><?php echo $rowCounts['payment_1'];?></td>
                     </tr>
                     <?php $i++;} ?>
                     
                     <tr>
                         <th colspan="2">TOTAL</th>
-                        <th><a href="#"><?php echo $totapp;?></a></th>
-                        <th><a href="#"><?php echo $tot3hp;?></a></th>
-                        <th><a href="#"><?php echo $tot5hp;?></a></th>
-                        <th><a href="#"><?php echo $tot7hp;?></a></th>
-                        <th><a href="#"><?php echo $totsurveydone;?></a></th>
-                        <!--<th></th>-->
-                        <th><a href="#"><?php echo $totsurveyreject;?></a></th>
-                        <th><a href="#"><?php echo $totsurveypending;?></a></th>
-                        <th><a href="#"><?php echo $totdispatch;?></a></th>
-                        <th><a href="#"><?php echo $totinstallationdone;?></a></th>
-                        
-                        
-                        <th><a href="#"><?php echo $totinstallationpending;?></a></th>
-                        
-                        <th><a href="#"><?php echo $totmeterinstdone;?></a></th>
-                        
-                        <th><a href="#"><?php echo $totmeterinstpending;?></a></th>
-                        
-                        <th><a href="#"><?php echo $totdatauploadone;?></a></th>
-                        
-                        <th><a href="#"><?php echo $totdatauploapending;?></a></th>
-                        <th><a href="#"><?php echo $totinspectiondone;?></a></th>
-                        <th><a href="#"><?php echo $totinspectiondis;?></a></th>
-                        <th><a href="#"><?php echo $totinspectionpending;?></a></th>
-                        
-                        
-                        <th><a href="#"><?php echo $totcompletepayment;?></a></th>
-                        
-                        <th><a href="#"><?php echo $totpartialpayment;?></a></th>
+                        <th><?php echo (int)$totapp;?></th>
+                        <?php foreach($capacityCols as $result22){ ?>
+                        <th><?php echo (int)$totCapacity[$result22['id']];?></th>
+                        <?php } ?>
+                        <th><?php echo (int)$totsurveydone;?></th>
+                        <th><?php echo (int)$totsurveyreject;?></th>
+                        <th><?php echo (int)$totsurveypending;?></th>
+                        <th><?php echo (int)$totdispatch;?></th>
+                        <th><?php echo (int)$totinstallationdone;?></th>
+                        <th><?php echo (int)$totinstallationpending;?></th>
+                        <th><?php echo (int)$totmeterinstdone;?></th>
+                        <th><?php echo (int)$totmeterinstpending;?></th>
+                        <th><?php echo (int)$totdatauploadone;?></th>
+                        <th><?php echo (int)$totdatauploapending;?></th>
+                        <th><?php echo (int)$totinspectiondone;?></th>
+                        <th><?php echo (int)$totinspectiondis;?></th>
+                        <th><?php echo (int)$totinspectionpending;?></th>
+                        <th><?php echo (int)$totcompletepayment;?></th>
+                        <th><?php echo (int)$totpartialpayment;?></th>
                     </tr>
                 </tbody>
                 

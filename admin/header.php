@@ -8,7 +8,21 @@ $Options = explode(',',$row77['Options']);
 $BranchId = $row77['BranchId'];
 $ImmediateBoss = $row77['ImmediateBoss'];
 $MulBranchId = $row77['MulBranchId'];
+$fileSubmissionReminderCount = getFileSubmissionReminderCount();
+$fileSubmissionReminderAlert = $fileSubmissionReminderCount > 0;
 ?>
+<style>
+@keyframes fileSubmissionReminderBlink {
+    0%, 100% { color: #dc3545; opacity: 1; }
+    50% { color: #ff1744; opacity: 0.7; }
+}
+.sidenav-item.file-submission-reminder-alert > .sidenav-link,
+.sidenav-item.file-submission-reminder-alert > .sidenav-link .sidenav-icon,
+.sidenav-item.file-submission-reminder-alert > .sidenav-link div {
+    color: #dc3545 !important;
+    animation: fileSubmissionReminderBlink 1s ease-in-out infinite;
+}
+</style>
 <div id="layout-sidenav" class="layout-sidenav sidenav sidenav-vertical bg-white logo-dark">
      <div class="app-brand demo">
                     <span class="app-brand-logo demo">
@@ -46,7 +60,7 @@ $MulBranchId = $row77['MulBranchId'];
             </a>
         </li> 
 
-        <li class="sidenav-item <?php if (!empty($MainPage) && $MainPage === 'File-Submission-Reminder') { ?>active<?php } ?>">
+        <li class="sidenav-item<?php if (!empty($MainPage) && $MainPage === 'File-Submission-Reminder') { ?> active<?php } ?><?php if (!empty($fileSubmissionReminderAlert)) { ?> file-submission-reminder-alert<?php } ?>">
             <a href="file-submission-reminder.php" class="sidenav-link">
                 <i class="sidenav-icon feather icon-bell"></i>
                 <div>File submission reminder</div>
@@ -798,9 +812,70 @@ $MulBranchId = $row77['MulBranchId'];
 <?php } ?>
 </a>
 </li>
+<li class="sidenav-item <?php if($Page=='Service-Abstract') {?> active <?php } ?>">
+<a href="service-abstract.php" class="sidenav-link">
+<div> Service Abstract</div>
+<?php if($Page=='Service-Abstract') {?>
+<div class="pl-1 ml-auto">
+<span class="badge badge-dot badge-primary"></span>
+</div>
+<?php } ?>
+</a>
+</li>
 </ul>
 </li>
-<?php } if(in_array("93", $Options)) {?>
+<?php } ?>
+
+<li class="sidenav-item <?php if($MainPage=='Insurance') {?> open active <?php } ?>">
+<a href="javascript:" class="sidenav-link sidenav-toggle">
+<i class="sidenav-icon feather icon-shield"></i>
+<div>Insurance Site</div>
+</a>
+<ul class="sidenav-menu">
+<li class="sidenav-item <?php if($Page=='Insurance-Dashboard') {?> active <?php } ?>">
+<a href="insurance-dashboard.php" class="sidenav-link">
+<div>Dashboard</div>
+<?php if($Page=='Insurance-Dashboard') {?>
+<div class="pl-1 ml-auto">
+<span class="badge badge-dot badge-primary"></span>
+</div>
+<?php } ?>
+</a>
+</li>
+<li class="sidenav-item <?php if($Page=='Pending-Insurance') {?> active <?php } ?>">
+<a href="pending-insurance.php" class="sidenav-link">
+<div>Pending Insurance</div>
+<?php if($Page=='Pending-Insurance') {?>
+<div class="pl-1 ml-auto">
+<span class="badge badge-dot badge-primary"></span>
+</div>
+<?php } ?>
+</a>
+</li>
+<li class="sidenav-item <?php if($Page=='Completed-Insurance') {?> active <?php } ?>">
+<a href="completed-insurance.php" class="sidenav-link">
+<div>Completed Insurance</div>
+<?php if($Page=='Completed-Insurance') {?>
+<div class="pl-1 ml-auto">
+<span class="badge badge-dot badge-primary"></span>
+</div>
+<?php } ?>
+</a>
+</li>
+<li class="sidenav-item <?php if($Page=='Renewal-Insurance') {?> active <?php } ?>">
+<a href="renewal-insurance.php" class="sidenav-link">
+<div>Renewal Insurance</div>
+<?php if($Page=='Renewal-Insurance') {?>
+<div class="pl-1 ml-auto">
+<span class="badge badge-dot badge-primary"></span>
+</div>
+<?php } ?>
+</a>
+</li>
+</ul>
+</li>
+
+<?php if(in_array("93", $Options)) {?>
 <li class="sidenav-item">
             <a href="update-dispatch-calling-status.php" class="sidenav-link">
                 <i class="sidenav-icon feather icon-activity"></i>

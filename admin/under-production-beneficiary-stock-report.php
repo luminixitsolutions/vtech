@@ -15,6 +15,21 @@ $Page = 'Under-Production-Stock-Report';
     <meta http-equiv="X-UA-Compatible" content="IE=edge" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=0, minimal-ui">
     <?php include_once 'header_script.php'; ?>
+    <style>
+        .upb-select-toolbar {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 12px;
+        }
+        table#example th.upb-chk-col,
+        table#example td.upb-chk-col {
+            width: 42px;
+            text-align: center;
+            vertical-align: middle;
+        }
+    </style>
 </head>
 <body>
 
@@ -27,12 +42,25 @@ $Page = 'Under-Production-Stock-Report';
 <div class="layout-content">
 <div class="container-fluid flex-grow-1 container-p-y">
     <h4 class="font-weight-bold py-3 mb-0">Done beneficiaries — required stock report</h4>
-  
+
     <div class="card" style="padding: 10px;">
+        <div class="upb-select-toolbar">
+            <span id="upbSelectedCount" class="text-muted">0 customer(s) selected</span>
+            <button type="button" id="btnShowCombinedStock" class="btn btn-primary btn-sm" disabled>
+                Show combined required stock
+            </button>
+        </div>
+
         <div class="card-datatable table-responsive">
             <table id="example" class="table table-striped table-bordered" style="width:100%">
                 <thead>
                     <tr>
+                        <th class="upb-chk-col" data-orderable="false">
+                            <label class="custom-control custom-checkbox m-0 d-inline-block">
+                                <input type="checkbox" id="upbSelectAll" class="custom-control-input">
+                                <span class="custom-control-label">&nbsp;</span>
+                            </label>
+                        </th>
                         <th>#</th>
                         <th>Beneficiary Id</th>
                         <th>Customer name</th>
@@ -59,6 +87,14 @@ $Page = 'Under-Production-Stock-Report';
                             $detailUrl = 'under-production-beneficiary-required-stock.php?uid=' . $uid;
                             ?>
                             <tr>
+                                <td class="upb-chk-col">
+                                    <label class="custom-control custom-checkbox m-0 d-inline-block">
+                                        <input type="checkbox" class="custom-control-input upb-cust-select"
+                                            value="<?php echo $uid; ?>"
+                                            data-name="<?php echo htmlspecialchars((string) $row['Fname'], ENT_QUOTES, 'UTF-8'); ?>">
+                                        <span class="custom-control-label">&nbsp;</span>
+                                    </label>
+                                </td>
                                 <td><?php echo $i++; ?></td>
                                 <td><?php echo htmlspecialchars((string) $row['BeneficiaryId']); ?></td>
                                 <td><?php echo htmlspecialchars((string) $row['Fname']); ?></td>
@@ -86,7 +122,51 @@ $Page = 'Under-Production-Stock-Report';
 <?php include_once 'footer_script.php'; ?>
 <script type="text/javascript">
 $(document).ready(function() {
-    $('#example').DataTable({ scrollX: true });
+    var dt = $('#example').DataTable({
+        scrollX: true,
+        columnDefs: [
+            { targets: 0, orderable: false, searchable: false }
+        ],
+        order: [[1, 'asc']]
+    });
+
+    function getSelectedIds() {
+        var ids = [];
+        $('#example tbody .upb-cust-select:checked').each(function() {
+            ids.push($(this).val());
+        });
+        return ids;
+    }
+
+    function updateSelectionUi() {
+        var ids = getSelectedIds();
+        var n = ids.length;
+        $('#upbSelectedCount').text(n + ' customer(s) selected');
+        $('#btnShowCombinedStock').prop('disabled', n === 0);
+        $('#upbSelectAll').prop('checked', n > 0 && n === $('#example tbody .upb-cust-select').length);
+    }
+
+    $('#example').on('change', '.upb-cust-select', updateSelectionUi);
+
+    $('#upbSelectAll').on('change', function() {
+        var checked = $(this).prop('checked');
+        $('#example tbody .upb-cust-select').prop('checked', checked);
+        updateSelectionUi();
+    });
+
+    dt.on('draw', function() {
+        updateSelectionUi();
+    });
+
+    $('#btnShowCombinedStock').on('click', function() {
+        var ids = getSelectedIds();
+        if (!ids.length) {
+            return;
+        }
+        window.location.href = 'under-production-beneficiary-required-stock.php?uids=' + ids.join(',');
+    });
+
+    updateSelectionUi();
 });
 </script>
 </body>

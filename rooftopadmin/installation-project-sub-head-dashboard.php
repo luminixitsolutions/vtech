@@ -71,7 +71,7 @@ $Options = explode(',',$row77['Options']);
                                             <div class="ml-3">
                                                 <h6 class="mb-0" style="color: black;"><?php echo $result['Name'];?></h6>
                                         <div class="text-large"><?php  
-                                                            $sql4 = "SELECT * FROM tbl_users WHERE ProjectSubHeadId='".$result['id']."' AND ProjectType=2";
+                                                            $sql4 = "SELECT * FROM tbl_users WHERE ProjectId='".$_GET['id']."' AND ProjectSubHeadId='".$result['id']."' AND ProjectType=2";
                                                             echo $rncnt4 = getRow($sql4);
 
                                                         ?></div>

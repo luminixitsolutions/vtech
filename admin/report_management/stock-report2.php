@@ -111,194 +111,118 @@ else{
                                         </div>
                                     </div>
    </div>
-   <?php if(isset($_POST['Search'])) {?>
+   <?php if(isset($_POST['Search'])) {
+            $FromDate = isset($_POST['FromDate']) ? trim((string) $_POST['FromDate']) : '';
+            $ToDate = isset($_POST['ToDate']) ? trim((string) $_POST['ToDate']) : '';
+            $dateSqlDist = '';
+            $dateSqlStockCr = '';
+            $dateSqlStockDr = '';
+            if ($FromDate !== '') {
+                $fd = mysqli_real_escape_string($conn, $FromDate);
+                $dateSqlDist .= " AND CreatedDate>='$fd'";
+                $dateSqlStockCr .= " AND CreatedDate>='$fd'";
+                $dateSqlStockDr .= " AND CreatedDate>='$fd'";
+            }
+            if ($ToDate !== '') {
+                $td = mysqli_real_escape_string($conn, $ToDate);
+                $dateSqlDist .= " AND CreatedDate<='$td'";
+                $dateSqlStockCr .= " AND CreatedDate<='$td'";
+                $dateSqlStockDr .= " AND CreatedDate<='$td'";
+            }
+?>
 <div class="card-datatable table-responsive">
 <table id="example" class="table table-striped table-bordered" style="width:100%">
         <thead>
             <tr>
                <th>#</th>
-               
+               <th>Branch</th>
                 <th>Product Name</th>
-                <th>Narration</th>
-                <th>Date</th>
                 <th>Inward</th>
                 <th>Outward</th>
-                
-             
+                <th>Balance</th>
             </tr>
         </thead>
         <tbody>
             <?php 
             $i=1;
-            $sql = "SELECT ts.*,tb.Name As Branch,tp.ProductName AS Product_Name FROM tbl_stocks ts 
-                    INNER JOIN tbl_products tp ON ts.ProductId=tp.id 
-                    LEFT JOIN tbl_branch tb ON ts.BranchId=tb.id WHERE ts.Status=1 AND ts.CrDr='cr'
-                    ";
-             
+            $TotCreditStock = 0;
+            $TotDebitStock = 0;
+            $BalStock = 0;
+            $sql = "SELECT p.ProductId, p.BranchId, tb.Name AS Branch, tp.ProductName AS Product_Name
+                    FROM (
+                        SELECT ProductId, BranchId FROM tbl_distibute_item_details WHERE 1 $dateSqlDist
+                        UNION
+                        SELECT ProductId, BranchId FROM tbl_stocks WHERE Status=1 AND CrDr='cr' $dateSqlStockCr
+                        UNION
+                        SELECT ProductId, BranchId FROM tbl_stocks WHERE Status=1 AND CrDr='dr' $dateSqlStockDr
+                    ) p
+                    INNER JOIN tbl_products tp ON p.ProductId=tp.id
+                    LEFT JOIN tbl_branch tb ON p.BranchId=tb.id
+                    WHERE tp.ProductName!=''";
 
             if($_POST['BranchId']){
                 $BranchId = $_POST['BranchId'];
-                if($BranchId == 'all'){
-                    $sql.= " ";
-                }
-                else{
-                $sql.= " AND ts.BranchId='$BranchId'";
+                if($BranchId != 'all'){
+                    $sql.= " AND p.BranchId='$BranchId'";
                 }
             }
             
             if($_POST['ProductId']){
                 $ProductId = $_POST['ProductId'];
-                if($ProductId == 'all'){
-                    $sql.= " ";
-                }
-                else{
-                $sql.= " AND ts.ProductId='$ProductId'";
+                if($ProductId != 'all'){
+                    $sql.= " AND p.ProductId='$ProductId'";
                 }
             }
-            if($_POST['FromDate']){
-                $FromDate = $_POST['FromDate'];
-                $sql.= " AND ts.CreatedDate>='$FromDate'";
-            }
-            if($_POST['ToDate']){
-                $ToDate = $_POST['ToDate'];
-                $sql.= " AND ts.CreatedDate<='$ToDate'";
-            }
-            $sql.=" ORDER BY ts.CreatedDate ASC";    
-            //echo $sql;
+            $sql.=" GROUP BY p.ProductId, p.BranchId ORDER BY tp.ProductName ASC";
             $res = $conn->query($sql);
             while($row = $res->fetch_assoc())
             {
-                if($row['CrDr'] == 'cr'){
-                    $CreditStock = $row['Qty'];
-                    $DebitStock = "";
-                    $TotCreditStock+=$row['Qty'];
+                $bid = (int) $row['BranchId'];
+                $pid = (int) $row['ProductId'];
+
+                $sqlInDist = "SELECT SUM(Qty) AS Qty FROM tbl_distibute_item_details WHERE BranchId='$bid' AND ProductId='$pid' $dateSqlDist";
+                $sqlInCr = "SELECT SUM(Qty) AS Qty FROM tbl_stocks WHERE Status=1 AND BranchId='$bid' AND ProductId='$pid' AND CrDr='cr' $dateSqlStockCr";
+                $sqlOut = "SELECT SUM(Qty) AS Qty FROM tbl_stocks WHERE Status=1 AND BranchId='$bid' AND ProductId='$pid' AND CrDr='dr' $dateSqlStockDr";
+
+                $inDist = (float) (getRecord($sqlInDist)['Qty'] ?? 0);
+                $inCr = (float) (getRecord($sqlInCr)['Qty'] ?? 0);
+                $Inward = $inDist + $inCr;
+                $Outward = (float) (getRecord($sqlOut)['Qty'] ?? 0);
+
+                if ($Inward <= 0 && $Outward <= 0) {
+                    continue;
                 }
-                else{
-                    $DebitStock = $row['Qty'];
-                    $CreditStock = "";
-                    $TotDebitStock+=$row['Qty'];
+
+                $TotCreditStock += $Inward;
+                $TotDebitStock += $Outward;
+                $BalStock += $Inward - $Outward;
+
+                $qBase = array('BranchId' => $bid, 'ProductId' => $pid);
+                if ($FromDate !== '' && $ToDate !== '') {
+                    $qBase['FromDate'] = $FromDate;
+                    $qBase['ToDate'] = $ToDate;
                 }
-
-                /*$sql2 = "SELECT SUM(Qty) AS TotStock FROM tbl_stocks WHERE BranchId='".$row['BranchId']."' AND ProductId='".$row['ProductId']."' AND CrDr='cr'";
-                $row2 = getRecord($sql2);
-
-                $sql3 = "SELECT SUM(Qty) AS SellStock FROM tbl_stocks WHERE BranchId='".$row['BranchId']."' AND ProductId='".$row['ProductId']."' AND CrDr='dr'";
-                $row3 = getRecord($sql3);*/
-
-                $TotStock+=$row2['TotStock'];
-                $SellStock+=$row3['SellStock'];
-                $BalStock+=$row2['TotStock'] - $row3['SellStock'];
-
+                $inwardHref = 'stock-report2-inward-detail.php?' . http_build_query($qBase);
+                $outwardHref = 'stock-report-sell-detail.php?' . http_build_query($qBase);
 
              ?>
             <tr>
                <td><?php echo $i; ?></td>
-           
-           
-          
-               <td><?php echo $row['Product_Name']; ?></td>
-            
-                <td><?php echo $row['Narration']; ?></td>
-                  <td><?php echo date("d/m/Y", strtotime(str_replace('-', '/',$row['CreatedDate']))); ?></td>
-               <td><?php echo $CreditStock; ?></td>
-               <td><?php echo $DebitStock; ?></td>
-                 
-            
-          
-          
-            </tr>
-           <?php $i++;} ?>
-
-
- <?php 
-            $i=$i;
-            $sql = "SELECT ts.*,tb.Name As Branch,tp.ProductName AS Product_Name FROM tbl_distibute_item_details ts 
-                    INNER JOIN tbl_products tp ON ts.ProductId=tp.id 
-                    LEFT JOIN tbl_branch tb ON ts.BranchId=tb.id WHERE 1";
-             
-
-            if($_POST['BranchId']){
-                $BranchId = $_POST['BranchId'];
-                if($BranchId == 'all'){
-                    $sql.= " ";
-                }
-                else{
-                $sql.= " AND ts.BranchId='$BranchId'";
-                }
-            }
-            
-            if($_POST['ProductId']){
-                $ProductId = $_POST['ProductId'];
-                if($ProductId == 'all'){
-                    $sql.= " ";
-                }
-                else{
-                $sql.= " AND ts.ProductId='$ProductId'";
-                }
-            }
-            if($_POST['FromDate']){
-                $FromDate = $_POST['FromDate'];
-                $sql.= " AND ts.CreatedDate>='$FromDate'";
-            }
-            if($_POST['ToDate']){
-                $ToDate = $_POST['ToDate'];
-                $sql.= " AND ts.CreatedDate<='$ToDate'";
-            }
-            $sql.=" ORDER BY ts.CreatedDate ASC";    
-            //echo $sql;
-            $res = $conn->query($sql);
-            while($row = $res->fetch_assoc())
-            {
-                
-                    $DebitStock = $row['Qty'];
-                    $CreditStock = "";
-                    $TotDebitStock+=$row['Qty'];
-                
-
-              
-
-             ?>
-            <tr>
-               <td><?php echo $i; ?></td>
-           
-           
-          
-               <td><?php echo $row['Product_Name']; ?></td>
-            
-                <td>Stock Allot To <?php echo $row['Branch'];?></td>
-                  <td><?php echo date("d/m/Y", strtotime(str_replace('-', '/',$row['CreatedDate']))); ?></td>
-               <td><?php echo $CreditStock; ?></td>
-               <td><?php echo $DebitStock; ?></td>
-                 
-            
-          
-          
+               <td><?php echo htmlspecialchars((string) $row['Branch']); ?></td>
+               <td><?php echo htmlspecialchars((string) $row['Product_Name']); ?></td>
+               <td><?php if ($Inward > 0) { ?><a href="<?php echo htmlspecialchars($inwardHref, ENT_QUOTES, 'UTF-8'); ?>" target="_blank" rel="noopener"><?php echo htmlspecialchars((string) $Inward); ?></a><?php } else { echo '0'; } ?></td>
+               <td><?php if ($Outward > 0) { ?><a href="<?php echo htmlspecialchars($outwardHref, ENT_QUOTES, 'UTF-8'); ?>" target="_blank" rel="noopener"><?php echo htmlspecialchars((string) $Outward); ?></a><?php } else { echo '0'; } ?></td>
+               <td><?php echo $Inward - $Outward; ?></td>
             </tr>
            <?php $i++;} ?>
            
            <tr>
                <td><?php echo $i; ?></td>
-               
-              
-              
-               <td></td>
                <td></td>
                <th>Total</th>
                <th><?php echo $TotCreditStock;?></th>
                <th><?php echo $TotDebitStock;?></th>
-               
-           </tr>
-           <tr>
-               <td><?php echo $i; ?></td>
-               
-              
-              
-               <td></td>
-               <td></td>
-               <th>Balance</th>
-               <th><?php echo $TotCreditStock-$TotDebitStock;?></th>
-               <th></th>
-               
+               <th><?php echo $BalStock;?></th>
            </tr>
         </tbody>
     </table>
