@@ -160,7 +160,7 @@ $Page = "Pending-CIF";
                     FROM tbl_users ts
                     LEFT JOIN tbl_common_master tcm ON tcm.id=ts.PumpCapacity
                     LEFT JOIN tbl_state ts2 ON ts2.id=ts.StateId
-                    WHERE ts.Status=1 AND ts.ProjectType=1 AND ts.SurveyMatch=0 AND ts.ProjectId=106 AND ts.MpSelectionStatus=1 AND ts.AifComplete = 'yes' AND (ts.CifComplete IS NULL OR ts.CifComplete = '' OR ts.CifComplete = 'no')";
+                    WHERE ts.Status=1 AND ts.ProjectType=1 AND ts.ProjectId=106 AND ts.MpSelectionStatus=1 AND ts.LoaReceived = 'yes' AND ts.NtpComplete = 'yes' AND ts.AifComplete = 'yes' AND (ts.CifComplete IS NULL OR ts.CifComplete = '' OR ts.CifComplete = 'no')";
             
             if($_REQUEST['CoordinatorStatus']!=''){
                 if($_REQUEST['CoordinatorStatus'] == 'all'){

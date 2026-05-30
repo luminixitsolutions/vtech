@@ -4,44 +4,86 @@ include_once '../config.php';
 include_once '../auth.php';
 
 $baseCondition = "ts.Status=1 AND ts.ProjectType=1 AND ts.ProjectId=106";
+$ntpCompleteCondition = "$baseCondition AND ts.MpSelectionStatus=1 AND ts.LoaReceived = 'yes' AND ts.NtpComplete = 'yes'";
+$aifCompleteCondition = "$ntpCompleteCondition AND ts.AifComplete = 'yes'";
 
-$totalCustomers = getRow("SELECT * FROM tbl_users ts WHERE $baseCondition");
-$pendingSelection = getRow("SELECT * FROM tbl_users ts WHERE $baseCondition AND ts.MpSelectionStatus=0");
-$approvedSelection = getRow("SELECT * FROM tbl_users ts WHERE $baseCondition AND ts.MpSelectionStatus=1");
-$rejectedSelection = getRow("SELECT * FROM tbl_users ts WHERE $baseCondition AND ts.MpSelectionStatus=2");
+function mpuvnlDashboardCount($sql) {
+    $row = getRecord($sql);
+    return ($row && isset($row['cnt'])) ? (int) $row['cnt'] : 0;
+}
 
-$pendingPayments = getRow("SELECT ts.* FROM tbl_users ts WHERE $baseCondition AND ts.MpSelectionStatus=1 AND ts.id NOT IN (SELECT customer_id FROM tbl_customer_payments)");
-$partialPayments = getRow("SELECT ts.* FROM tbl_users ts 
-    LEFT JOIN tbl_common_master tcm ON tcm.id=ts.PumpCapacity 
-    WHERE $baseCondition AND ts.MpSelectionStatus=1 
-    AND ts.id IN (SELECT customer_id FROM tbl_customer_payments) 
-    AND (SELECT IFNULL(SUM(credit),0) FROM tbl_customer_payment_ledger WHERE customer_id=ts.id) < tcm.Amount");
-$fullPayments = getRow("SELECT ts.* FROM tbl_users ts 
-    LEFT JOIN tbl_common_master tcm ON tcm.id=ts.PumpCapacity 
-    WHERE $baseCondition AND ts.MpSelectionStatus=1 
-    AND ts.id IN (SELECT customer_id FROM tbl_customer_payments) 
-    AND (SELECT IFNULL(SUM(credit),0) FROM tbl_customer_payment_ledger WHERE customer_id=ts.id) >= tcm.Amount");
+$totalCustomers = mpuvnlDashboardCount("SELECT COUNT(*) AS cnt FROM tbl_users ts WHERE $baseCondition");
+$pendingSelection = mpuvnlDashboardCount("SELECT COUNT(*) AS cnt FROM tbl_users ts WHERE $baseCondition AND ts.MpSelectionStatus=0");
+$approvedSelection = mpuvnlDashboardCount("SELECT COUNT(*) AS cnt FROM tbl_users ts WHERE $baseCondition AND ts.MpSelectionStatus=1");
+$rejectedSelection = mpuvnlDashboardCount("SELECT COUNT(*) AS cnt FROM tbl_users ts WHERE $baseCondition AND ts.MpSelectionStatus=2");
 
-$pendingLoa = getRow("SELECT * FROM tbl_users ts WHERE $baseCondition AND ts.MpSelectionStatus=1 AND (ts.LoaReceived IS NULL OR ts.LoaReceived = '' OR ts.LoaReceived = 'no')");
-$receivedLoa = getRow("SELECT * FROM tbl_users ts WHERE $baseCondition AND ts.MpSelectionStatus=1 AND ts.LoaReceived = 'yes'");
+// Same rules as pending-mp-payments.php (no row in tbl_customer_payments)
+$pendingPayments = mpuvnlDashboardCount("SELECT COUNT(*) AS cnt FROM tbl_users ts
+    WHERE $baseCondition AND ts.MpSelectionStatus=1
+    AND NOT EXISTS (SELECT 1 FROM tbl_customer_payments cp WHERE cp.customer_id = ts.id)");
 
-$pendingNtp = getRow("SELECT * FROM tbl_users ts WHERE $baseCondition AND ts.MpSelectionStatus=1 AND ts.LoaReceived = 'yes' AND (ts.NtpComplete IS NULL OR ts.NtpComplete = '' OR ts.NtpComplete = 'no')");
-$completeNtp = getRow("SELECT * FROM tbl_users ts WHERE $baseCondition AND ts.MpSelectionStatus=1 AND ts.NtpComplete = 'yes'");
+// Same rules as partial-mp-payments.php: BalanceAmt > 0 AND TotalPaid != 0
+$partialPayments = mpuvnlDashboardCount("SELECT COUNT(*) AS cnt FROM tbl_users ts
+    LEFT JOIN tbl_common_master tcm ON tcm.id = ts.PumpCapacity
+    LEFT JOIN (
+        SELECT customer_id, SUM(credit) AS TotalPaid
+        FROM tbl_customer_payment_ledger
+        GROUP BY customer_id
+    ) paid ON paid.customer_id = ts.id
+    WHERE $baseCondition AND ts.MpSelectionStatus=1
+    AND IFNULL(paid.TotalPaid, 0) != 0
+    AND (IFNULL(tcm.Amount, 0) - IFNULL(paid.TotalPaid, 0)) > 0");
 
-$pendingAif = getRow("SELECT * FROM tbl_users ts WHERE $baseCondition AND ts.MpSelectionStatus=1 AND ts.NtpComplete = 'yes' AND (ts.AifComplete IS NULL OR ts.AifComplete = '' OR ts.AifComplete = 'no')");
-$completeAif = getRow("SELECT * FROM tbl_users ts WHERE $baseCondition AND ts.MpSelectionStatus=1 AND ts.AifComplete = 'yes'");
+// Same rules as full-mp-payments.php: BalanceAmt <= 0
+$fullPayments = mpuvnlDashboardCount("SELECT COUNT(*) AS cnt FROM tbl_users ts
+    LEFT JOIN tbl_common_master tcm ON tcm.id = ts.PumpCapacity
+    LEFT JOIN (
+        SELECT customer_id, SUM(credit) AS TotalPaid
+        FROM tbl_customer_payment_ledger
+        GROUP BY customer_id
+    ) paid ON paid.customer_id = ts.id
+    WHERE $baseCondition AND ts.MpSelectionStatus=1
+    AND (IFNULL(tcm.Amount, 0) - IFNULL(paid.TotalPaid, 0)) <= 0");
 
-$pendingCif = getRow("SELECT * FROM tbl_users ts WHERE $baseCondition AND ts.MpSelectionStatus=1 AND ts.AifComplete = 'yes' AND (ts.CifComplete IS NULL OR ts.CifComplete = '' OR ts.CifComplete = 'no')");
-$completeCif = getRow("SELECT * FROM tbl_users ts WHERE $baseCondition AND ts.MpSelectionStatus=1 AND ts.CifComplete = 'yes'");
+$pendingLoa = mpuvnlDashboardCount("SELECT COUNT(*) AS cnt FROM tbl_users ts
+    WHERE $baseCondition AND ts.MpSelectionStatus=1
+    AND (ts.LoaReceived IS NULL OR ts.LoaReceived = '' OR ts.LoaReceived = 'no')");
+$receivedLoa = mpuvnlDashboardCount("SELECT COUNT(*) AS cnt FROM tbl_users ts
+    WHERE $baseCondition AND ts.MpSelectionStatus=1 AND ts.LoaReceived = 'yes'");
+
+// NTP: same base as received-loa.php — pending = received LOA minus complete NTP
+$completeNtp = mpuvnlDashboardCount("SELECT COUNT(*) AS cnt FROM tbl_users ts
+    WHERE $baseCondition AND ts.MpSelectionStatus=1 AND ts.LoaReceived = 'yes' AND ts.NtpComplete = 'yes'");
+$pendingNtp = mpuvnlDashboardCount("SELECT COUNT(*) AS cnt FROM tbl_users ts
+    WHERE $baseCondition AND ts.MpSelectionStatus=1 AND ts.LoaReceived = 'yes'
+    AND (ts.NtpComplete IS NULL OR ts.NtpComplete = '' OR ts.NtpComplete = 'no')");
+
+// AIF: pending = complete NTP minus complete AIF (same customer pool as NTP complete)
+$completeAif = mpuvnlDashboardCount("SELECT COUNT(*) AS cnt FROM tbl_users ts WHERE $aifCompleteCondition");
+$pendingAif = mpuvnlDashboardCount("SELECT COUNT(*) AS cnt FROM tbl_users ts
+    WHERE $ntpCompleteCondition
+    AND (ts.AifComplete IS NULL OR ts.AifComplete = '' OR ts.AifComplete = 'no')");
+
+// CIF: pending = complete AIF minus complete CIF
+$completeCif = mpuvnlDashboardCount("SELECT COUNT(*) AS cnt FROM tbl_users ts WHERE $aifCompleteCondition AND ts.CifComplete = 'yes'");
+$pendingCif = mpuvnlDashboardCount("SELECT COUNT(*) AS cnt FROM tbl_users ts
+    WHERE $aifCompleteCondition
+    AND (ts.CifComplete IS NULL OR ts.CifComplete = '' OR ts.CifComplete = 'no')");
 
 $totalPaymentReceived = 0;
 $totalPaymentPending = 0;
-$paymentResult = $conn->query("SELECT IFNULL(SUM(l.credit),0) AS TotalPaid, IFNULL(SUM(tcm.Amount),0) AS TotalAmount 
-    FROM tbl_users ts 
-    LEFT JOIN tbl_common_master tcm ON tcm.id=ts.PumpCapacity 
-    LEFT JOIN tbl_customer_payment_ledger l ON l.customer_id=ts.id 
+$paymentRow = getRecord("SELECT
+        IFNULL(SUM(paid.TotalPaid), 0) AS TotalPaid,
+        IFNULL(SUM(tcm.Amount), 0) AS TotalAmount
+    FROM tbl_users ts
+    LEFT JOIN tbl_common_master tcm ON tcm.id = ts.PumpCapacity
+    LEFT JOIN (
+        SELECT customer_id, SUM(credit) AS TotalPaid
+        FROM tbl_customer_payment_ledger
+        GROUP BY customer_id
+    ) paid ON paid.customer_id = ts.id
     WHERE $baseCondition AND ts.MpSelectionStatus=1");
-if($paymentRow = $paymentResult->fetch_assoc()) {
+if ($paymentRow) {
     $totalPaymentReceived = $paymentRow['TotalPaid'];
     $totalPaymentPending = $paymentRow['TotalAmount'] - $paymentRow['TotalPaid'];
 }
