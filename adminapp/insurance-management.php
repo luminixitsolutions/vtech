@@ -5,7 +5,25 @@ require_once 'auth.php';
 require_once 'inc-mobile-mgmt.php';
 
 $PageName = 'Insurance Management';
-$counts = getInsuranceMgmtCounts();
+
+$selectedProjectId = isset($_GET['ProjectId']) ? (int) $_GET['ProjectId'] : 0;
+$selectedSubHeadId = isset($_GET['ProjectSubHeadId']) ? (int) $_GET['ProjectSubHeadId'] : 0;
+
+$projects = mobileMgmtGetProjects();
+$subHeads = $selectedProjectId > 0 ? mobileMgmtGetSubHeadsForProject($selectedProjectId) : array();
+$subHeadsByProject = mobileMgmtGetSubHeadsByProjectMap($projects);
+
+$filters = array();
+if ($selectedProjectId > 0) {
+    $filters['project_id'] = $selectedProjectId;
+}
+if ($selectedSubHeadId > 0) {
+    $filters['sub_head_id'] = $selectedSubHeadId;
+}
+
+$insuranceSummary = getInsuranceMgmtProjectSubHeadSummary($filters);
+$insuranceRows = $insuranceSummary['rows'];
+$insuranceTotals = $insuranceSummary['totals'];
 ?>
 <!doctype html>
 <html lang="en" class="h-100">
@@ -34,23 +52,136 @@ $counts = getInsuranceMgmtCounts();
     <h1>Insurance Management</h1>
 </div>
 
-<div class="mob-mgmt-heading mob-mgmt-heading-insurance">Insurance Dashboard</div>
+<div class="mob-mgmt-heading mob-mgmt-heading-insurance">Insurance Site Abstract</div>
 
-<div class="mob-mgmt-grid">
-    <div class="row g-3">
-        <?php
-        mobileMgmtStatCard('Pending Insurance', $counts['pending'], 'mobile-insurance-list.php?status=pending', 'teal');
-        mobileMgmtStatCard('Active Completed', $counts['active_completed'], 'mobile-insurance-list.php?status=active', 'teal');
-        mobileMgmtStatCard('Upcoming Renewal', $counts['renewal'], 'mobile-insurance-list.php?status=renewal', 'teal');
-        mobileMgmtStatCard('Expired Insurance', $counts['expired'], 'mobile-insurance-list.php?status=expired', 'teal');
-        mobileMgmtStatCard('Site Dispatched', $counts['site_dispatched'], 'mobile-insurance-list.php?status=dispatched', 'teal');
-        mobileMgmtStatCard('Total Completed', $counts['total_completed'], 'mobile-insurance-list.php?status=completed', 'teal');
-        ?>
+<div class="mob-mgmt-list-wrap" style="padding-top: 8px;">
+    <div class="mob-mgmt-card mob-mgmt-filter-card">
+        <form method="get" id="insuranceFilterForm">
+            <div class="mb-3">
+                <label class="form-label small fw-semibold mb-1">Project Head</label>
+                <select name="ProjectId" id="ProjectId" class="form-control form-control-sm">
+                    <option value="">All Project Head</option>
+                    <?php foreach ($projects as $project) { ?>
+                    <option value="<?php echo (int) $project['id']; ?>" <?php echo ($selectedProjectId === (int) $project['id']) ? 'selected' : ''; ?>>
+                        <?php echo htmlspecialchars($project['Name']); ?>
+                    </option>
+                    <?php } ?>
+                </select>
+            </div>
+            <div class="mb-3">
+                <label class="form-label small fw-semibold mb-1">Sub Head</label>
+                <select name="ProjectSubHeadId" id="ProjectSubHeadId" class="form-control form-control-sm">
+                    <option value="">All Sub Head</option>
+                    <?php foreach ($subHeads as $subHead) { ?>
+                    <option value="<?php echo (int) $subHead['id']; ?>" <?php echo ($selectedSubHeadId === (int) $subHead['id']) ? 'selected' : ''; ?>>
+                        <?php echo htmlspecialchars($subHead['Name']); ?>
+                    </option>
+                    <?php } ?>
+                </select>
+            </div>
+            <div class="d-flex gap-2">
+                <button type="submit" class="btn btn-primary btn-sm flex-grow-1">Search</button>
+                <a href="insurance-management.php" class="btn btn-outline-secondary btn-sm">Clear</a>
+            </div>
+        </form>
     </div>
+
+    <div class="mob-mgmt-abstract-meta text-center mb-3">
+        <div class="fw-bold">VTECH SUNSYSTEMS PVT LTD</div>
+        <div class="fw-semibold small mt-1">Insurance Site Abstract</div>
+        <div class="text-muted small">Update as on <?php echo date('d.m.Y'); ?></div>
+    </div>
+
+    <div class="mob-mgmt-table-wrap mob-mgmt-table-scroll">
+        <table class="table table-striped table-bordered mob-mgmt-table mob-mgmt-table-insurance mb-0">
+            <thead>
+                <tr>
+                    <th>Project Head</th>
+                    <th>Sub Head</th>
+                    <th>Total Insurance</th>
+                    <th>Pending Insurance</th>
+                    <th>Completed</th>
+                    <th>Upcoming Renewal</th>
+                    <th>Expired</th>
+                    <th>Renewed Insurance</th>
+                </tr>
+            </thead>
+            <tbody>
+                <?php if (empty($insuranceRows)) { ?>
+                <tr>
+                    <td colspan="8" class="text-center text-muted py-4">No records found.</td>
+                </tr>
+                <?php } else {
+                    foreach ($insuranceRows as $row) {
+                        $projectId = (int) ($row['project_id'] ?? 0);
+                        $subHeadId = (int) ($row['sub_head_id'] ?? 0);
+                        ?>
+                <tr>
+                    <td class="mob-mgmt-table-label"><?php echo htmlspecialchars((string) ($row['project_name'] ?? '')); ?></td>
+                    <td><?php echo htmlspecialchars((string) ($row['sub_head_name'] ?? '')); ?></td>
+                    <td><a href="<?php echo htmlspecialchars(mobileMgmtInsuranceListUrl('dispatched', $projectId, $subHeadId), ENT_QUOTES, 'UTF-8'); ?>"><?php echo number_format((int) $row['total_insurance']); ?></a></td>
+                    <td><a href="<?php echo htmlspecialchars(mobileMgmtInsuranceListUrl('pending', $projectId, $subHeadId), ENT_QUOTES, 'UTF-8'); ?>"><?php echo number_format((int) $row['pending']); ?></a></td>
+                    <td><a href="<?php echo htmlspecialchars(mobileMgmtInsuranceListUrl('active', $projectId, $subHeadId), ENT_QUOTES, 'UTF-8'); ?>"><?php echo number_format((int) $row['completed']); ?></a></td>
+                    <td><a href="<?php echo htmlspecialchars(mobileMgmtInsuranceListUrl('renewal', $projectId, $subHeadId), ENT_QUOTES, 'UTF-8'); ?>"><?php echo number_format((int) $row['renewal']); ?></a></td>
+                    <td><a href="<?php echo htmlspecialchars(mobileMgmtInsuranceListUrl('expired', $projectId, $subHeadId), ENT_QUOTES, 'UTF-8'); ?>"><?php echo number_format((int) $row['expired']); ?></a></td>
+                    <td><a href="<?php echo htmlspecialchars(mobileMgmtInsuranceListUrl('renewed', $projectId, $subHeadId), ENT_QUOTES, 'UTF-8'); ?>"><?php echo number_format((int) $row['renewed']); ?></a></td>
+                </tr>
+                    <?php }
+                    if (count($insuranceRows) > 1) { ?>
+                <tr class="mob-mgmt-table-total">
+                    <td class="mob-mgmt-table-label"><?php echo htmlspecialchars($insuranceTotals['project_name']); ?></td>
+                    <td><?php echo htmlspecialchars($insuranceTotals['sub_head_name']); ?></td>
+                    <td><a href="<?php echo htmlspecialchars(mobileMgmtInsuranceListUrl('dispatched', $selectedProjectId, $selectedSubHeadId), ENT_QUOTES, 'UTF-8'); ?>"><?php echo number_format((int) $insuranceTotals['total_insurance']); ?></a></td>
+                    <td><a href="<?php echo htmlspecialchars(mobileMgmtInsuranceListUrl('pending', $selectedProjectId, $selectedSubHeadId), ENT_QUOTES, 'UTF-8'); ?>"><?php echo number_format((int) $insuranceTotals['pending']); ?></a></td>
+                    <td><a href="<?php echo htmlspecialchars(mobileMgmtInsuranceListUrl('active', $selectedProjectId, $selectedSubHeadId), ENT_QUOTES, 'UTF-8'); ?>"><?php echo number_format((int) $insuranceTotals['completed']); ?></a></td>
+                    <td><a href="<?php echo htmlspecialchars(mobileMgmtInsuranceListUrl('renewal', $selectedProjectId, $selectedSubHeadId), ENT_QUOTES, 'UTF-8'); ?>"><?php echo number_format((int) $insuranceTotals['renewal']); ?></a></td>
+                    <td><a href="<?php echo htmlspecialchars(mobileMgmtInsuranceListUrl('expired', $selectedProjectId, $selectedSubHeadId), ENT_QUOTES, 'UTF-8'); ?>"><?php echo number_format((int) $insuranceTotals['expired']); ?></a></td>
+                    <td><a href="<?php echo htmlspecialchars(mobileMgmtInsuranceListUrl('renewed', $selectedProjectId, $selectedSubHeadId), ENT_QUOTES, 'UTF-8'); ?>"><?php echo number_format((int) $insuranceTotals['renewed']); ?></a></td>
+                </tr>
+                    <?php }
+                } ?>
+            </tbody>
+        </table>
+    </div>
+
+    <p class="text-muted small px-1 mb-0">Tap a count to view insurance records for that project and status.</p>
 </div>
 
 </main>
 
 <?php include_once 'footer.php'; ?>
+<script>
+(function () {
+    var subHeadsByProject = <?php echo json_encode($subHeadsByProject, JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_AMP | JSON_UNESCAPED_UNICODE); ?>;
+    var selectedSubHeadId = <?php echo (int) $selectedSubHeadId; ?>;
+
+    function renderSubHeads(projectId) {
+        var $sub = $('#ProjectSubHeadId');
+        projectId = parseInt(projectId, 10) || 0;
+        $sub.html('<option value="">All Sub Head</option>');
+
+        if (projectId < 1) {
+            return;
+        }
+
+        var list = subHeadsByProject[projectId] || [];
+        list.forEach(function (item) {
+            var selected = selectedSubHeadId === item.id ? ' selected' : '';
+            $sub.append(
+                '<option value="' + item.id + '"' + selected + '>' +
+                $('<div>').text(item.name).html() +
+                '</option>'
+            );
+        });
+    }
+
+    $('#ProjectId').on('change', function () {
+        selectedSubHeadId = 0;
+        renderSubHeads(this.value);
+    });
+
+    renderSubHeads($('#ProjectId').val());
+})();
+</script>
 </body>
 </html>

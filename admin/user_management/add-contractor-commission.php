@@ -67,19 +67,28 @@ $Page = "View-Contractor-Commission";
                 </style>
 
                 <?php
-                $UserId = $_GET['UserId'];
-                $ProjectHeadId = $_GET['ProjectHeadId'];
-                $ProjectSubHeadId = $_GET['ProjectSubHeadId'];
-                $sql7 = "SELECT tu.* FROM tbl_contractor_commision tu WHERE tu.UserId='$UserId' AND tu.ProjectHeadId='$ProjectHeadId' AND tu.ProjectSubHeadId='$ProjectSubHeadId' GROUP BY tu.UserId,tu.ProjectHeadId,tu.ProjectSubHeadId";
-                $row7 = getRecord($sql7);
-                //$row7['Options'] = explode(',', $row7['Options']);
+                $UserId = $_GET['UserId'] ?? '';
+                $ProjectHeadId = $_GET['ProjectHeadId'] ?? '';
+                $ProjectSubHeadId = $_GET['ProjectSubHeadId'] ?? '';
+                $row7 = [
+                    'UserId' => '',
+                    'ProjectHeadId' => '',
+                    'ProjectSubHeadId' => '',
+                ];
+                if ($UserId !== '' && $ProjectHeadId !== '' && $ProjectSubHeadId !== '') {
+                    $sql7 = "SELECT UserId, ProjectHeadId, ProjectSubHeadId FROM tbl_contractor_commision WHERE UserId='$UserId' AND ProjectHeadId='$ProjectHeadId' AND ProjectSubHeadId='$ProjectSubHeadId' LIMIT 1";
+                    $existing = getRecord($sql7);
+                    if (is_array($existing)) {
+                        $row7 = $existing;
+                    }
+                }
 
                 if (isset($_POST['submit'])) {
                     $UserId = $_POST['UserId'];
                     $ProjectId = $_POST['ProjectId'];
                     $ProjectSubHeadId = $_POST['ProjectSubHeadId'];
                     $CreatedDate = date('Y-m-d H:i:s');
-                    if ($_GET['UserId'] == '') {
+                    if (($_GET['UserId'] ?? '') == '') {
                         if ($_POST["Capacity"] != '') {
                             $number = count($_POST["Capacity"]);
                             if ($number > 0) {
@@ -92,9 +101,10 @@ $Page = "View-Contractor-Commission";
                                         $FoundationVal = $_POST['FoundationVal'][$i];
                                         $InstallationVal = $_POST['InstallationVal'][$i];
                                         $InspectionVal = $_POST['InspectionVal'][$i];
+                                        $InspectionApprovalVal = $_POST['InspectionApprovalVal'][$i];
                                         $DocumentationVal = $_POST['DocumentationVal'][$i];
 
-                                        $sql = "INSERT INTO tbl_contractor_commision SET CreatedBy='$user_id',CreatedDate='$CreatedDate',ProjectHeadId='$ProjectId',ProjectSubHeadId='$ProjectSubHeadId',UserId='$UserId',Capacity='$Capacity',SelectionVal='$SelectionVal',FieldSurveyVal='$FieldSurveyVal',DispatchVal='$DispatchVal',FoundationVal='$FoundationVal',InstallationVal='$InstallationVal',InspectionVal='$InspectionVal',DocumentationVal='$DocumentationVal'";
+                                        $sql = "INSERT INTO tbl_contractor_commision SET CreatedBy='$user_id',CreatedDate='$CreatedDate',ProjectHeadId='$ProjectId',ProjectSubHeadId='$ProjectSubHeadId',UserId='$UserId',Capacity='$Capacity',SelectionVal='$SelectionVal',FieldSurveyVal='$FieldSurveyVal',DispatchVal='$DispatchVal',FoundationVal='$FoundationVal',InstallationVal='$InstallationVal',InspectionVal='$InspectionVal',InspectionApprovalVal='$InspectionApprovalVal',DocumentationVal='$DocumentationVal'";
                                         $conn->query($sql);
                                     }
                                 }
@@ -115,9 +125,10 @@ $Page = "View-Contractor-Commission";
                                         $FoundationVal = $_POST['FoundationVal'][$i];
                                         $InstallationVal = $_POST['InstallationVal'][$i];
                                         $InspectionVal = $_POST['InspectionVal'][$i];
+                                        $InspectionApprovalVal = $_POST['InspectionApprovalVal'][$i];
                                         $DocumentationVal = $_POST['DocumentationVal'][$i];
 
-                                        $sql = "INSERT INTO tbl_contractor_commision SET CreatedBy='$user_id',CreatedDate='$CreatedDate',ProjectHeadId='$ProjectId',ProjectSubHeadId='$ProjectSubHeadId',UserId='$UserId',Capacity='$Capacity',SelectionVal='$SelectionVal',FieldSurveyVal='$FieldSurveyVal',DispatchVal='$DispatchVal',FoundationVal='$FoundationVal',InstallationVal='$InstallationVal',InspectionVal='$InspectionVal',DocumentationVal='$DocumentationVal'";
+                                        $sql = "INSERT INTO tbl_contractor_commision SET CreatedBy='$user_id',CreatedDate='$CreatedDate',ProjectHeadId='$ProjectId',ProjectSubHeadId='$ProjectSubHeadId',UserId='$UserId',Capacity='$Capacity',SelectionVal='$SelectionVal',FieldSurveyVal='$FieldSurveyVal',DispatchVal='$DispatchVal',FoundationVal='$FoundationVal',InstallationVal='$InstallationVal',InspectionVal='$InspectionVal',InspectionApprovalVal='$InspectionApprovalVal',DocumentationVal='$DocumentationVal'";
                                         $conn->query($sql);
                                     }
                                 }
@@ -190,9 +201,9 @@ $Page = "View-Contractor-Commission";
                                         function getCommision($val, $capacity, $uid, $ProjectHeadId, $ProjectSubHeadId)
                                         {
                                             global $conn;
-                                            $sql = "SELECT $val AS Value FROM tbl_contractor_commision WHERE Capacity='$capacity' AND UserId='$uid' AND ProjectHeadId='$ProjectHeadId' AND ProjectSubHeadId='$ProjectSubHeadId'";
+                                            $sql = "SELECT $val AS Value FROM tbl_contractor_commision WHERE Capacity='$capacity' AND UserId='$uid' AND ProjectHeadId='$ProjectHeadId' AND ProjectSubHeadId='$ProjectSubHeadId' LIMIT 1";
                                             $row = getRecord($sql);
-                                            return $row['Value'];
+                                            return $row['Value'] ?? 0;
                                         }
                                         ?>
                                         <table>
@@ -212,8 +223,8 @@ $Page = "View-Contractor-Commission";
                                                 <td>1</td>
                                                 <td>Selection</td>
                                                 <?php foreach ($row as $result) {
-                                                    if ($_GET['UserId'] != '') {
-                                                        $val1 = getCommision('SelectionVal', $result['id'], $_GET['UserId'], $_GET['ProjectHeadId'], $_GET['ProjectSubHeadId']);
+                                                    if ($UserId != '') {
+                                                        $val1 = getCommision('SelectionVal', $result['id'], $UserId, $ProjectHeadId, $ProjectSubHeadId);
                                                     } else {
                                                         $val1 = 0;
                                                     }
@@ -225,8 +236,8 @@ $Page = "View-Contractor-Commission";
                                                 <td>2</td>
                                                 <td>Field Survey</td>
                                                 <?php foreach ($row as $result) {
-                                                    if ($_GET['UserId'] != '') {
-                                                        $val2 = getCommision('FieldSurveyVal', $result['id'], $_GET['UserId'], $_GET['ProjectHeadId'], $_GET['ProjectSubHeadId']);
+                                                    if ($UserId != '') {
+                                                        $val2 = getCommision('FieldSurveyVal', $result['id'], $UserId, $ProjectHeadId, $ProjectSubHeadId);
                                                     } else {
                                                         $val2 = 0;
                                                     }
@@ -239,8 +250,8 @@ $Page = "View-Contractor-Commission";
                                                 <td>3</td>
                                                 <td>Material Dispatch</td>
                                                 <?php foreach ($row as $result) {
-                                                    if ($_GET['UserId'] != '') {
-                                                        $val3 = getCommision('DispatchVal', $result['id'], $_GET['UserId'], $_GET['ProjectHeadId'], $_GET['ProjectSubHeadId']);
+                                                    if ($UserId != '') {
+                                                        $val3 = getCommision('DispatchVal', $result['id'], $UserId, $ProjectHeadId, $ProjectSubHeadId);
                                                     } else {
                                                         $val3 = 0;
                                                     }
@@ -253,8 +264,8 @@ $Page = "View-Contractor-Commission";
                                                 <td>4</td>
                                                 <td>Foundation</td>
                                                 <?php foreach ($row as $result) {
-                                                    if ($_GET['UserId'] != '') {
-                                                        $val4 = getCommision('FoundationVal', $result['id'], $_GET['UserId'], $_GET['ProjectHeadId'], $_GET['ProjectSubHeadId']);
+                                                    if ($UserId != '') {
+                                                        $val4 = getCommision('FoundationVal', $result['id'], $UserId, $ProjectHeadId, $ProjectSubHeadId);
                                                     } else {
                                                         $val4 = 0;
                                                     }
@@ -267,8 +278,8 @@ $Page = "View-Contractor-Commission";
                                                 <td>5</td>
                                                 <td>Installation </td>
                                                 <?php foreach ($row as $result) {
-                                                    if ($_GET['UserId'] != '') {
-                                                        $val5 = getCommision('InstallationVal', $result['id'], $_GET['UserId'], $_GET['ProjectHeadId'], $_GET['ProjectSubHeadId']);
+                                                    if ($UserId != '') {
+                                                        $val5 = getCommision('InstallationVal', $result['id'], $UserId, $ProjectHeadId, $ProjectSubHeadId);
                                                     } else {
                                                         $val5 = 0;
                                                     }
@@ -281,8 +292,8 @@ $Page = "View-Contractor-Commission";
                                                 <td>6</td>
                                                 <td>Inspection</td>
                                                 <?php foreach ($row as $result) {
-                                                    if ($_GET['UserId'] != '') {
-                                                        $val6 = getCommision('InspectionVal', $result['id'], $_GET['UserId'], $_GET['ProjectHeadId'], $_GET['ProjectSubHeadId']);
+                                                    if ($UserId != '') {
+                                                        $val6 = getCommision('InspectionVal', $result['id'], $UserId, $ProjectHeadId, $ProjectSubHeadId);
                                                     } else {
                                                         $val6 = 0;
                                                     }
@@ -293,16 +304,30 @@ $Page = "View-Contractor-Commission";
                                             </tr>
                                             <tr>
                                                 <td>7</td>
-                                                <td>Documentation</td>
+                                                <td>Inspection Approval</td>
                                                 <?php foreach ($row as $result) {
-                                                    if ($_GET['UserId'] != '') {
-                                                        $val7 = getCommision('DocumentationVal', $result['id'], $_GET['UserId'], $_GET['ProjectHeadId'], $_GET['ProjectSubHeadId']);
+                                                    if ($UserId != '') {
+                                                        $val7 = getCommision('InspectionApprovalVal', $result['id'], $UserId, $ProjectHeadId, $ProjectSubHeadId);
                                                     } else {
                                                         $val7 = 0;
                                                     }
                                                 ?>
 
-                                                    <td><input type="text" class="form-control" value="<?php echo $val7; ?>" name="DocumentationVal[]"></td>
+                                                    <td><input type="text" class="form-control" value="<?php echo $val7; ?>" name="InspectionApprovalVal[]"></td>
+                                                <?php } ?>
+                                            </tr>
+                                            <tr>
+                                                <td>8</td>
+                                                <td>Documentation</td>
+                                                <?php foreach ($row as $result) {
+                                                    if ($UserId != '') {
+                                                        $val8 = getCommision('DocumentationVal', $result['id'], $UserId, $ProjectHeadId, $ProjectSubHeadId);
+                                                    } else {
+                                                        $val8 = 0;
+                                                    }
+                                                ?>
+
+                                                    <td><input type="text" class="form-control" value="<?php echo $val8; ?>" name="DocumentationVal[]"></td>
                                                 <?php } ?>
                                             </tr>
                                         </table>
@@ -391,42 +416,9 @@ $Page = "View-Contractor-Commission";
             });
         }
         $(document).ready(function() {
-            //$(document).on("click", ".btn-finish", function(event){
             $('#validation-form').on('submit', function(e) {
-                exit();
-                e.preventDefault();
-                if ($('#validation-form').valid()) {
-
-                    $.ajax({
-                        url: "../ajax_files/ajax_employee.php",
-                        method: "POST",
-                        data: new FormData(this),
-                        contentType: false,
-                        processData: false,
-                        beforeSend: function() {
-                            $('#submit').attr('disabled', 'disabled');
-                            $('#submit').text('Please Wait...');
-                        },
-                        success: function(data) {
-
-                            if (data == 0) {
-                                error_toast();
-
-                            } else {
-                                success_toast();
-                                setTimeout(function() {
-                                    window.location.href = 'view-manufacture.php';
-                                }, 2000);
-                            }
-                            $('#submit').attr('disabled', false);
-                            $('#submit').text('Save');
-                        }
-                    })
-
-
-
-                } else {
-                    //$('#Fname').focus();
+                if (!$('#validation-form').valid()) {
+                    e.preventDefault();
                     return false;
                 }
             });

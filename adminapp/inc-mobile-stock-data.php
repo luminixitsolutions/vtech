@@ -1,8 +1,10 @@
 <?php
 
 /**
- * Available stock: store balance (distribute details − assign to dispatch) and
- * dispatch officer balance (assigned − issued to customer via tbl_stocks).
+ * Store stock report:
+ * Inward  = store receipt (allotment + dispatch-to-store + store-to-store in) via tbl_distibute_item_details
+ * Outward = delivery challans + store-to-store transfer out
+ * Balance = Inward − Outward
  */
 
 function mobileStockFormatQty($qty)
@@ -242,6 +244,133 @@ function mobileStockBuildReport2DateSql($fromDate, $toDate)
     return array($dateSqlDist, $dateSqlStockCr, $dateSqlStockDr);
 }
 
+function mobileStockBuildChallanDateSql($fromDate, $toDate, $column = 'sp.SellDate')
+{
+    global $conn;
+
+    $sql = '';
+    if ($fromDate !== '') {
+        $fd = mysqli_real_escape_string($conn, $fromDate);
+        $sql .= " AND $column>='$fd'";
+    }
+    if ($toDate !== '') {
+        $td = mysqli_real_escape_string($conn, $toDate);
+        $sql .= " AND $column<='$td'";
+    }
+
+    return $sql;
+}
+
+/**
+ * Resolve challan line to tbl_products.id.
+ * sp.ProductId is only trusted when it matches the master product name (avoids
+ * dispatch-row id collisions with unrelated product ids).
+ */
+function mobileStockResolveChallanProductIdExpr()
+{
+    return "CASE
+        WHEN tp_by_id.id IS NOT NULL AND TRIM(tp_by_id.ProductName) = TRIM(sp.ProductName) THEN tp_by_id.id
+        ELSE tp_by_name.id
+    END";
+}
+
+/**
+ * Serial challan lines count as outward only when the same serial exists in store inward.
+ * Non-serial lines (blank / N/A) keep quantity-based matching.
+ */
+function mobileStockLoadStoreInwardSerialKeys($branchSqlDist, $productSqlDist)
+{
+    global $conn;
+
+    $keys = array();
+    $sql = "SELECT BranchId, ProductId, SerialNo
+        FROM tbl_distibute_item_details
+        WHERE TRIM(SerialNo) NOT IN ('', 'N/A') $branchSqlDist $productSqlDist";
+    $res = $conn->query($sql);
+    if ($res) {
+        while ($row = $res->fetch_assoc()) {
+            $serial = trim((string) $row['SerialNo']);
+            if ($serial === '') {
+                continue;
+            }
+            $key = (int) $row['BranchId'] . '_' . (int) $row['ProductId'] . '_' . $serial;
+            $keys[$key] = true;
+        }
+    }
+
+    return $keys;
+}
+
+function mobileStockChallanLineMatchesStoreInward($branchId, $productId, $serialNo, array $serialKeys)
+{
+    $serial = trim((string) $serialNo);
+    if ($serial === '' || strcasecmp($serial, 'N/A') === 0) {
+        return true;
+    }
+
+    $key = (int) $branchId . '_' . (int) $productId . '_' . $serial;
+
+    return isset($serialKeys[$key]);
+}
+
+function mobileStockTransferTablesReady()
+{
+    global $conn;
+
+    static $ready = null;
+    if ($ready !== null) {
+        return $ready;
+    }
+
+    $ready = false;
+    $t1 = $conn->query("SHOW TABLES LIKE 'tbl_store_to_store_transfer'");
+    $t2 = $conn->query("SHOW TABLES LIKE 'tbl_dispatch_to_store_transfer'");
+    if ($t1 && $t1->num_rows > 0 && $t2 && $t2->num_rows > 0) {
+        $ready = true;
+    }
+
+    return $ready;
+}
+
+function mobileStockApplyTransferDateSql($fromDate, $toDate, $column = 't.TransferDate')
+{
+    return mobileStockApplyReport2LineDateSql($fromDate, $toDate, $column);
+}
+
+function mobileStockAppendStoreToStoreOutward(&$lines, array $serialKeys, $branchSql, $productId, $fromDate, $toDate)
+{
+    global $conn;
+
+    if (!mobileStockTransferTablesReady()) {
+        return;
+    }
+
+    $dateSql = mobileStockApplyTransferDateSql($fromDate, $toDate);
+    $productSql = $productId > 0 ? " AND td.ProductId='" . (int) $productId . "'" : '';
+
+    $sql = "SELECT t.FromBranchId AS BranchId, td.ProductId, td.Qty, td.SerialNo
+        FROM tbl_store_to_store_transfer_details td
+        INNER JOIN tbl_store_to_store_transfer t ON t.id = td.TransferId
+        WHERE 1=1 $branchSql $dateSql $productSql";
+    $res = $conn->query($sql);
+    if (!$res) {
+        return;
+    }
+
+    while ($row = $res->fetch_assoc()) {
+        $bid = (int) $row['BranchId'];
+        $pid = (int) $row['ProductId'];
+        $lineKey = $bid . '_' . $pid;
+        if (!isset($lines[$lineKey])) {
+            continue;
+        }
+        if (!mobileStockChallanLineMatchesStoreInward($bid, $pid, $row['SerialNo'], $serialKeys)) {
+            continue;
+        }
+        $lines[$lineKey]['outward_qty'] += (float) $row['Qty'];
+    }
+}
+
 function mobileStockGetStoreReportData($filters)
 {
     global $conn;
@@ -256,7 +385,8 @@ function mobileStockGetStoreReportData($filters)
     $toDate = isset($filters['to_date']) ? trim((string) $filters['to_date']) : '';
     $allBranches = !empty($filters['all_branches']);
 
-    list($dateSqlDist, $dateSqlStockCr, $dateSqlStockDr) = mobileStockBuildReport2DateSql($fromDate, $toDate);
+    list($dateSqlDist) = mobileStockBuildReport2DateSql($fromDate, $toDate);
+    $dateSqlChallan = mobileStockBuildChallanDateSql($fromDate, $toDate);
 
     $storeName = '';
     if (!$allBranches && $branchId > 0) {
@@ -266,70 +396,140 @@ function mobileStockGetStoreReportData($filters)
         $storeName = 'All Stores';
     }
 
+    $branchSqlDist = '';
+    $branchSqlChallan = '';
+    $branchSqlS2SOut = '';
+    if (!$allBranches && $branchId > 0) {
+        $branchSqlDist = " AND BranchId='$branchId'";
+        $branchSqlChallan = " AND sp.BranchId='$branchId' AND ts.BranchId='$branchId'";
+        $branchSqlS2SOut = " AND t.FromBranchId='$branchId'";
+    }
+    $productSqlDist = $productId > 0 ? " AND ProductId='$productId'" : '';
+    $resolveProductId = mobileStockResolveChallanProductIdExpr();
+
+    $lines = array();
+
+    $sqlInward = "SELECT BranchId, ProductId, SUM(Qty) AS inward_qty
+        FROM tbl_distibute_item_details
+        WHERE 1=1 $branchSqlDist $dateSqlDist $productSqlDist
+        GROUP BY BranchId, ProductId";
+    $resIn = $conn->query($sqlInward);
+    if ($resIn) {
+        while ($row = $resIn->fetch_assoc()) {
+            $bid = (int) $row['BranchId'];
+            $pid = (int) $row['ProductId'];
+            $key = $bid . '_' . $pid;
+            if (!isset($lines[$key])) {
+                $lines[$key] = array(
+                    'BranchId' => $bid,
+                    'ProductId' => $pid,
+                    'inward_qty' => 0.0,
+                    'outward_qty' => 0.0,
+                );
+            }
+            $lines[$key]['inward_qty'] = (float) $row['inward_qty'];
+        }
+    }
+
+    $serialKeys = mobileStockLoadStoreInwardSerialKeys($branchSqlDist, $productSqlDist);
+
+    $sqlOutward = "SELECT sp.BranchId, sp.Qty, sp.SerialNo,
+            ($resolveProductId) AS resolved_product_id
+        FROM tbl_sell_products sp
+        INNER JOIN tbl_sell ts ON ts.id = sp.SellId AND ts.Status = 1 AND ts.SellType = 'Challan'
+        LEFT JOIN tbl_products tp_by_id ON tp_by_id.id = sp.ProductId
+        LEFT JOIN tbl_products tp_by_name ON TRIM(tp_by_name.ProductName) = TRIM(sp.ProductName)
+        WHERE sp.ProductName != ''
+        AND ($resolveProductId) IS NOT NULL
+        $branchSqlChallan
+        $dateSqlChallan";
+    $resOut = $conn->query($sqlOutward);
+    if ($resOut) {
+        while ($row = $resOut->fetch_assoc()) {
+            $bid = (int) $row['BranchId'];
+            $pid = (int) $row['resolved_product_id'];
+            if ($productId > 0 && $pid !== $productId) {
+                continue;
+            }
+            $lineKey = $bid . '_' . $pid;
+            if (!isset($lines[$lineKey])) {
+                continue;
+            }
+            if (!mobileStockChallanLineMatchesStoreInward($bid, $pid, $row['SerialNo'], $serialKeys)) {
+                continue;
+            }
+            if (!isset($lines[$lineKey]['outward_qty'])) {
+                $lines[$lineKey]['outward_qty'] = 0.0;
+            }
+            $lines[$lineKey]['outward_qty'] += (float) $row['Qty'];
+        }
+    }
+
+    mobileStockAppendStoreToStoreOutward($lines, $serialKeys, $branchSqlS2SOut, $productId, $fromDate, $toDate);
+
+    $productNames = array();
+    $branchNames = array();
+    if (!empty($lines)) {
+        $productIds = array();
+        $branchIds = array();
+        foreach ($lines as $line) {
+            $productIds[(int) $line['ProductId']] = true;
+            $branchIds[(int) $line['BranchId']] = true;
+        }
+        if (!empty($productIds)) {
+            $idList = implode(',', array_map('intval', array_keys($productIds)));
+            $resProd = $conn->query("SELECT id, ProductName FROM tbl_products WHERE id IN ($idList) AND ProductName != ''");
+            if ($resProd) {
+                while ($prod = $resProd->fetch_assoc()) {
+                    $productNames[(int) $prod['id']] = (string) $prod['ProductName'];
+                }
+            }
+        }
+        if ($allBranches && !empty($branchIds)) {
+            $branchList = implode(',', array_map('intval', array_keys($branchIds)));
+            $resBranch = $conn->query("SELECT id, Name FROM tbl_branch WHERE id IN ($branchList)");
+            if ($resBranch) {
+                while ($branch = $resBranch->fetch_assoc()) {
+                    $branchNames[(int) $branch['id']] = (string) $branch['Name'];
+                }
+            }
+        }
+    }
+
     $rows = array();
     $totInward = 0.0;
     $totOutward = 0.0;
     $totBalance = 0.0;
 
-    $sql = "SELECT p.ProductId, p.BranchId,
-            MAX(tb.Name) AS Branch,
-            MAX(tp.ProductName) AS Product_Name,
-            (
-                COALESCE((
-                    SELECT SUM(Qty) FROM tbl_distibute_item_details
-                    WHERE BranchId = p.BranchId AND ProductId = p.ProductId $dateSqlDist
-                ), 0)
-                + COALESCE((
-                    SELECT SUM(Qty) FROM tbl_stocks
-                    WHERE Status = 1 AND BranchId = p.BranchId AND ProductId = p.ProductId AND CrDr = 'cr' $dateSqlStockCr
-                ), 0)
-            ) AS inward_qty,
-            COALESCE((
-                SELECT SUM(Qty) FROM tbl_stocks
-                WHERE Status = 1 AND BranchId = p.BranchId AND ProductId = p.ProductId AND CrDr = 'dr' $dateSqlStockDr
-            ), 0) AS outward_qty
-        FROM (
-            SELECT ProductId, BranchId FROM tbl_distibute_item_details WHERE 1=1 $dateSqlDist
-            UNION
-            SELECT ProductId, BranchId FROM tbl_stocks WHERE Status = 1 AND CrDr = 'cr' $dateSqlStockCr
-            UNION
-            SELECT ProductId, BranchId FROM tbl_stocks WHERE Status = 1 AND CrDr = 'dr' $dateSqlStockDr
-        ) p
-        INNER JOIN tbl_products tp ON p.ProductId = tp.id
-        LEFT JOIN tbl_branch tb ON p.BranchId = tb.id
-        WHERE tp.ProductName != ''";
-
-    if (!$allBranches && $branchId > 0) {
-        $sql .= " AND p.BranchId='$branchId'";
-    }
-    if ($productId > 0) {
-        $sql .= " AND p.ProductId='$productId'";
-    }
-
-    $sql .= " GROUP BY p.ProductId, p.BranchId
-        HAVING inward_qty > 0 OR outward_qty > 0
-        ORDER BY Product_Name ASC";
-
-    $res = $conn->query($sql);
-    if ($res) {
-        while ($row = $res->fetch_assoc()) {
-            $inward = (float) $row['inward_qty'];
-            $outward = (float) $row['outward_qty'];
-            $balance = $inward - $outward;
-            $totInward += $inward;
-            $totOutward += $outward;
-            $totBalance += $balance;
-            $rows[] = array(
-                'ProductId' => (int) $row['ProductId'],
-                'BranchId' => (int) $row['BranchId'],
-                'Branch' => (string) ($row['Branch'] ?? ''),
-                'ProductName' => (string) ($row['Product_Name'] ?? ''),
-                'inward_qty' => $inward,
-                'outward_qty' => $outward,
-                'balance_qty' => $balance,
-            );
+    foreach ($lines as $line) {
+        $pid = (int) $line['ProductId'];
+        if (!isset($productNames[$pid])) {
+            continue;
         }
+        $inward = (float) $line['inward_qty'];
+        $outward = (float) $line['outward_qty'];
+        if ($inward <= 0) {
+            continue;
+        }
+        $balance = $inward - $outward;
+        $totInward += $inward;
+        $totOutward += $outward;
+        $totBalance += $balance;
+        $bid = (int) $line['BranchId'];
+        $rows[] = array(
+            'ProductId' => $pid,
+            'BranchId' => $bid,
+            'Branch' => $allBranches ? ($branchNames[$bid] ?? '') : $storeName,
+            'ProductName' => $productNames[$pid],
+            'inward_qty' => $inward,
+            'outward_qty' => $outward,
+            'balance_qty' => $balance,
+        );
     }
+
+    usort($rows, function ($a, $b) {
+        return strcasecmp($a['ProductName'], $b['ProductName']);
+    });
 
     return array(
         'store_name' => $storeName,
@@ -367,31 +567,42 @@ function mobileStockGetCreditDetailRows($branchId, $productId, $fromDate = '', $
     $branchId = (int) $branchId;
     $productId = (int) $productId;
     $dateSqlDist = mobileStockApplyReport2LineDateSql($fromDate, $toDate, 'd.CreatedDate');
-    $dateSqlStock = mobileStockApplyReport2LineDateSql($fromDate, $toDate, 's.CreatedDate');
 
     $rows = array();
     $sumQty = 0.0;
 
+    $lineTypeSql = "'Assigned to store'";
+    if (mobileStockTransferTablesReady()) {
+        $lineTypeSql = "CASE
+            WHEN EXISTS (
+                SELECT 1 FROM tbl_store_to_store_transfer_details td
+                INNER JOIN tbl_store_to_store_transfer t ON t.id = td.TransferId
+                WHERE t.ToBranchId = d.BranchId AND td.ProductId = d.ProductId
+                AND (
+                    (TRIM(IFNULL(td.SerialNo, '')) NOT IN ('', 'N/A') AND TRIM(td.SerialNo) = TRIM(d.SerialNo))
+                    OR (TRIM(IFNULL(td.SerialNo, '')) IN ('', 'N/A') AND TRIM(IFNULL(d.SerialNo, '')) IN ('', 'N/A') AND td.Qty = d.Qty)
+                )
+            ) THEN 'Store to store transfer (in)'
+            WHEN EXISTS (
+                SELECT 1 FROM tbl_dispatch_to_store_transfer_details td
+                INNER JOIN tbl_dispatch_to_store_transfer t ON t.id = td.TransferId
+                WHERE t.ToBranchId = d.BranchId AND td.ProductId = d.ProductId
+                AND (
+                    (TRIM(IFNULL(td.SerialNo, '')) NOT IN ('', 'N/A') AND TRIM(td.SerialNo) = TRIM(d.SerialNo))
+                    OR (TRIM(IFNULL(td.SerialNo, '')) IN ('', 'N/A') AND TRIM(IFNULL(d.SerialNo, '')) IN ('', 'N/A') AND td.Qty = d.Qty)
+                )
+            ) THEN 'Dispatch to store transfer (in)'
+            ELSE 'Assigned to store'
+        END";
+    }
+
     $sqlDist = "SELECT d.id, d.DistId, d.ProductName, d.Qty, d.SerialNo, d.ModelNo, d.Purity, d.CreatedDate, d.VehicalNo, d.VehicalDate,
-        h.Narration AS HeaderNarration, 'Store allotment' AS LineType
+        h.Narration AS HeaderNarration, ($lineTypeSql) AS LineType
         FROM tbl_distibute_item_details d
         LEFT JOIN tbl_distibute_items h ON h.id = d.DistId
         WHERE d.BranchId='$branchId' AND d.ProductId='$productId' $dateSqlDist
         ORDER BY d.CreatedDate DESC, d.id DESC";
     $res = $conn->query($sqlDist);
-    if ($res) {
-        while ($row = $res->fetch_assoc()) {
-            $rows[] = $row;
-            $sumQty += (float) $row['Qty'];
-        }
-    }
-
-    $sqlStock = "SELECT s.id, s.SellId AS DistId, s.ProductName, s.Qty, s.SerialNo, s.ModelNo, '' AS Purity, s.CreatedDate, s.VehicalNo, s.VehicalDate,
-        s.Narration AS HeaderNarration, CONCAT('Purchase / ', COALESCE(s.SellType, '')) AS LineType
-        FROM tbl_stocks s
-        WHERE s.Status=1 AND s.BranchId='$branchId' AND s.ProductId='$productId' AND s.CrDr='cr' $dateSqlStock
-        ORDER BY s.CreatedDate DESC, s.id DESC";
-    $res = $conn->query($sqlStock);
     if ($res) {
         while ($row = $res->fetch_assoc()) {
             $rows[] = $row;
@@ -408,22 +619,74 @@ function mobileStockGetDebitDetailRows($branchId, $productId, $fromDate = '', $t
 
     $branchId = (int) $branchId;
     $productId = (int) $productId;
-    $dateSql = mobileStockApplyReport2LineDateSql($fromDate, $toDate, 'CreatedDate');
+    $dateSql = mobileStockBuildChallanDateSql($fromDate, $toDate, 'sp.SellDate');
 
-    $sqlLines = "SELECT id, Qty, SerialNo, ModelNo, CreatedDate, Narration, VehicalNo, VehicalDate, CrDr, SellType, ProductName, SellId
-        FROM tbl_stocks
-        WHERE Status=1 AND BranchId='$branchId' AND ProductId='$productId' AND CrDr='dr' $dateSql
-        ORDER BY CreatedDate DESC, id DESC";
+    $prodRow = getRecord("SELECT ProductName FROM tbl_products WHERE id='$productId' LIMIT 1");
+    if (!is_array($prodRow) || trim((string) ($prodRow['ProductName'] ?? '')) === '') {
+        return array('rows' => array(), 'sum_qty' => 0.0);
+    }
+    $resolveProductId = mobileStockResolveChallanProductIdExpr();
+    $serialKeys = mobileStockLoadStoreInwardSerialKeys(" AND BranchId='$branchId'", " AND ProductId='$productId'");
+
+    $sqlLines = "SELECT sp.id, sp.SellId AS DistId, sp.ProductName, sp.Qty, sp.SerialNo, sp.ModelNo, sp.Purity,
+        sp.SellDate AS CreatedDate, ts.InvoiceNo, ts.CustName,
+        'Delivery challan' AS SellType,
+        CONCAT('Challan ', IFNULL(ts.InvoiceNo, sp.SellId), IF(ts.CustName IS NULL OR TRIM(ts.CustName) = '', '', CONCAT(' — ', ts.CustName))) AS Narration
+        FROM tbl_sell_products sp
+        INNER JOIN tbl_sell ts ON ts.id = sp.SellId AND ts.Status = 1 AND ts.SellType = 'Challan'
+        LEFT JOIN tbl_products tp_by_id ON tp_by_id.id = sp.ProductId
+        LEFT JOIN tbl_products tp_by_name ON TRIM(tp_by_name.ProductName) = TRIM(sp.ProductName)
+        WHERE sp.BranchId='$branchId' AND ts.BranchId='$branchId'
+        AND sp.ProductName != ''
+        AND ($resolveProductId) = '$productId'
+        $dateSql
+        ORDER BY sp.SellDate DESC, sp.id DESC";
 
     $rows = array();
     $sumQty = 0.0;
     $res = $conn->query($sqlLines);
     if ($res) {
         while ($row = $res->fetch_assoc()) {
+            if (!mobileStockChallanLineMatchesStoreInward($branchId, $productId, $row['SerialNo'], $serialKeys)) {
+                continue;
+            }
             $rows[] = $row;
             $sumQty += (float) $row['Qty'];
         }
     }
+
+    if (mobileStockTransferTablesReady()) {
+        $dateSqlTransfer = mobileStockApplyTransferDateSql($fromDate, $toDate);
+        $sqlS2S = "SELECT td.id, td.TransferId AS DistId, td.ProductName, td.Qty, td.SerialNo, td.ModelNo, td.Unit AS Purity,
+            t.TransferDate AS CreatedDate, tb_to.Name AS ToStoreName, t.Narration AS TransferNarration,
+            'Store to store transfer' AS SellType,
+            CONCAT('Transfer to ', IFNULL(tb_to.Name, 'store'), IF(t.Narration IS NULL OR TRIM(t.Narration) = '', '', CONCAT(' — ', t.Narration))) AS Narration
+            FROM tbl_store_to_store_transfer_details td
+            INNER JOIN tbl_store_to_store_transfer t ON t.id = td.TransferId
+            LEFT JOIN tbl_branch tb_to ON tb_to.id = t.ToBranchId
+            WHERE t.FromBranchId='$branchId' AND td.ProductId='$productId' $dateSqlTransfer
+            ORDER BY t.TransferDate DESC, td.id DESC";
+        $resS2S = $conn->query($sqlS2S);
+        if ($resS2S) {
+            while ($row = $resS2S->fetch_assoc()) {
+                if (!mobileStockChallanLineMatchesStoreInward($branchId, $productId, $row['SerialNo'], $serialKeys)) {
+                    continue;
+                }
+                $rows[] = $row;
+                $sumQty += (float) $row['Qty'];
+            }
+        }
+    }
+
+    usort($rows, function ($a, $b) {
+        $da = strtotime((string) ($a['CreatedDate'] ?? ''));
+        $db = strtotime((string) ($b['CreatedDate'] ?? ''));
+        if ($da === $db) {
+            return ((int) ($b['id'] ?? 0)) <=> ((int) ($a['id'] ?? 0));
+        }
+
+        return $db <=> $da;
+    });
 
     return array('rows' => $rows, 'sum_qty' => $sumQty);
 }

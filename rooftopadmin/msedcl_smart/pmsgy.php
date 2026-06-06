@@ -30,11 +30,13 @@ msedclSmartRenderListPage('pmsgy', [
     'page_slug' => 'pmsgy.php',
     'show_mahadiscom_btn' => true,
     'show_delete_btn' => true,
+    'datatable_export' => true,
 ]);
 ?>
 </div>
 <?php include_once __DIR__ . '/../footer_script.php'; ?>
 <script src="js/msedcl-smart-import.js"></script>
+<script src="js/msedcl-smart-list.js"></script>
 </div>
 </div>
 </body>

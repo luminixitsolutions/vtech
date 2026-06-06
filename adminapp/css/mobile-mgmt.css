@@ -57,6 +57,14 @@
     background: linear-gradient(to right, #5e35b1, #9575cd);
 }
 
+.mob-mgmt-heading-billing {
+    background: linear-gradient(to right, #1565c0, #42a5f5);
+}
+
+.mob-mgmt-heading-msedcl {
+    background: linear-gradient(to right, #2563eb, #7c3aed);
+}
+
 .mob-mgmt-grid {
     padding: 10px 14px 20px;
 }
@@ -123,7 +131,7 @@
 
 .mob-mgmt-stat-count.tone-orange { color: #f57c00; }
 .mob-mgmt-stat-count.tone-teal { color: #00897b; }
-.mob-mgmt-stat-count.tone-purple { color: #5e35b1; }
+.mob-mgmt-stat-count.tone-purple { color: #7c3aed; }
 .mob-mgmt-stat-count.tone-red { color: #d32f2f; }
 .mob-mgmt-stat-count.tone-green { color: #388e3c; }
 
@@ -273,6 +281,14 @@
     background: linear-gradient(135deg, #5e35b1, #9575cd);
 }
 
+.home-card-billing {
+    background: linear-gradient(135deg, #1565c0, #42a5f5);
+}
+
+.home-card-msedcl {
+    background: linear-gradient(135deg, #2563eb, #7c3aed);
+}
+
 .mob-mgmt-filter-card form {
     margin: 0;
 }
@@ -400,6 +416,106 @@
     background: #fee2d6;
     color: #333;
 }
+
+.mob-mgmt-table-insurance {
+    min-width: 920px;
+}
+
+.mob-mgmt-table-billing {
+    min-width: 1200px;
+}
+
+.mob-mgmt-table-contractor-summary {
+    min-width: 980px;
+}
+
+.mob-mgmt-table-contractor-summary thead th {
+    background: #1565c0;
+}
+
+.mob-mgmt-row-link {
+    cursor: pointer;
+}
+
+.mob-mgmt-row-link:hover td {
+    background: #eef2ff;
+}
+
+.mob-mgmt-table-contractor-summary tfoot th {
+    background: #f5f7fb;
+    font-weight: 700;
+}
+
+.mob-mgmt-table-contractor-summary tfoot .scope-amt {
+    text-align: right;
+}
+
+.mob-mgmt-table-msedcl {
+    min-width: 1080px;
+}
+
+.mob-mgmt-table-msedcl thead th {
+    background: #2563eb;
+}
+
+.mob-mgmt-table-msedcl th:nth-child(1),
+.mob-mgmt-table-msedcl td:nth-child(1) { min-width: 36px; }
+
+.mob-mgmt-table-msedcl th:nth-child(2),
+.mob-mgmt-table-msedcl td:nth-child(2) { min-width: 120px; white-space: normal; }
+
+.mob-mgmt-table-msedcl th:nth-child(3),
+.mob-mgmt-table-msedcl td:nth-child(3) { min-width: 140px; white-space: normal; }
+
+.mob-mgmt-table-msedcl th:nth-child(4),
+.mob-mgmt-table-msedcl td:nth-child(4) { min-width: 100px; }
+
+.mob-mgmt-table-msedcl th:nth-child(5),
+.mob-mgmt-table-msedcl td:nth-child(5),
+.mob-mgmt-table-msedcl th:nth-child(6),
+.mob-mgmt-table-msedcl td:nth-child(6),
+.mob-mgmt-table-msedcl th:nth-child(7),
+.mob-mgmt-table-msedcl td:nth-child(7) { min-width: 100px; white-space: normal; }
+
+.mob-mgmt-table-msedcl th:nth-child(8),
+.mob-mgmt-table-msedcl td:nth-child(8) { min-width: 90px; white-space: normal; }
+
+.mob-mgmt-table-msedcl th:nth-child(9),
+.mob-mgmt-table-msedcl td:nth-child(9),
+.mob-mgmt-table-msedcl th:nth-child(10),
+.mob-mgmt-table-msedcl td:nth-child(10),
+.mob-mgmt-table-msedcl th:nth-child(11),
+.mob-mgmt-table-msedcl td:nth-child(11) { min-width: 110px; white-space: normal; }
+
+.mob-mgmt-table-billing .scope-amt {
+    text-align: right;
+    white-space: nowrap;
+}
+
+.mob-mgmt-table-billing .group-row td {
+    background: #eef2ff;
+    font-weight: 700;
+    color: #083068;
+}
+
+.mob-mgmt-table-billing tfoot th {
+    background: #f5f7fb;
+    font-weight: 700;
+}
+
+.mob-mgmt-table-billing tfoot .scope-amt {
+    text-align: right;
+}
+
+.mob-mgmt-table-insurance thead th {
+    background: #00897b;
+}
+
+.mob-mgmt-table-insurance th:nth-child(1),
+.mob-mgmt-table-insurance td:nth-child(1) { min-width: 120px; white-space: normal; }
+
+.mob-mgmt-table-insurance th:nth-child(2),
+.mob-mgmt-table-insurance td:nth-child(2) { min-width: 120px; white-space: normal; }
 
 .mob-mgmt-table-label {
     text-align: left;

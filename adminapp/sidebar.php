@@ -103,45 +103,78 @@ $FieldName = $row_33['Name'];*/
                 <li class="nav-item">
                     <a class="nav-link" href="home.php">
                         <div>
-                            <span class="material-icons icon">view_list</span>
+                            <span class="material-icons icon">dashboard</span>
                             Dashboard
                         </div>
-                        <!--<span class="arrow material-icons">chevron_right</span>-->
                     </a>
                 </li>
                 <li class="nav-item">
                     <a class="nav-link" href="pump-management.php">
                         <div>
-                            <span class="material-icons icon">view_list</span>
+                            <span class="material-icons icon">water</span>
                             Pump Project
                         </div>
-                        <!--<span class="arrow material-icons">chevron_right</span>-->
                     </a>
                 </li>
-                
-                 <li class="nav-item">
+                <li class="nav-item">
                     <a class="nav-link" href="rooftop-management.php">
                         <div>
-                            <span class="material-icons icon">view_list</span>
+                            <span class="material-icons icon">solar_power</span>
                             Rooftop Project
                         </div>
-                        <!--<span class="arrow material-icons">chevron_right</span>-->
                     </a>
                 </li>
-                
-                 <li class="nav-item">
+                <li class="nav-item">
                     <a class="nav-link" href="task-management.php">
                         <div>
-                            <span class="material-icons icon">view_list</span>
+                            <span class="material-icons icon">assignment</span>
                             Task Management
                         </div>
-                        <!--<span class="arrow material-icons">chevron_right</span>-->
                     </a>
                 </li>
-
-                
-
-           
+                <li class="nav-item">
+                    <a class="nav-link" href="msedcl-smart-management.php">
+                        <div>
+                            <span class="material-icons icon">bolt</span>
+                            MSEDCL Smart Project
+                        </div>
+                    </a>
+                </li>
+                <li class="nav-item mt-2">
+                    <span class="nav-link disabled px-3 py-1 small text-uppercase" style="opacity:.7;">Operations</span>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="stock-management.php">
+                        <div>
+                            <span class="material-icons icon">inventory_2</span>
+                            Stock Management
+                        </div>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="insurance-management.php">
+                        <div>
+                            <span class="material-icons icon">health_and_safety</span>
+                            Insurance Management
+                        </div>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="service-management.php">
+                        <div>
+                            <span class="material-icons icon">build</span>
+                            Service / Maintenance
+                        </div>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="mobile-contractor-billing.php">
+                        <div>
+                            <span class="material-icons icon">receipt_long</span>
+                            Contractor Billing
+                        </div>
+                    </a>
+                </li>
             </ul>
             <?php if(isset($_SESSION['User'])){?>
             <div class="text-center">

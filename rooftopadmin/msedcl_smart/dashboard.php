@@ -72,7 +72,7 @@ $hasCharts = ($dash['total'] > 0);
         <span class="msedcl-dash-top-pill"><i class="feather icon-user"></i> <?php echo htmlspecialchars($adminName !== '' ? $adminName : 'Admin'); ?></span>
         <span class="msedcl-dash-top-pill"><i class="feather icon-calendar"></i> <?php echo date('d M Y'); ?></span>
         <span class="msedcl-dash-top-pill"><i class="feather icon-users"></i> <?php echo number_format($dash['total']); ?> total customers</span>
-        <span class="msedcl-dash-top-pill"><i class="feather icon-upload"></i> <?php echo number_format($dash['imported_today']); ?> PMSGY uploads today</span>
+        <span class="msedcl-dash-top-pill"><i class="feather icon-upload"></i> <?php echo number_format($dash['imported_today']); ?> new records today</span>
     </div>
 </div>
 
@@ -81,10 +81,10 @@ $hasCharts = ($dash['total'] > 0);
     <div class="card-body">
         <div class="msedcl-dash-stat-grid">
             <?php
-            msedclSmartDashboardStatCard('Total Customers', $dash['total'], 'pmsgy.php', 'users', 'All uploaded records', 'total');
+            msedclSmartDashboardStatCard('Total Customers', $dash['total'], 'abstract.php', 'users', 'All uploaded records', 'total');
             msedclSmartDashboardStatCard('PMSGY Portal', $dash['pmsgy'], 'pmsgy.php', 'upload-cloud', 'Awaiting Mahadiscom', 'pmsgy');
             msedclSmartDashboardStatCard('Mahadiscom Portal', $dash['mahadiscom'], 'mahadiscom.php', 'file-text', 'Awaiting payment', 'mahadiscom');
-            msedclSmartDashboardStatCard('Payment Done', $dash['payment_done'], 'payment.php', 'check-circle', 'Customers who paid', 'payment');
+            msedclSmartDashboardStatCard('Payment Done', $dash['payment_done'], 'payment.php', 'check-circle', 'Paid — pending forward', 'payment');
             msedclSmartDashboardStatCard('Survey Pending', $dash['survey_pending'], 'survey-pending.php', 'clock', 'Ready for survey', 'survey');
             msedclSmartDashboardStatCard('Survey Done', $dash['survey_done'], 'abstract.php', 'map', 'Completed surveys', 'total');
             ?>

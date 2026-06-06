@@ -263,16 +263,18 @@ if (!is_array($talukaRows)) {
         </form>
     </div>
 
-    <?php if ($isSearch) { ?>
     <div class="alert alert-light border small mb-3 msedcl-abstract-no-print">
+        <?php if ($isSearch) { ?>
         <strong>Filters:</strong>
         District: <?php echo $filterDistrict !== '' ? htmlspecialchars($filterDistrict) : 'All'; ?> |
         Taluka: <?php echo $filterTaluka !== '' ? htmlspecialchars($filterTaluka) : 'All'; ?> |
         From: <?php echo $filterFromDate !== '' ? htmlspecialchars($filterFromDate) : '—'; ?> |
         To: <?php echo $filterToDate !== '' ? htmlspecialchars($filterToDate) : '—'; ?> |
         Date mode: <?php echo $filterDateMode === 'stage' ? 'Stage date' : 'Upload date'; ?>
+        <br>
+        <?php } ?>
+        <strong>Counts:</strong> Each column shows customers at that workflow stage (same logic as Dashboard). Stage columns total <?php echo number_format($totPmsgy + $totMahadiscom + $totPayment + $totSurvey); ?> active records.
     </div>
-    <?php } ?>
 
     <div class="card">
         <div class="card-body">
@@ -282,9 +284,9 @@ if (!is_array($talukaRows)) {
                         <tr>
                             <th>Sr no.</th>
                             <th>District</th>
-                            <th class="text-right">Total No. of application on PMSGY</th>
-                            <th class="text-right">Total No. of application on MAHADISCOM</th>
-                            <th class="text-right">Payment Done</th>
+                            <th class="text-right">PMSGY Portal<br><small class="font-weight-normal">Awaiting Mahadiscom</small></th>
+                            <th class="text-right">Mahadiscom Portal<br><small class="font-weight-normal">Awaiting Payment</small></th>
+                            <th class="text-right">Payment Done<br><small class="font-weight-normal">Survey Pending</small></th>
                             <th class="text-right">Survey Done</th>
                         </tr>
                     </thead>

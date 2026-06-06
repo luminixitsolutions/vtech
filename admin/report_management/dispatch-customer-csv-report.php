@@ -3,13 +3,13 @@ session_start();
 include_once '../config.php';
 include_once '../auth.php';
 $user_id = $_SESSION['Admin']['id'];
-$MainPage = "Customers";
-$Page = "View-Customers";
+$MainPage = "Report";
+$Page = "Dispatch-Customer-CSV-Report";
 ?>
 <!DOCTYPE html>
 <html lang="en" class="default-style layout-fixed layout-navbar-fixed">
 <head>
-<title><?php echo $Proj_Title; ?> | View Customer Account List</title>
+<title><?php echo $Proj_Title; ?> | Dispatch Customer CSV Report</title>
 <meta charset="utf-8">
 <meta http-equiv="X-UA-Compatible" content="IE=edge" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=0, minimal-ui">
@@ -46,9 +46,7 @@ if($_REQUEST["action"]=="delete")
 <div class="layout-content">
 
 <div class="container-fluid flex-grow-1 container-p-y">
-<h4 class="font-weight-bold py-3 mb-0">Material Dispatch CSV Report
-   
-</h4>
+<h4 class="font-weight-bold py-3 mb-0">Dispatch Customer CSV Report</h4>
 
 <div class="card" style="padding: 10px;">
 

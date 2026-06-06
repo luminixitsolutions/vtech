@@ -1,21 +1,49 @@
-<?php 
+<?php
 session_start();
 include_once '../config.php';
 include_once '../auth.php';
+include_once 'inc-contractor-payment.php';
+
 $user_id = $_SESSION['Admin']['id'];
-$MainPage = "Reports";
-$Page = "Sell-Reports";
+$MainPage = 'Reports';
+$Page = 'Contractor-Commision-Report';
+contractorPaymentEnsureTable($conn);
+
+$projectId = isset($_GET['project_id']) ? (int) $_GET['project_id'] : 0;
+$subheadId = isset($_GET['subhead_id']) ? (int) $_GET['subhead_id'] : 0;
+$projectName = $projectId > 0 ? contractorBillingGetProjectName($conn, $projectId) : '';
+$subheadName = $subheadId > 0 ? contractorBillingGetSubHeadName($conn, $subheadId) : '';
+
+if ($projectId > 0 && $projectName === '') {
+    header('Location: contractor-commision-report.php');
+    exit;
+}
+if ($subheadId > 0 && ($subheadName === '' || $projectId <= 0)) {
+    header('Location: contractor-commision-report.php' . ($projectId > 0 ? '?project_id=' . $projectId : ''));
+    exit;
+}
+
+$viewLevel = 'projects';
+if ($projectId > 0 && $subheadId > 0) {
+    $viewLevel = 'contractors';
+} elseif ($projectId > 0) {
+    $viewLevel = 'subheads';
+}
+
+$pageTitle = 'Contractor Billing Report';
+if ($viewLevel === 'subheads') {
+    $pageTitle = $projectName . ' — Sub Projects';
+} elseif ($viewLevel === 'contractors') {
+    $pageTitle = $projectName . ' / ' . $subheadName . ' — Contractors';
+}
 ?>
 <!DOCTYPE html>
 <html lang="en" class="default-style layout-fixed layout-navbar-fixed">
 <head>
-<title><?php echo $Proj_Title; ?> | Sell Reports</title>
+<title><?php echo $Proj_Title; ?> | Contractor Billing Report</title>
 <meta charset="utf-8">
 <meta http-equiv="X-UA-Compatible" content="IE=edge" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=0, minimal-ui">
-<meta name="description" content="" />
-<meta name="keywords" content="">
-<meta name="author" content="" />
 <?php include_once '../header_script.php'; ?>
 </head>
 <body>
@@ -25,176 +53,150 @@ $Page = "Sell-Reports";
 
 <?php include_once 'report-sidebar.php'; ?>
 
-
 <div class="layout-container">
-
 <?php include_once '../top_header.php'; ?>
 
-
 <div class="layout-content">
-
 <div class="container-fluid flex-grow-1 container-p-y">
-<h4 class="font-weight-bold py-3 mb-0">Contractor Commission Report</h4>
+<h4 class="font-weight-bold py-3 mb-0"><?php echo htmlspecialchars($pageTitle); ?></h4>
+
+<nav aria-label="breadcrumb" class="mb-3">
+    <ol class="breadcrumb mb-0">
+        <li class="breadcrumb-item<?php echo $viewLevel === 'projects' ? ' active' : ''; ?>">
+            <?php if ($viewLevel === 'projects') { ?>
+            All Projects
+            <?php } else { ?>
+            <a href="contractor-commision-report.php">All Projects</a>
+            <?php } ?>
+        </li>
+        <?php if ($viewLevel !== 'projects') { ?>
+        <li class="breadcrumb-item<?php echo $viewLevel === 'subheads' ? ' active' : ''; ?>">
+            <?php if ($viewLevel === 'subheads') { ?>
+            <?php echo htmlspecialchars($projectName); ?>
+            <?php } else { ?>
+            <a href="contractor-commision-report.php?project_id=<?php echo $projectId; ?>"><?php echo htmlspecialchars($projectName); ?></a>
+            <?php } ?>
+        </li>
+        <?php } ?>
+        <?php if ($viewLevel === 'contractors') { ?>
+        <li class="breadcrumb-item active"><?php echo htmlspecialchars($subheadName); ?></li>
+        <?php } ?>
+    </ol>
+</nav>
+
+<p class="text-muted mb-3">
+    <a href="contractor-payment-dashboard.php" class="btn btn-sm btn-primary">Contractor Payment Dashboard</a>
+    <a href="contractor-payment-add.php" class="btn btn-sm btn-outline-primary ml-1">Record Payment</a>
+</p>
 
 <div class="card" style="padding: 10px;">
-     <div id="accordion2">
-<div class="card mb-2">
-                                        
-                                        <div id="accordion2-2" class="collapse show" data-parent="#accordion2">
-                                            <div class="" style="padding:5px;">
-                                                <form id="validation-form" method="post" enctype="multipart/form-data" action="">
-<div class="form-row">
-
- 
-  <div class="form-group col-md-4">
-<label class="form-label">Contractor</label>
- <select class="select2-demo form-control" name="CustId" id="CustId">
-<option selected="" value="all">All</option>
- <?php 
-  $sql12 = "SELECT * FROM tbl_users WHERE Roll = '40' AND Status='1'";
-  $row12 = getList($sql12);
-  foreach($row12 as $result){
-     ?>
-  <option <?php if($_REQUEST["CustId"] == $result['id']) {?> selected <?php } ?> value="<?php echo $result['id'];?>">
-    <?php echo $result['Fname']; ?></option>
-<?php } ?>
-</select>
-<div class="clearfix"></div>
-</div>
-
-  
-
-  
-
-
-<!--<div class="form-group col-md-2">
-<label class="form-label">From Date </label>
-<input type="date" name="FromDate" id="FromDate" class="form-control" value="<?php echo $_POST['FromDate'] ?>" autocomplete="off">
-</div>
-<div class="form-group col-md-2">
-<label class="form-label">To Date</label>
-<input type="date" name="ToDate" id="ToDate" class="form-control" value="<?php echo $_POST['ToDate'] ?>" autocomplete="off">
-</div>-->
-<input type="hidden" name="Search" value="Search">
-<div class="form-group col-md-1" style="padding-top:30px;">
-<button type="submit" name="submit" class="btn btn-primary btn-finish">Search</button>
-</div>
-<?php if(isset($_POST['Search'])) {?>
-<div class="col-md-1">
-<label class="form-label d-none d-md-block">&nbsp;</label>
-<a href="<?php echo $_SERVER['PHP_SELF']; ?>" class="btn btn-info btn-block" data-toggle="tooltip" data-placement="top" data-original-title="Clear Filter">X</a>
-</div>
-<?php } ?>
-</div>
-
-</form>
-                                            </div>
-                                        </div>
-                                    </div>
-   </div>
 <div class="card-datatable table-responsive">
 <table id="example" class="table table-striped table-bordered" style="width:100%">
-        <thead>
-            <tr>
-               <th>#</th>
-              
-                <th>Contractor Name</th>
-                <th>Wallet Amount</th>
-                <th>View</th>
-               
-            
-              
-            </tr>
-        </thead>
-        <tbody>
-            <?php 
-            $i=1;
-            $sql = "SELECT * FROM tbl_users tu WHERE tu.Roll=40 
-                    ";
-             if($_POST['CustId']){
-                $CustId = $_POST['CustId'];
-                if($CustId == 'all'){
-                    $sql.= " ";
-                }
-                else{
-                $sql.= " AND tu.id='$CustId'";
-                }
+    <thead>
+        <tr>
+            <th>#</th>
+            <?php if ($viewLevel === 'projects') { ?>
+            <th>Project Name</th>
+            <th>Total Sites</th>
+            <th>View</th>
+            <?php } elseif ($viewLevel === 'subheads') { ?>
+            <th>Sub Project Name</th>
+            <th>Total Sites</th>
+            <th>View</th>
+            <?php } else { ?>
+            <th>Contractor Name</th>
+            <th>Total Sites</th>
+            <th>Total Commission</th>
+            <th>View</th>
+            <?php } ?>
+        </tr>
+    </thead>
+    <tbody>
+        <?php
+        $i = 1;
+        if ($viewLevel === 'projects') {
+            $projects = contractorBillingProjectsList($conn);
+            foreach ($projects as $row) {
+                $pid = (int) $row['id'];
+                ?>
+        <tr>
+            <td><?php echo $i++; ?></td>
+            <td><?php echo htmlspecialchars((string) $row['Name']); ?></td>
+            <td><?php echo (int) ($row['site_count'] ?? 0); ?></td>
+            <td><a href="contractor-commision-report.php?project_id=<?php echo $pid; ?>" class="btn btn-sm btn-outline-primary">Sub Projects</a></td>
+        </tr>
+                <?php
             }
-
-           
-            if($_POST['FromDate']){
-                $FromDate = $_POST['FromDate'];
-                $sql.= " AND tu.InvoiceDate>='$FromDate'";
+        } elseif ($viewLevel === 'subheads') {
+            $subheads = contractorBillingSubHeadsList($conn, $projectId);
+            foreach ($subheads as $row) {
+                $sid = (int) $row['id'];
+                ?>
+        <tr>
+            <td><?php echo $i++; ?></td>
+            <td><?php echo htmlspecialchars((string) $row['Name']); ?></td>
+            <td><?php echo (int) ($row['site_count'] ?? 0); ?></td>
+            <td><a href="contractor-commision-report.php?project_id=<?php echo $projectId; ?>&amp;subhead_id=<?php echo $sid; ?>" class="btn btn-sm btn-outline-primary">Contractors</a></td>
+        </tr>
+                <?php
             }
-            if($_POST['ToDate']){
-                $ToDate = $_POST['ToDate'];
-                $sql.= " AND tu.InvoiceDate<='$ToDate'";
+            if (count($subheads) === 0) {
+                ?>
+        <tr>
+            <td colspan="4" class="text-center text-muted">No sub projects found for this project.</td>
+        </tr>
+                <?php
             }
-            $sql.=" ORDER BY tu.id DESC";    
-            //echo $sql;
-            $res = $conn->query($sql);
-            while($row = $res->fetch_assoc())
-            {
-                $sql2 = "SELECT SUM(tc.Amount) AS TotAmt FROM tbl_made_contractor_commision tc INNER JOIN tbl_users tu On tu.id=tc.CustId WHERE tc.ContractorId='".$row['id']."'";
-                $row2 = getRecord($sql2);
-                $PaidAmt = $row2['TotAmt'];
-                if($PaidAmt > 0){
-                    $PaidAmt = $PaidAmt;
-                }
-                else{
-                    $PaidAmt = 0;
-                }
-             ?>
-            <tr>
-               <td><?php echo $i; ?></td>
-             
-              <td><?php echo $row['Fname']; ?></td>
-              <td>&#8377;<?php echo $PaidAmt; ?></td>
-             <td><a href="view-commision-details.php?id=<?php echo $row['id'];?>">View Details</a></td>
-              
-            </tr>
-           <?php $i++;} ?>
-
-          
-        </tbody>
-    </table>
+        } else {
+            $contractors = contractorBillingContractorsByProjectSubHead($conn, $projectId, $subheadId);
+            foreach ($contractors as $row) {
+                $cid = (int) $row['id'];
+                $cname = trim((string) ($row['Fname'] ?? '') . ' ' . (string) ($row['Lname'] ?? ''));
+                $detailUrl = 'view-commision-details.php?id=' . $cid
+                    . '&amp;project_id=' . $projectId
+                    . '&amp;subhead_id=' . $subheadId;
+                ?>
+        <tr>
+            <td><?php echo $i++; ?></td>
+            <td><?php echo htmlspecialchars($cname); ?></td>
+            <td><?php echo (int) ($row['total_sites'] ?? 0); ?></td>
+            <td>&#8377;<?php echo number_format((float) ($row['total_commission'] ?? 0), 0); ?></td>
+            <td><a href="<?php echo $detailUrl; ?>" class="btn btn-sm btn-primary">View</a></td>
+        </tr>
+                <?php
+            }
+            if (count($contractors) === 0) {
+                ?>
+        <tr>
+            <td colspan="5" class="text-center text-muted">No contractor billing records found for this sub project.</td>
+        </tr>
+                <?php
+            }
+        }
+        ?>
+    </tbody>
+</table>
 </div>
 </div>
 </div>
-
 
 <?php include_once '../footer.php'; ?>
-
 </div>
-
 </div>
-
 </div>
 
 <div class="layout-overlay layout-sidenav-toggle"></div>
 </div>
 
-
 <?php include_once '../footer_script.php'; ?>
-
-<script type="text/javascript">
-  function receiptPrint(id){
-     setTimeout(function() {
-        window.open(
-            'receipt.php?id=' + id + '&roll=vendor', 'stickerPrint',
-            'toolbar=1, scrollbars=1, location=1,statusbar=0, menubar=1, resizable=1, width=800, height=800'
-        );
-    }, 1);
- }
-    $(document).ready(function() {
+<script>
+$(function() {
+    var orderCol = <?php echo $viewLevel === 'contractors' ? 3 : ($viewLevel === 'projects' ? 2 : 2); ?>;
     $('#example').DataTable({
-        order: [[2, 'desc']],
-       "scrollX": true,
+        order: [[orderCol, 'desc']],
+        pageLength: 25,
         dom: 'Bfrtip',
-        buttons: [
-            'excelHtml5',
-            'pdfHtml5'
-        ]
+        buttons: ['excelHtml5']
     });
 });
 </script>

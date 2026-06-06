@@ -33,8 +33,10 @@ $Page = "View-Installer";
 <?php
 if($_REQUEST["action"]=="delete")
 {
-  $id = $_REQUEST["id"];
-  $sql11 = "DELETE FROM tbl_contractor_commision WHERE id = '$id'";
+  $UserId = (int) $_REQUEST["UserId"];
+  $ProjectHeadId = (int) $_REQUEST["ProjectHeadId"];
+  $ProjectSubHeadId = (int) $_REQUEST["ProjectSubHeadId"];
+  $sql11 = "DELETE FROM tbl_contractor_commision WHERE UserId='$UserId' AND ProjectHeadId='$ProjectHeadId' AND ProjectSubHeadId='$ProjectSubHeadId'";
   $conn->query($sql11);
   ?>
     <script type="text/javascript">
@@ -73,18 +75,22 @@ if($_REQUEST["action"]=="delete")
         <tbody>
             <?php 
             $i = 1;
-            $sql = "SELECT tcc.*,tu.Fname,tc.Name AS HeadName,tp.Name AS SubHeadName FROM tbl_contractor_commision tcc 
-                    INNER JOIN tbl_users tu ON tu.id=tcc.UserId 
-                    INNER JOIN tbl_common_master tc ON tc.id=tcc.ProjectHeadId 
-                    INNER JOIN tbl_project_sub_head tp ON tp.id=tcc.ProjectSubHeadId GROUP BY tcc.UserId,tcc.ProjectHeadId,tcc.ProjectSubHeadId ORDER BY tcc.id DESC";
+            $sql = "SELECT tcc.UserId, tcc.ProjectHeadId, tcc.ProjectSubHeadId, tu.Fname, tu.Lname,
+                    tc.Name AS HeadName, tp.Name AS SubHeadName, MAX(tcc.id) AS id
+                    FROM tbl_contractor_commision tcc
+                    INNER JOIN tbl_users tu ON tu.id=tcc.UserId
+                    INNER JOIN tbl_common_master tc ON tc.id=tcc.ProjectHeadId
+                    INNER JOIN tbl_project_sub_head tp ON tp.id=tcc.ProjectSubHeadId
+                    GROUP BY tcc.UserId, tcc.ProjectHeadId, tcc.ProjectSubHeadId, tu.Fname, tu.Lname, tc.Name, tp.Name
+                    ORDER BY MAX(tcc.id) DESC";
             $res = $conn->query($sql);
-            while($row = $res->fetch_assoc())
+            while($res && ($row = $res->fetch_assoc()))
             {
                
              ?>
             <tr>
-                <td><?php echo $i;?>
-               <td><?php echo $row['Fname']." ".$row['Lname']; ?></td>
+                <td><?php echo $i; ?></td>
+                <td><?php echo $row['Fname']." ".$row['Lname']; ?></td>
               
                 
                 <td><?php echo $row['HeadName']; ?></td>

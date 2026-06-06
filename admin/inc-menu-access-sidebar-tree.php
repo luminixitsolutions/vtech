@@ -164,7 +164,7 @@ function getMenuAccessDetailedTree()
                 menuAccessTreeItem(214, 'View Contractor'),
                 menuAccessTreeItem(215, 'Set Contractor Commission'),
             ]),
-            menuAccessTreeItem(142, 'Contractor Commission Report'),
+            menuAccessTreeItem(142, 'Contractor Billing Report'),
             menuAccessTreeGroup('Installer', [
                 menuAccessTreeItem(216, 'Add Installer'),
                 menuAccessTreeItem(217, 'View Installer'),
@@ -311,7 +311,7 @@ function getMenuAccessDetailedTree()
             menuAccessTreeItem(251, 'To Do Tasks'),
         ],
         'Reports' => [
-            menuAccessTreeItem(142, 'Contractor Commission Report'),
+            menuAccessTreeItem(142, 'Contractor Billing Report'),
             menuAccessTreeItem(160, 'Download Dispatch Customer CSV'),
             menuAccessTreeItem(29, 'Delivery Challan Report'),
             menuAccessTreeItem(120, 'Material Dispatch Report'),

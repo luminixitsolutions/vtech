@@ -330,7 +330,7 @@
 <?php if(in_array("142", $Options)) { ?>
 <li class="sidenav-item">
 <a href="../report_management/contractor-commision-report.php" class="sidenav-link">
-<div> Contractor Commision Report</div>
+<div> Contractor Billing Report</div>
 <?php if($Page=='Contractor-Commision-Report') {?>
 <div class="pl-1 ml-auto">
 <span class="badge badge-dot badge-primary"></span>

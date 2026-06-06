@@ -48,9 +48,7 @@ if($_REQUEST["action"]=="delete")
 <div class="layout-content">
 
 <div class="container-fluid flex-grow-1 container-p-y">
-<h4 class="font-weight-bold py-3 mb-0">Store Stock Report
-    
-</h4>
+<h4 class="font-weight-bold py-3 mb-0">Store Stock Movement Report</h4>
 
 <div class="card" style="padding: 10px;">
      <div id="accordion2">

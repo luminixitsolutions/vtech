@@ -9,7 +9,7 @@ require_once __DIR__ . '/../admin/inc-insurance-site.php';
 $status = isset($_GET['status']) ? trim($_GET['status']) : 'pending';
 $title = mobileMgmtInsuranceStatusLabel($status);
 $where = mobileMgmtInsuranceStatusCondition($status);
-$filters = array();
+$filters = insuranceSiteListFiltersFromRequest();
 $sql = insuranceSiteListSelectSql($where, $filters);
 $rows = array();
 $res = $conn->query($sql);

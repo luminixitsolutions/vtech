@@ -2,14 +2,85 @@
 session_start();
 include_once '../config.php';
 include_once '../auth.php';
+require_once __DIR__ . '/../../adminapp/inc-mobile-stock-data.php';
+
 $user_id = $_SESSION['Admin']['id'];
+$sql77 = "SELECT * FROM tbl_users WHERE id='$user_id'";
+$row77 = getRecord($sql77);
+$Roll = $row77['Roll'];
+$BranchId = $row77['BranchId'];
+$MulBranchId = $row77['MulBranchId'];
 $MainPage = "Report";
 $Page = "Stock-Report";
+
+$clearSearch = isset($_GET['clear']);
+$branchPost = '';
+$productPost = 'all';
+if (!$clearSearch) {
+    if (isset($_POST['BranchId'])) {
+        $branchPost = trim((string) $_POST['BranchId']);
+    } elseif (isset($_REQUEST['BranchId'])) {
+        $branchPost = trim((string) $_REQUEST['BranchId']);
+    }
+    if (isset($_POST['ProductId'])) {
+        $productPost = trim((string) $_POST['ProductId']);
+    } elseif (isset($_REQUEST['ProductId'])) {
+        $productPost = trim((string) $_REQUEST['ProductId']);
+    }
+}
+if ($productPost === '') {
+    $productPost = 'all';
+}
+
+$report = null;
+$displayRows = array();
+$TotStock = 0.0;
+$SellStock = 0.0;
+$BalStock = 0.0;
+$showBranchColumn = false;
+$runReport = false;
+
+if ($branchPost !== '') {
+    $runReport = true;
+} elseif ((int) $Roll === 1 || (int) $Roll === 7) {
+    $branchPost = 'all';
+    $runReport = true;
+} elseif (!empty($BranchId)) {
+    $branchPost = (string) (int) $BranchId;
+    $runReport = true;
+}
+
+if ($runReport) {
+    set_time_limit(120);
+    $filters = array();
+    if ($branchPost === 'all' && ((int) $Roll === 1 || (int) $Roll === 7)) {
+        $filters['all_branches'] = true;
+    } elseif ($branchPost !== '' && $branchPost !== 'all') {
+        $filters['branch_id'] = (int) $branchPost;
+    }
+    if ($productPost !== '' && $productPost !== 'all') {
+        $filters['product_id'] = (int) $productPost;
+    }
+
+    $report = mobileStockGetStoreReportData($filters);
+    $showBranchColumn = !empty($report['all_branches']);
+
+    foreach ($report['rows'] as $row) {
+        $balance = (float) $row['balance_qty'];
+        if ($balance <= 0.0001) {
+            continue;
+        }
+        $displayRows[] = $row;
+        $TotStock += (float) $row['inward_qty'];
+        $SellStock += (float) $row['outward_qty'];
+        $BalStock += $balance;
+    }
+}
 ?>
 <!DOCTYPE html>
 <html lang="en" class="default-style layout-fixed layout-navbar-fixed">
 <head>
-<title><?php echo $Proj_Title; ?> | Stock Report</title>
+<title><?php echo $Proj_Title; ?> | Outstanding Stock Report</title>
 <meta charset="utf-8">
 <meta http-equiv="X-UA-Compatible" content="IE=edge" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=0, minimal-ui">
@@ -34,35 +105,34 @@ $Page = "Stock-Report";
 <div class="layout-content">
 
 <div class="container-fluid flex-grow-1 container-p-y">
-<h4 class="font-weight-bold py-3 mb-0">Stock Report</h4>
+<h4 class="font-weight-bold py-3 mb-0">Outstanding Stock Report</h4>
 
 <div class="card" style="padding: 10px;">
      <div id="accordion2">
 <div class="card mb-2">
-                                        
                                         <div id="accordion2-2" class="collapse show" data-parent="#accordion2">
                                             <div class="" style="padding:5px;">
                                                 <form id="validation-form" method="post" enctype="multipart/form-data" action="">
 <div class="form-row">
 
-       
 <div class="form-group col-md-2">
 <label class="form-label"> Branch<span class="text-danger">*</span></label>
  <select class="form-control" name="BranchId" id="BranchId" required>
   <?php 
  if($Roll == 1 || $Roll == 7){?>
-<option selected="" value="all">All</option>
+<option <?php if($branchPost === 'all') { ?> selected <?php } ?> value="all">All</option>
  <?php }
  if($Roll == 1 || $Roll == 7){
-  $sql12 = "SELECT * FROM tbl_branch WHERE Status='1'";
+  $sql12 = "SELECT * FROM tbl_branch WHERE Status='1' ORDER BY Name ASC";
 }
 else{
-  $sql12 = "SELECT * FROM tbl_branch WHERE Status='1' AND id='$BranchId'";
+  $branchSql = trim((string) $MulBranchId) !== '' ? "id IN($MulBranchId)" : "id='".(int)$BranchId."'";
+  $sql12 = "SELECT * FROM tbl_branch WHERE Status='1' AND $branchSql ORDER BY Name ASC";
 }
   $row12 = getList($sql12);
   foreach($row12 as $result){
      ?>
-  <option <?php if($_REQUEST["BranchId"] == $result['id']) {?> selected <?php } ?> value="<?php echo $result['id'];?>">
+  <option <?php if($branchPost !== '' && $branchPost !== 'all' && (string)$branchPost === (string)$result['id']) {?> selected <?php } ?> value="<?php echo $result['id'];?>">
     <?php echo $result['Name']; ?></option>
 <?php } ?>
 </select>
@@ -72,35 +142,26 @@ else{
   <div class="form-group col-md-5">
                                             <label class="form-label">Product</label>
                                             <select class="select2-demo form-control" name="ProductId" id="ProductId">
-                                                <option selected="" value="all">All</option>
+                                                <option <?php if($productPost === 'all') { ?> selected <?php } ?> value="all">All</option>
                                                 <?php 
-  $sql12 = "SELECT * FROM tbl_products WHERE Status='1'";
+  $sql12 = "SELECT * FROM tbl_products WHERE Status='1' ORDER BY ProductName ASC";
   $row12 = getList($sql12);
   foreach($row12 as $result){
      ?>
-                                                <option <?php if($_REQUEST['ProductId']==$result['id']){ ?> selected <?php } ?>
+                                                <option <?php if($productPost !== 'all' && (string)$productPost === (string)$result['id']){ ?> selected <?php } ?>
                                                     value="<?php echo $result['id']; ?>"><?php echo $result['ProductName']; ?></option>
                                                 <?php } ?>
                                             </select>
                                         </div>
 
-
-<!-- <div class="form-group col-md-2">
-<label class="form-label">From Date </label>
-<input type="date" name="FromDate" id="FromDate" class="form-control" value="<?php echo $_POST['FromDate'] ?>" autocomplete="off">
-</div>
-<div class="form-group col-md-2">
-<label class="form-label">To Date</label>
-<input type="date" name="ToDate" id="ToDate" class="form-control" value="<?php echo $_POST['ToDate'] ?>" autocomplete="off">
-</div> -->
 <input type="hidden" name="Search" value="Search">
 <div class="form-group col-md-1" style="padding-top:30px;">
 <button type="submit" name="submit" class="btn btn-primary btn-finish">Search</button>
 </div>
-<?php if(isset($_POST['Search'])) {?>
+<?php if($runReport && !$clearSearch) {?>
 <div class="col-md-1">
 <label class="form-label d-none d-md-block">&nbsp;</label>
-<a href="<?php echo $_SERVER['PHP_SELF']; ?>" class="btn btn-info btn-block" data-toggle="tooltip" data-placement="top" data-original-title="Clear Filter">X</a>
+<a href="<?php echo $_SERVER['PHP_SELF']; ?>?clear=1" class="btn btn-info btn-block" data-toggle="tooltip" data-placement="top" data-original-title="Clear Filter">X</a>
 </div>
 <?php } ?>
 </div>
@@ -110,111 +171,74 @@ else{
                                         </div>
                                     </div>
    </div>
+
+<?php if ($runReport) { ?>
 <div class="card-datatable table-responsive">
 <table id="example" class="table table-striped table-bordered" style="width:100%">
         <thead>
             <tr>
                <th>#</th>
-               <th>Branch</th>
+               <?php if ($showBranchColumn) { ?><th>Branch</th><?php } ?>
                 <th>Product Name</th>
                 <th>Total Stock</th>
                 <th>Sell</th>
                 <th>Balance</th>
-             
             </tr>
         </thead>
         <tbody>
-            <?php 
-            $i=1;
-            $TotStock = 0;
-            $SellStock = 0;
-            $BalStock = 0;
-            $sql = "SELECT p.ProductId, p.BranchId, tb.Name AS Branch, tp.ProductName AS Product_Name
-                    FROM (
-                        SELECT ProductId, BranchId FROM tbl_distibute_item_details
-                        UNION
-                        SELECT ProductId, BranchId FROM tbl_stocks WHERE Status=1 AND CrDr='dr'
-                    ) p
-                    INNER JOIN tbl_products tp ON p.ProductId=tp.id
-                    LEFT JOIN tbl_branch tb ON p.BranchId=tb.id
-                    WHERE tp.ProductName!=''";
-
-            if($_POST['BranchId']){
-                $BranchId = $_POST['BranchId'];
-                if($BranchId != 'all'){
-                    $sql.= " AND p.BranchId='$BranchId'";
-                }
-            }
-            
-            if($_POST['ProductId']){
-                $ProductId = $_POST['ProductId'];
-                if($ProductId != 'all'){
-                    $sql.= " AND p.ProductId='$ProductId'";
-                }
-            }
-            $sql.=" GROUP BY p.ProductId, p.BranchId ORDER BY tp.ProductName ASC";
-            //echo $sql;
-            $res = $conn->query($sql);
-            while($row = $res->fetch_assoc())
-            {
+            <?php
+            $i = 1;
+            foreach ($displayRows as $row) {
                 $bid = (int) $row['BranchId'];
                 $pid = (int) $row['ProductId'];
-
-                $sql2 = "SELECT SUM(Qty) AS TotStock FROM tbl_distibute_item_details WHERE BranchId='$bid' AND ProductId='$pid'";
-                $row2 = getRecord($sql2);
-
-                $sql3 = "SELECT SUM(Qty) AS SellStock FROM tbl_stocks WHERE Status=1 AND BranchId='$bid' AND ProductId='$pid' AND CrDr='dr'";
-                $row3 = getRecord($sql3);
-                
-                $Tot_Stock = isset($row2['TotStock']) && $row2['TotStock'] !== '' ? (float) $row2['TotStock'] : 0;
-                $Tot_SellStock = isset($row3['SellStock']) && $row3['SellStock'] !== '' ? (float) $row3['SellStock'] : 0;
-
-                if ($Tot_Stock <= 0 && $Tot_SellStock <= 0) {
-                    continue;
-                }
-                
-                $TotStock += $Tot_Stock;
-                $SellStock += $Tot_SellStock;
-                $BalStock += $Tot_Stock - $Tot_SellStock;
+                $totStock = (float) $row['inward_qty'];
+                $sellStock = (float) $row['outward_qty'];
+                $balance = (float) $row['balance_qty'];
 
                 $qParamsDetail = array(
                     'BranchId' => $bid,
                     'ProductId' => $pid,
                 );
-                $stockHref = 'store-stock-report-2-credit-detail.php?' . http_build_query($qParamsDetail);
-                $sellHref = 'stock-report-sell-detail.php?' . http_build_query($qParamsDetail);
-
+                $stockHref = 'stock-report2-inward-detail.php?' . http_build_query($qParamsDetail);
+                $sellHref = 'stock-report2-outward-detail.php?' . http_build_query($qParamsDetail);
              ?>
             <tr>
                <td><?php echo $i; ?></td>
-           
-               <td><?php echo $row['Branch']; ?></td>
-          
-               <td><?php echo $row['Product_Name']; ?></td>
-            
-                <td><?php if ($Tot_Stock > 0) { ?><a href="<?php echo htmlspecialchars($stockHref, ENT_QUOTES, 'UTF-8'); ?>" target="_blank" rel="noopener"><?php echo htmlspecialchars((string) $Tot_Stock); ?></a><?php } else { echo '0'; } ?></td>
-               <td><?php if ($Tot_SellStock > 0) { ?><a href="<?php echo htmlspecialchars($sellHref, ENT_QUOTES, 'UTF-8'); ?>" target="_blank" rel="noopener"><?php echo htmlspecialchars((string) $Tot_SellStock); ?></a><?php } else { echo '0'; } ?></td>
-               <td><?php echo $Tot_Stock - $Tot_SellStock; ?></td>
-                 
-            
-          
-          
+               <?php if ($showBranchColumn) { ?>
+               <td><?php echo htmlspecialchars((string) ($row['Branch'] ?? '')); ?></td>
+               <?php } ?>
+               <td><?php echo htmlspecialchars((string) ($row['ProductName'] ?? '')); ?></td>
+               <td><?php if ($totStock > 0) { ?><a href="<?php echo htmlspecialchars($stockHref, ENT_QUOTES, 'UTF-8'); ?>" target="_blank" rel="noopener"><?php echo htmlspecialchars(mobileStockFormatQty($totStock)); ?></a><?php } else { echo '0'; } ?></td>
+               <td><?php if ($sellStock > 0) { ?><a href="<?php echo htmlspecialchars($sellHref, ENT_QUOTES, 'UTF-8'); ?>" target="_blank" rel="noopener"><?php echo htmlspecialchars(mobileStockFormatQty($sellStock)); ?></a><?php } else { echo '0'; } ?></td>
+               <td><?php echo htmlspecialchars(mobileStockFormatQty($balance)); ?></td>
             </tr>
-           <?php $i++;} ?>
+           <?php
+                $i++;
+            }
+            if (empty($displayRows)) {
+                $colspan = $showBranchColumn ? 6 : 5;
+                ?>
+            <tr>
+                <td colspan="<?php echo $colspan; ?>" class="text-center text-muted">No outstanding stock found for selected filters.</td>
+            </tr>
+                <?php
+            }
+            ?>
 
            <tr>
                <td><?php echo $i; ?></td>
-               
-              
-               <td></td>
+               <?php if ($showBranchColumn) { ?><td></td><?php } ?>
                <th>Total</th>
-               <th><?php echo $TotStock;?></th>
-               <th><?php echo $SellStock;?></th>
-               <th><?php echo $BalStock;?></th>
+               <th><?php echo htmlspecialchars(mobileStockFormatQty($TotStock)); ?></th>
+               <th><?php echo htmlspecialchars(mobileStockFormatQty($SellStock)); ?></th>
+               <th><?php echo htmlspecialchars(mobileStockFormatQty($BalStock)); ?></th>
            </tr>
         </tbody>
     </table>
 </div>
+<?php } else { ?>
+<p class="text-muted mb-0 px-2">Select a branch and click <strong>Search</strong> to view outstanding stock.</p>
+<?php } ?>
 </div>
 </div>
 
@@ -236,32 +260,18 @@ else{
 <script type="text/javascript">
  
     $(document).ready(function() {
+    if (!$('#example').length) {
+        return;
+    }
     $('#example').DataTable({
         "scrollX": true,
         "pageLength":500,
         dom: 'Bfrtip',
+        order: [[0, 'asc']],
         buttons: [
             'excelHtml5'
         ]
     });
-
- $(document).on("change", "#ModelNo", function(event) {
-            var val = this.value;
-            var action = "getModelNo";
-            $.ajax({
-                url: "ajax_files/ajax_dropdown.php",
-                method: "POST",
-                data: {
-                    action: action,
-                    id: val
-                },
-                success: function(data) {
-                    $('#ProductNo').html(data);
-                  
-                }
-            });
-
-        });
     
 });
 </script>

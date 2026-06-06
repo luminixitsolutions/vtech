@@ -585,7 +585,7 @@ function menuAccessBuiltinOptionLabels()
         139 => 'Completed Trips',
         140 => 'Project Sub Head 2',
         141 => 'Project Sub Head 3',
-        142 => 'Contractor Commission Report',
+        142 => 'Contractor Billing Report',
         143 => 'Delay Calculation Report',
         144 => 'Approve Attendance',
         145 => 'PDI Verification',

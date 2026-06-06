@@ -56,9 +56,9 @@ echo "\xEF\xBB\xBF";
     <tr>
         <th>Sr no.</th>
         <th>District</th>
-        <th>Total No. of application on PMSGY</th>
-        <th>Total No. of application on MAHADISCOM</th>
-        <th>Payment Done</th>
+        <th>PMSGY Portal (Awaiting Mahadiscom)</th>
+        <th>Mahadiscom Portal (Awaiting Payment)</th>
+        <th>Payment Done (Survey Pending)</th>
         <th>Survey Done</th>
     </tr>
     <?php

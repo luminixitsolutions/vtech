@@ -38,6 +38,7 @@ function msedclSmartRenderListPage($listType, array $config)
     $showSurveyColumns = !empty($config['show_survey_columns']);
     $excelColumnsHint = isset($config['excel_columns_hint']) ? trim((string) $config['excel_columns_hint']) : '';
     $showActionCol = ($showMahadiscomBtn || $showPaymentBtn || $showDeleteBtn);
+    $enableDatatableExport = !empty($config['datatable_export']);
 
     $userSurveyMap = [];
     if ($showSurveyColumns && !empty($rows)) {
@@ -114,7 +115,10 @@ function msedclSmartRenderListPage($listType, array $config)
         <?php } ?>
 
         <div class="table-responsive">
-            <table class="table table-striped table-bordered table-hover" id="msedclSmartTable">
+            <table class="table table-striped table-bordered table-hover" id="msedclSmartTable"
+                data-dt-export="<?php echo $enableDatatableExport ? '1' : '0'; ?>"
+                data-dt-exclude-first="<?php echo $showForwardBtn ? '1' : '0'; ?>"
+                data-dt-exclude-last="<?php echo $showActionCol ? '1' : '0'; ?>">
                 <thead>
                     <tr>
                         <?php if ($showForwardBtn) { ?>

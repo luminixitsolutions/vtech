@@ -27,10 +27,12 @@ msedclSmartRenderListPage('survey_pending', [
     'title' => 'Survey Pending',
     'page_slug' => 'survey-pending.php',
     'show_survey_columns' => true,
+    'datatable_export' => true,
 ]);
 ?>
 </div>
 <?php include_once __DIR__ . '/../footer_script.php'; ?>
+<script src="js/msedcl-smart-list.js"></script>
 </div>
 </div>
 </body>

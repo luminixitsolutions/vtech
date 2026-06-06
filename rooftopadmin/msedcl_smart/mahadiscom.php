@@ -30,12 +30,14 @@ msedclSmartRenderListPage('mahadiscom', [
     'show_payment_btn' => true,
     'excel_columns_hint' => 'Beneficiary ID, Payment Yes/No (Yes = mark payment done and move to Survey Pending; No or blank = Mahadiscom only)',
     'show_delete_btn' => true,
+    'datatable_export' => true,
 ]);
 ?>
 <p class="container-fluid small text-muted">Tip: Upload Excel with Beneficiary ID and Payment Yes/No. Use <strong>Yes</strong> to mark Mahadiscom + payment in one row; <strong>No</strong> marks Mahadiscom only.</p>
 </div>
 <?php include_once __DIR__ . '/../footer_script.php'; ?>
 <script src="js/msedcl-smart-import.js"></script>
+<script src="js/msedcl-smart-list.js"></script>
 </div>
 </div>
 </body>

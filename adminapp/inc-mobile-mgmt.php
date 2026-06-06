@@ -51,6 +51,95 @@ function getInsuranceMgmtCounts()
     );
 }
 
+function getInsuranceMgmtProjectSubHeadSummary($filters = array())
+{
+    require_once __DIR__ . '/../admin/inc-insurance-site.php';
+
+    insuranceEnsureHistoryTable();
+
+    $from = insuranceSiteInsuranceFromSqlCore();
+    $base = insuranceSiteBaseEligibleSqlCondition();
+    $pendingCond = insuranceSitePendingSqlCondition();
+    $completedCond = insuranceSiteActiveCompletedSqlCondition();
+    $renewalCond = insuranceSiteRenewalSqlCondition();
+    $expiredCond = insuranceSiteExpiredSqlCondition();
+    $renewedCond = insuranceSiteRenewedSqlCondition();
+
+    $sql = "SELECT proj.id AS project_id, proj.Name AS project_name,
+            psh.id AS sub_head_id, psh.Name AS sub_head_name,
+            COALESCE(ins.total_insurance, 0) AS total_insurance,
+            COALESCE(ins.pending, 0) AS pending,
+            COALESCE(ins.completed, 0) AS completed,
+            COALESCE(ins.renewal, 0) AS renewal,
+            COALESCE(ins.expired, 0) AS expired,
+            COALESCE(ins.renewed, 0) AS renewed
+        FROM tbl_project_sub_head psh
+        INNER JOIN tbl_common_master proj ON proj.id = psh.UnderBy
+        LEFT JOIN (
+            SELECT tu.ProjectId, tu.ProjectSubHeadId,
+                COUNT(DISTINCT tdo.CustId) AS total_insurance,
+                COUNT(DISTINCT CASE WHEN ($pendingCond) THEN tdo.CustId END) AS pending,
+                COUNT(DISTINCT CASE WHEN ($completedCond) THEN tdo.CustId END) AS completed,
+                COUNT(DISTINCT CASE WHEN ($renewalCond) THEN tdo.CustId END) AS renewal,
+                COUNT(DISTINCT CASE WHEN ($expiredCond) THEN tdo.CustId END) AS expired,
+                COUNT(DISTINCT CASE WHEN ($renewedCond) THEN tdo.CustId END) AS renewed
+            $from
+            WHERE $base
+            GROUP BY tu.ProjectId, tu.ProjectSubHeadId
+        ) ins ON ins.ProjectId = psh.UnderBy AND ins.ProjectSubHeadId = psh.id
+        WHERE psh.Status = 1 AND proj.Status = 1 AND proj.Roll = 24";
+
+    if (!empty($filters['project_id']) && (int) $filters['project_id'] > 0) {
+        $sql .= " AND psh.UnderBy='" . (int) $filters['project_id'] . "'";
+    }
+    if (!empty($filters['sub_head_id']) && (int) $filters['sub_head_id'] > 0) {
+        $sql .= " AND psh.id='" . (int) $filters['sub_head_id'] . "'";
+    }
+
+    $sql .= " ORDER BY proj.Name ASC, psh.Name ASC";
+
+    $rows = mobileMgmtQueryRows($sql);
+    $totals = array(
+        'project_name' => 'Total',
+        'sub_head_name' => '',
+        'total_insurance' => 0,
+        'pending' => 0,
+        'completed' => 0,
+        'renewal' => 0,
+        'expired' => 0,
+        'renewed' => 0,
+    );
+
+    foreach ($rows as $row) {
+        $totals['total_insurance'] += (int) $row['total_insurance'];
+        $totals['pending'] += (int) $row['pending'];
+        $totals['completed'] += (int) $row['completed'];
+        $totals['renewal'] += (int) $row['renewal'];
+        $totals['expired'] += (int) $row['expired'];
+        $totals['renewed'] += (int) $row['renewed'];
+    }
+
+    return array(
+        'rows' => $rows,
+        'totals' => $totals,
+    );
+}
+
+function mobileMgmtInsuranceListUrl($status, $projectId = 0, $subHeadId = 0)
+{
+    $status = preg_replace('/[^a-z_]/', '', (string) $status);
+    $url = 'mobile-insurance-list.php?status=' . urlencode($status);
+
+    if ((int) $projectId > 0) {
+        $url .= '&ProjectId=' . (int) $projectId;
+    }
+    if ((int) $subHeadId > 0) {
+        $url .= '&ProjectSubHeadId=' . (int) $subHeadId;
+    }
+
+    return $url;
+}
+
 function getServiceMgmtCounts()
 {
     $today = mobileMgmtToday();
@@ -80,6 +169,8 @@ function mobileMgmtInsuranceStatusCondition($status)
             return insuranceSiteCompletedSqlCondition();
         case 'dispatched':
             return insuranceSiteBaseEligibleSqlCondition();
+        case 'renewed':
+            return insuranceSiteRenewedSqlCondition();
         case 'pending':
         default:
             return insuranceSitePendingSqlCondition();
@@ -95,6 +186,7 @@ function mobileMgmtInsuranceStatusLabel($status)
         'expired' => 'Expired Insurance',
         'completed' => 'Total Completed',
         'dispatched' => 'Site Dispatched',
+        'renewed' => 'Renewed Insurance',
     );
 
     return isset($labels[$status]) ? $labels[$status] : 'Insurance List';
@@ -339,4 +431,193 @@ function mobileServiceAbstractListTitle($filters, $filter, $rowLabel = '')
     }
 
     return implode(' — ', $parts);
+}
+
+function mobileContractorBillingUrl($projectId = 0, $subheadId = 0)
+{
+    $url = 'mobile-contractor-billing.php';
+    $projectId = (int) $projectId;
+    $subheadId = (int) $subheadId;
+
+    if ($projectId > 0) {
+        $url .= '?project_id=' . $projectId;
+        if ($subheadId > 0) {
+            $url .= '&subhead_id=' . $subheadId;
+        }
+    }
+
+    return $url;
+}
+
+function mobileContractorBillingDetailsUrl($contractorId, $projectId = 0, $subheadId = 0)
+{
+    $contractorId = (int) $contractorId;
+    $projectId = (int) $projectId;
+    $subheadId = (int) $subheadId;
+    $url = 'mobile-contractor-billing-details.php?id=' . $contractorId;
+
+    if ($projectId > 0 && $subheadId > 0) {
+        $url .= '&project_id=' . $projectId . '&subhead_id=' . $subheadId;
+    }
+
+    return $url;
+}
+
+function mobileContractorBillingFormatMoney($amount)
+{
+    return number_format((float) $amount, 2);
+}
+
+function mobileMsedclSmartGetDashboardData()
+{
+    require_once __DIR__ . '/../rooftopadmin/inc-msedcl-smart-dashboard-data.php';
+
+    return getMsedclSmartDashboardData();
+}
+
+function mobileMsedclSmartAdminUrl($file = 'dashboard.php')
+{
+    return '../rooftopadmin/msedcl_smart/' . ltrim($file, '/');
+}
+
+function mobileMsedclSmartListTypes()
+{
+    return array(
+        'total' => 'Total Customers',
+        'pmsgy' => 'PMSGY Portal',
+        'mahadiscom' => 'Mahadiscom Portal',
+        'payment' => 'Payment Done',
+        'survey_pending' => 'Survey Pending',
+        'survey_done' => 'Survey Done',
+    );
+}
+
+function mobileMsedclSmartListTitle($type)
+{
+    $types = mobileMsedclSmartListTypes();
+    $type = preg_replace('/[^a-z_]/', '', (string) $type);
+
+    return isset($types[$type]) ? $types[$type] : 'MSEDCL Smart';
+}
+
+function mobileMsedclSmartListUrl($type, $district = '', $search = '')
+{
+    $type = preg_replace('/[^a-z_]/', '', (string) $type);
+    if (!isset(mobileMsedclSmartListTypes()[$type])) {
+        $type = 'total';
+    }
+
+    $url = 'mobile-msedcl-smart-list.php?type=' . urlencode($type);
+    if ($district !== '') {
+        $url .= '&District=' . urlencode($district);
+    }
+    if ($search !== '') {
+        $url .= '&Search=' . urlencode($search);
+    }
+
+    return $url;
+}
+
+function mobileMsedclSmartListFiltersFromRequest()
+{
+    $district = isset($_REQUEST['District']) ? trim((string) $_REQUEST['District']) : '';
+    $search = isset($_REQUEST['Search']) ? trim((string) $_REQUEST['Search']) : '';
+    $filters = array();
+
+    if ($district !== '') {
+        $filters['District'] = $district;
+    }
+    if ($search !== '') {
+        $filters['Search'] = $search;
+    }
+
+    return array(
+        'District' => $district,
+        'Search' => $search,
+        'filters' => $filters,
+        'searched' => isset($_REQUEST['Search']) || isset($_REQUEST['submit']),
+    );
+}
+
+function mobileMsedclSmartApplyListFilters($sql, array $filters)
+{
+    global $conn;
+
+    if (!empty($filters['District'])) {
+        $esc = mysqli_real_escape_string($conn, $filters['District']);
+        $sql .= " AND District='$esc'";
+    }
+    if (!empty($filters['Search'])) {
+        $esc = mysqli_real_escape_string($conn, $filters['Search']);
+        $sql .= " AND (BeneficiaryId LIKE '%$esc%' OR CustName LIKE '%$esc%' OR CellNo LIKE '%$esc%')";
+    }
+
+    return $sql . ' ORDER BY id DESC';
+}
+
+function mobileMsedclSmartGetListRows($type, array $filters = array())
+{
+    require_once __DIR__ . '/../rooftopadmin/inc-msedcl-smart-site.php';
+
+    msedclSmartEnsureTables();
+    $type = preg_replace('/[^a-z_]/', '', (string) $type);
+
+    if (in_array($type, array('pmsgy', 'mahadiscom', 'payment', 'survey_pending'), true)) {
+        return mobileMgmtQueryRows(msedclSmartBuildListSql($type, $filters));
+    }
+
+    if ($type === 'total') {
+        $sql = mobileMsedclSmartApplyListFilters(
+            "SELECT * FROM tbl_rooftop_msedcl_smart_customers WHERE Status=1",
+            $filters
+        );
+
+        return mobileMgmtQueryRows($sql);
+    }
+
+    if ($type === 'survey_done') {
+        $sql = mobileMsedclSmartApplyListFilters(
+            "SELECT * FROM tbl_rooftop_msedcl_smart_customers WHERE Status=1 AND SurveyDone=1",
+            $filters
+        );
+
+        return mobileMgmtQueryRows($sql);
+    }
+
+    return array();
+}
+
+function mobileMsedclSmartShowSurveyColumns($type)
+{
+    return in_array($type, array('survey_pending', 'survey_done'), true);
+}
+
+function mobileMsedclSmartDistrictOptions()
+{
+    require_once __DIR__ . '/../rooftopadmin/inc-msedcl-smart-site.php';
+
+    msedclSmartEnsureTables();
+
+    return mobileMgmtQueryRows(
+        "SELECT DISTINCT District FROM tbl_rooftop_msedcl_smart_customers WHERE District!='' AND Status=1 ORDER BY District ASC"
+    );
+}
+
+function mobileMsedclSmartCapacityLabel($row)
+{
+    require_once __DIR__ . '/../rooftopadmin/inc-msedcl-smart-site.php';
+
+    $capName = msedclSmartRooftopCapacityMasterName($row['PumpCapacity'] ?? '');
+    if ($capName !== '') {
+        return $capName;
+    }
+
+    $raw = trim((string) ($row['PumpCapacity'] ?? ''));
+
+    return $raw !== '' ? $raw : '—';
+}
+
+function mobileMsedclSmartSurveyStatusLabel($done)
+{
+    return (int) $done === 1 ? 'Done' : 'Pending';
 }

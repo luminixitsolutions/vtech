@@ -9,7 +9,7 @@ $Page = "Stock-Report2";
 <!DOCTYPE html>
 <html lang="en" class="default-style layout-fixed layout-navbar-fixed">
 <head>
-<title><?php echo $Proj_Title; ?> | Stock Report</title>
+<title><?php echo $Proj_Title; ?> | Store Inward & Outward Report</title>
 <meta charset="utf-8">
 <meta http-equiv="X-UA-Compatible" content="IE=edge" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=0, minimal-ui">
@@ -34,7 +34,7 @@ $Page = "Stock-Report2";
 <div class="layout-content">
 
 <div class="container-fluid flex-grow-1 container-p-y">
-<h4 class="font-weight-bold py-3 mb-0">Stock Report</h4>
+<h4 class="font-weight-bold py-3 mb-0">Store Inward &amp; Outward Report</h4>
 
 <div class="card" style="padding: 10px;">
      <div id="accordion2">
@@ -112,30 +112,39 @@ else{
                                     </div>
    </div>
    <?php if(isset($_POST['Search'])) {
+            require_once __DIR__ . '/../../adminapp/inc-mobile-stock-data.php';
+            set_time_limit(120);
+
             $FromDate = isset($_POST['FromDate']) ? trim((string) $_POST['FromDate']) : '';
             $ToDate = isset($_POST['ToDate']) ? trim((string) $_POST['ToDate']) : '';
-            $dateSqlDist = '';
-            $dateSqlStockCr = '';
-            $dateSqlStockDr = '';
-            if ($FromDate !== '') {
-                $fd = mysqli_real_escape_string($conn, $FromDate);
-                $dateSqlDist .= " AND CreatedDate>='$fd'";
-                $dateSqlStockCr .= " AND CreatedDate>='$fd'";
-                $dateSqlStockDr .= " AND CreatedDate>='$fd'";
+            $branchPost = isset($_POST['BranchId']) ? trim((string) $_POST['BranchId']) : '';
+            $productPost = isset($_POST['ProductId']) ? trim((string) $_POST['ProductId']) : 'all';
+
+            $filters = array(
+                'from_date' => $FromDate,
+                'to_date' => $ToDate,
+            );
+            if ($branchPost === 'all' && ((int) $Roll === 1 || (int) $Roll === 7)) {
+                $filters['all_branches'] = true;
+            } elseif ($branchPost !== '' && $branchPost !== 'all') {
+                $filters['branch_id'] = (int) $branchPost;
             }
-            if ($ToDate !== '') {
-                $td = mysqli_real_escape_string($conn, $ToDate);
-                $dateSqlDist .= " AND CreatedDate<='$td'";
-                $dateSqlStockCr .= " AND CreatedDate<='$td'";
-                $dateSqlStockDr .= " AND CreatedDate<='$td'";
+            if ($productPost !== '' && $productPost !== 'all') {
+                $filters['product_id'] = (int) $productPost;
             }
+
+            $report = mobileStockGetStoreReportData($filters);
+            $TotCreditStock = (float) $report['tot_inward'];
+            $TotDebitStock = (float) $report['tot_outward'];
+            $BalStock = (float) $report['tot_balance'];
+            $showBranchColumn = !empty($report['all_branches']);
 ?>
 <div class="card-datatable table-responsive">
 <table id="example" class="table table-striped table-bordered" style="width:100%">
         <thead>
             <tr>
                <th>#</th>
-               <th>Branch</th>
+               <?php if ($showBranchColumn) { ?><th>Branch</th><?php } ?>
                 <th>Product Name</th>
                 <th>Inward</th>
                 <th>Outward</th>
@@ -143,86 +152,55 @@ else{
             </tr>
         </thead>
         <tbody>
-            <?php 
-            $i=1;
-            $TotCreditStock = 0;
-            $TotDebitStock = 0;
-            $BalStock = 0;
-            $sql = "SELECT p.ProductId, p.BranchId, tb.Name AS Branch, tp.ProductName AS Product_Name
-                    FROM (
-                        SELECT ProductId, BranchId FROM tbl_distibute_item_details WHERE 1 $dateSqlDist
-                        UNION
-                        SELECT ProductId, BranchId FROM tbl_stocks WHERE Status=1 AND CrDr='cr' $dateSqlStockCr
-                        UNION
-                        SELECT ProductId, BranchId FROM tbl_stocks WHERE Status=1 AND CrDr='dr' $dateSqlStockDr
-                    ) p
-                    INNER JOIN tbl_products tp ON p.ProductId=tp.id
-                    LEFT JOIN tbl_branch tb ON p.BranchId=tb.id
-                    WHERE tp.ProductName!=''";
-
-            if($_POST['BranchId']){
-                $BranchId = $_POST['BranchId'];
-                if($BranchId != 'all'){
-                    $sql.= " AND p.BranchId='$BranchId'";
-                }
-            }
-            
-            if($_POST['ProductId']){
-                $ProductId = $_POST['ProductId'];
-                if($ProductId != 'all'){
-                    $sql.= " AND p.ProductId='$ProductId'";
-                }
-            }
-            $sql.=" GROUP BY p.ProductId, p.BranchId ORDER BY tp.ProductName ASC";
-            $res = $conn->query($sql);
-            while($row = $res->fetch_assoc())
-            {
+            <?php
+            $i = 1;
+            foreach ($report['rows'] as $row) {
                 $bid = (int) $row['BranchId'];
                 $pid = (int) $row['ProductId'];
-
-                $sqlInDist = "SELECT SUM(Qty) AS Qty FROM tbl_distibute_item_details WHERE BranchId='$bid' AND ProductId='$pid' $dateSqlDist";
-                $sqlInCr = "SELECT SUM(Qty) AS Qty FROM tbl_stocks WHERE Status=1 AND BranchId='$bid' AND ProductId='$pid' AND CrDr='cr' $dateSqlStockCr";
-                $sqlOut = "SELECT SUM(Qty) AS Qty FROM tbl_stocks WHERE Status=1 AND BranchId='$bid' AND ProductId='$pid' AND CrDr='dr' $dateSqlStockDr";
-
-                $inDist = (float) (getRecord($sqlInDist)['Qty'] ?? 0);
-                $inCr = (float) (getRecord($sqlInCr)['Qty'] ?? 0);
-                $Inward = $inDist + $inCr;
-                $Outward = (float) (getRecord($sqlOut)['Qty'] ?? 0);
-
-                if ($Inward <= 0 && $Outward <= 0) {
-                    continue;
-                }
-
-                $TotCreditStock += $Inward;
-                $TotDebitStock += $Outward;
-                $BalStock += $Inward - $Outward;
+                $inward = (float) $row['inward_qty'];
+                $outward = (float) $row['outward_qty'];
+                $balance = (float) $row['balance_qty'];
 
                 $qBase = array('BranchId' => $bid, 'ProductId' => $pid);
-                if ($FromDate !== '' && $ToDate !== '') {
+                if ($FromDate !== '') {
                     $qBase['FromDate'] = $FromDate;
+                }
+                if ($ToDate !== '') {
                     $qBase['ToDate'] = $ToDate;
                 }
                 $inwardHref = 'stock-report2-inward-detail.php?' . http_build_query($qBase);
-                $outwardHref = 'stock-report-sell-detail.php?' . http_build_query($qBase);
-
+                $outwardHref = 'stock-report2-outward-detail.php?' . http_build_query($qBase);
              ?>
             <tr>
                <td><?php echo $i; ?></td>
-               <td><?php echo htmlspecialchars((string) $row['Branch']); ?></td>
-               <td><?php echo htmlspecialchars((string) $row['Product_Name']); ?></td>
-               <td><?php if ($Inward > 0) { ?><a href="<?php echo htmlspecialchars($inwardHref, ENT_QUOTES, 'UTF-8'); ?>" target="_blank" rel="noopener"><?php echo htmlspecialchars((string) $Inward); ?></a><?php } else { echo '0'; } ?></td>
-               <td><?php if ($Outward > 0) { ?><a href="<?php echo htmlspecialchars($outwardHref, ENT_QUOTES, 'UTF-8'); ?>" target="_blank" rel="noopener"><?php echo htmlspecialchars((string) $Outward); ?></a><?php } else { echo '0'; } ?></td>
-               <td><?php echo $Inward - $Outward; ?></td>
+               <?php if ($showBranchColumn) { ?>
+               <td><?php echo htmlspecialchars((string) ($row['Branch'] ?? '')); ?></td>
+               <?php } ?>
+               <td><?php echo htmlspecialchars((string) ($row['ProductName'] ?? '')); ?></td>
+               <td><?php if ($inward > 0) { ?><a href="<?php echo htmlspecialchars($inwardHref, ENT_QUOTES, 'UTF-8'); ?>" target="_blank" rel="noopener"><?php echo htmlspecialchars(mobileStockFormatQty($inward)); ?></a><?php } else { echo '0'; } ?></td>
+               <td><?php if ($outward > 0) { ?><a href="<?php echo htmlspecialchars($outwardHref, ENT_QUOTES, 'UTF-8'); ?>" target="_blank" rel="noopener"><?php echo htmlspecialchars(mobileStockFormatQty($outward)); ?></a><?php } else { echo '0'; } ?></td>
+               <td><?php echo htmlspecialchars(mobileStockFormatQty($balance)); ?></td>
             </tr>
-           <?php $i++;} ?>
+           <?php
+                $i++;
+            }
+            if (empty($report['rows'])) {
+                $colspan = $showBranchColumn ? 6 : 5;
+                ?>
+            <tr>
+                <td colspan="<?php echo $colspan; ?>" class="text-center text-muted">No stock records found for selected filters.</td>
+            </tr>
+                <?php
+            }
+            ?>
            
            <tr>
                <td><?php echo $i; ?></td>
-               <td></td>
+               <?php if ($showBranchColumn) { ?><td></td><?php } ?>
                <th>Total</th>
-               <th><?php echo $TotCreditStock;?></th>
-               <th><?php echo $TotDebitStock;?></th>
-               <th><?php echo $BalStock;?></th>
+               <th><?php echo htmlspecialchars(mobileStockFormatQty($TotCreditStock)); ?></th>
+               <th><?php echo htmlspecialchars(mobileStockFormatQty($TotDebitStock)); ?></th>
+               <th><?php echo htmlspecialchars(mobileStockFormatQty($BalStock)); ?></th>
            </tr>
         </tbody>
     </table>

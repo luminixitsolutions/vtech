@@ -184,6 +184,27 @@ $Page = "Pump-Installation";
                         $conn->query($sql);
                     }
 
+                    $sql = "DELETE FROM tbl_made_contractor_commision WHERE CustId='$CustId' AND Roll=8";
+                    $conn->query($sql);
+
+                    if ($DgmApproval == 'Yes') {
+                        $sql = "SELECT PumpCapacity,ProjectId,ProjectSubHeadId,ContractorInspectionId FROM tbl_users WHERE id='$CustId'";
+                        $row = getRecord($sql);
+                        $PumpCapacity = $row['PumpCapacity'];
+                        $ProjectHeadId = $row['ProjectId'];
+                        $ProjectSubHeadId = $row['ProjectSubHeadId'];
+                        $InspectionContractorId = $row['ContractorInspectionId'];
+
+                        if ($InspectionContractorId != '') {
+                            $sql2 = "SELECT InspectionApprovalVal FROM tbl_contractor_commision WHERE UserId='$InspectionContractorId' AND Capacity='$PumpCapacity' AND ProjectHeadId='$ProjectHeadId' AND ProjectSubHeadId='$ProjectSubHeadId' LIMIT 1";
+                            $row2 = getRecord($sql2);
+                            $Amount = $row2['InspectionApprovalVal'] ?? 0;
+
+                            $sql = "INSERT INTO tbl_made_contractor_commision SET ContractorId='$InspectionContractorId',CustId='$CustId',Capacity='$PumpCapacity',ScopeOfWork='Inspection Approval',Amount='$Amount',CreatedDate='$DgmApprovalDate',Roll=8";
+                            $conn->query($sql);
+                        }
+                    }
+
                     $randno = rand(1, 100);
                     $src = $_FILES['Photo']['tmp_name'];
                     $fnm = substr($_FILES["Photo"]["name"], 0, strrpos($_FILES["Photo"]["name"], '.'));

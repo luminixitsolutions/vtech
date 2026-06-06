@@ -30,6 +30,34 @@ $Options = adminResolveMenuOptionsFromUserRow($row77);
     .mr_5 {
         margin-right: 3rem !important;
     }
+    .report-dashboard-grid > [class*="col-"] > a {
+        display: block;
+        text-decoration: none;
+    }
+    .report-dashboard-grid .card {
+        min-height: 110px;
+        border: none;
+        border-radius: 8px;
+        transition: transform 0.2s ease, box-shadow 0.2s ease;
+    }
+    .report-dashboard-grid .card:hover {
+        transform: translateY(-4px);
+        box-shadow: 0 8px 20px rgba(0, 0, 0, 0.15);
+    }
+    .report-dashboard-grid .card-body {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        min-height: 110px;
+        padding: 1rem 0.75rem;
+    }
+    .report-dashboard-grid .card-body h6 {
+        font-size: 0.82rem;
+        font-weight: 600;
+        line-height: 1.35;
+        margin-bottom: 0;
+    }
     </style>
    <div class="layout-wrapper layout-2">
         <div class="layout-inner">
@@ -52,7 +80,7 @@ $Options = adminResolveMenuOptionsFromUserRow($row77);
                                 <div class="card ui-task mb-4">
                                     <h5 class="card-header" style="text-align:center;">REPORT DASHBOARD</h5>
                                     <div class="card-body">             
-                    <div class="row">        
+                    <div class="row report-dashboard-grid">        
                <?php  if(in_array("29", $Options)) {?>
                         <div class="col-sm-6 col-xl-2">
                                 <a href="sell-report.php">
@@ -81,7 +109,7 @@ $Options = adminResolveMenuOptionsFromUserRow($row77);
                                <div class="card bg-warning text-white ui-hover-icon mb-4 bg-pattern-3">
                                         <div class="card-body text-center">
                                        
-                                        <h6 class="mb-0">Stock <br>Report</h6>
+                                        <h6 class="mb-0">Store Inward &amp; Outward Report</h6>
                                         <i class="lnr lnr-users hov-icon"></i>
                                      </div>
                                 </div></a>
@@ -171,7 +199,7 @@ $Options = adminResolveMenuOptionsFromUserRow($row77);
                                <div class="card bg-warning text-white ui-hover-icon mb-4 bg-pattern-3">
                                         <div class="card-body text-center">
                                        
-                                        <h6 class="mb-0">Store Stock Report</h6>
+                                        <h6 class="mb-0">Store Stock Movement Report</h6>
                                         <i class="lnr lnr-users hov-icon"></i>
                                      </div>
                                 </div></a>
@@ -183,7 +211,7 @@ $Options = adminResolveMenuOptionsFromUserRow($row77);
                                <div class="card bg-warning text-white ui-hover-icon mb-4 bg-pattern-3">
                                         <div class="card-body text-center">
                                        
-                                        <h6 class="mb-0">Store Stock Report 2</h6>
+                                        <h6 class="mb-0">Store Stock Summary Report</h6>
                                         <i class="lnr lnr-users hov-icon"></i>
                                      </div>
                                 </div></a>
@@ -193,7 +221,7 @@ $Options = adminResolveMenuOptionsFromUserRow($row77);
                                 <a href="serial-location-report.php">
                                <div class="card bg-warning text-white ui-hover-icon mb-4 bg-pattern-3">
                                         <div class="card-body text-center">
-                                        <h6 class="mb-0">Serial Location Report</h6>
+                                        <h6 class="mb-0">Serial No Location Report</h6>
                                         <i class="lnr lnr-users hov-icon"></i>
                                      </div>
                                 </div></a>
@@ -323,11 +351,30 @@ $Options = adminResolveMenuOptionsFromUserRow($row77);
                                      </div>
                                 </div></a>
                             </div>                           
+<?php } if(in_array("142", $Options)) {?>
+<div class="col-sm-6 col-xl-2">
+                                <a href="contractor-payment-dashboard.php">
+                               <div class="card bg-warning text-white ui-hover-icon mb-4 bg-pattern-3">
+                                        <div class="card-body text-center">
+                                        <h6 class="mb-0">Contractor Payment Dashboard</h6>
+                                        <i class="lnr lnr-credit-cards hov-icon"></i>
+                                     </div>
+                                </div></a>
+                            </div>
+<div class="col-sm-6 col-xl-2">
+                                <a href="contractor-commision-report.php">
+                               <div class="card bg-warning text-white ui-hover-icon mb-4 bg-pattern-3">
+                                        <div class="card-body text-center">
+                                        <h6 class="mb-0">Contractor Billing Report</h6>
+                                        <i class="lnr lnr-users hov-icon"></i>
+                                     </div>
+                                </div></a>
+                            </div>
 <?php } ?>
 <?php if ((function_exists('adminUserHasFullMenuAccess') && adminUserHasFullMenuAccess($Roll)) || in_array('187', $Options)) { ?>
                         <div class="col-sm-6 col-xl-2">
                                 <a href="employee-tracking-dashboard.php">
-                               <div class="card text-white ui-hover-icon mb-4" style="background:linear-gradient(135deg,#4f46e5,#7c3aed);">
+                               <div class="card bg-warning text-white ui-hover-icon mb-4 bg-pattern-3">
                                         <div class="card-body text-center">
                                         <h6 class="mb-0">Employee Tracking Dashboard</h6>
                                         <i class="lnr lnr-chart-bars hov-icon"></i>
@@ -336,7 +383,7 @@ $Options = adminResolveMenuOptionsFromUserRow($row77);
                             </div>
                         <div class="col-sm-6 col-xl-2">
                                 <a href="employee-tracking-report.php">
-                               <div class="card text-white ui-hover-icon mb-4" style="background:linear-gradient(135deg,#6366f1,#0ea5e9);">
+                               <div class="card bg-warning text-white ui-hover-icon mb-4 bg-pattern-3">
                                         <div class="card-body text-center">
                                         <h6 class="mb-0">Employee Tracking Report</h6>
                                         <i class="lnr lnr-list hov-icon"></i>

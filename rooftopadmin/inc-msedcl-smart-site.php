@@ -1291,6 +1291,27 @@ function msedclSmartCount($where = 'Status=1')
     return (int) getRow("SELECT id FROM tbl_rooftop_msedcl_smart_customers WHERE $where");
 }
 
+/**
+ * Dashboard counts aligned with each list page filter (mutually exclusive stages + payment queue).
+ */
+function msedclSmartDashboardCounts()
+{
+    msedclSmartEnsureTables();
+
+    return [
+        'total' => msedclSmartCount('Status=1'),
+        'pmsgy' => msedclSmartCount("Status=1 AND CurrentStage='" . MSEDCL_SMART_STAGE_PMSGY . "'"),
+        'mahadiscom' => msedclSmartCount("Status=1 AND CurrentStage='" . MSEDCL_SMART_STAGE_MAHADISCOM . "'"),
+        'payment_done' => msedclSmartCount(
+            "Status=1 AND PaymentDone=1 AND CurrentStage='" . MSEDCL_SMART_STAGE_SURVEY_PENDING . "' AND SurveyDone=0 AND CustUserId=0"
+        ),
+        'survey_pending' => msedclSmartCount(
+            "Status=1 AND CurrentStage='" . MSEDCL_SMART_STAGE_SURVEY_PENDING . "' AND SurveyDone=0"
+        ),
+        'survey_done' => msedclSmartCount('Status=1 AND SurveyDone=1'),
+    ];
+}
+
 function msedclSmartAbstractFiltersFromRequest($request = null)
 {
     if ($request === null) {
@@ -1437,12 +1458,22 @@ function msedclSmartAbstractSqlParts(array $filters = [], $rowDistrict = null)
     ];
 }
 
+function msedclSmartAbstractMetricConditions()
+{
+    return [
+        'pmsgy' => "CurrentStage='" . MSEDCL_SMART_STAGE_PMSGY . "'",
+        'mahadiscom' => "CurrentStage='" . MSEDCL_SMART_STAGE_MAHADISCOM . "'",
+        'payment' => "PaymentDone=1 AND CurrentStage='" . MSEDCL_SMART_STAGE_SURVEY_PENDING . "' AND SurveyDone=0",
+        'survey' => 'SurveyDone=1',
+    ];
+}
+
 function msedclSmartAbstractMetricLabel($metric)
 {
     $labels = [
-        'pmsgy' => 'Applications on PMSGY',
-        'mahadiscom' => 'Applications on MAHADISCOM',
-        'payment' => 'Payment Done',
+        'pmsgy' => 'PMSGY Portal (Awaiting Mahadiscom)',
+        'mahadiscom' => 'Mahadiscom Portal (Awaiting Payment)',
+        'payment' => 'Payment Done (Survey Pending)',
         'survey' => 'Survey Done',
     ];
 
@@ -1457,12 +1488,7 @@ function msedclSmartAbstractRecords($metric, $rowDistrict, array $filters = [])
     }
 
     $parts = msedclSmartAbstractSqlParts($filters, $rowDistrict === '' ? null : $rowDistrict);
-    $flags = [
-        'pmsgy' => 'PmsgyApplied=1',
-        'mahadiscom' => 'MahadiscomApplied=1',
-        'payment' => 'PaymentDone=1',
-        'survey' => 'SurveyDone=1',
-    ];
+    $flags = msedclSmartAbstractMetricConditions();
     $extra = isset($parts['extras'][$metric]) ? $parts['extras'][$metric] : '';
 
     $sql = "SELECT id, BeneficiaryId, CustName, CellNo, District, Taluka, Village, PumpCapacity, CurrentStage,
@@ -1506,12 +1532,13 @@ function msedclSmartAbstractByDistrict(array $filters = [])
     $surveyExtra = $parts['extras']['survey'];
     $whereSql = $parts['whereSql'];
 
+    $metrics = msedclSmartAbstractMetricConditions();
     $sql = "SELECT
         IFNULL(NULLIF(TRIM(District), ''), 'Unknown') AS District,
-        SUM(CASE WHEN PmsgyApplied=1 $pmsgyExtra THEN 1 ELSE 0 END) AS pmsgy_cnt,
-        SUM(CASE WHEN MahadiscomApplied=1 $mahadiscomExtra THEN 1 ELSE 0 END) AS mahadiscom_cnt,
-        SUM(CASE WHEN PaymentDone=1 $paymentExtra THEN 1 ELSE 0 END) AS payment_cnt,
-        SUM(CASE WHEN SurveyDone=1 $surveyExtra THEN 1 ELSE 0 END) AS survey_cnt
+        SUM(CASE WHEN {$metrics['pmsgy']} $pmsgyExtra THEN 1 ELSE 0 END) AS pmsgy_cnt,
+        SUM(CASE WHEN {$metrics['mahadiscom']} $mahadiscomExtra THEN 1 ELSE 0 END) AS mahadiscom_cnt,
+        SUM(CASE WHEN {$metrics['payment']} $paymentExtra THEN 1 ELSE 0 END) AS payment_cnt,
+        SUM(CASE WHEN {$metrics['survey']} $surveyExtra THEN 1 ELSE 0 END) AS survey_cnt
         FROM tbl_rooftop_msedcl_smart_customers
         WHERE $whereSql
         GROUP BY IFNULL(NULLIF(TRIM(District), ''), 'Unknown')

@@ -3,6 +3,7 @@ session_start();
 $sessionid = session_id();
 require_once 'config.php';
 require_once 'auth.php';
+require_once 'inc-mobile-mgmt.php';
 $PageName = "Home";
 
 $uid = $_REQUEST['uid'];    
@@ -29,6 +30,8 @@ if($_REQUEST['city_id']==0 || $_REQUEST['city_id']==''){
 if($rncnt11 > 0){
     $_SESSION['User'] = $row;
 }
+
+$msedclDash = mobileMsedclSmartGetDashboardData();
 ?>
 <!doctype html>
 <html lang="en" class="h-100">
@@ -87,6 +90,12 @@ body{
 }
 .card-service{
     background:linear-gradient(135deg,#5e35b1,#9575cd);
+}
+.card-billing{
+    background:linear-gradient(135deg,#1565c0,#42a5f5);
+}
+.card-msedcl{
+    background:linear-gradient(135deg,#2563eb,#7c3aed);
 }
 .section-label{
     font-size:14px;
@@ -179,6 +188,14 @@ body{
             </a>
         </div>
 
+        <div class="col-6 col-md-4">
+            <a href="msedcl-smart-management.php" class="project-card card-msedcl">
+                <span class="material-icons project-icon">bolt</span>
+                <div class="project-title">MSEDCL Smart Project</div>
+                <div class="project-sub"><?php echo number_format((int) $msedclDash['total']); ?> customers</div>
+            </a>
+        </div>
+
     </div>
 
     <p class="section-label">Operations</p>
@@ -206,6 +223,14 @@ body{
                 <span class="material-icons project-icon">build</span>
                 <div class="project-title">Service / Maintenance</div>
                 <div class="project-sub">Complaints &amp; claims</div>
+            </a>
+        </div>
+
+        <div class="col-6 col-md-4">
+            <a href="mobile-contractor-billing.php" class="project-card card-billing">
+                <span class="material-icons project-icon">receipt_long</span>
+                <div class="project-title">Contractor Billing</div>
+                <div class="project-sub">Project-wise commission</div>
             </a>
         </div>
 

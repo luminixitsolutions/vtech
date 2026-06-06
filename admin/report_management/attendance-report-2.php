@@ -4,12 +4,12 @@ include_once '../config.php';
 include_once '../auth.php';
 $user_id = $_SESSION['Admin']['id'];
 $MainPage = "Report";
-$Page = "Attendance-Report";
+$Page = "Attendance-Report-2";
 ?>
 <!DOCTYPE html>
 <html lang="en" class="default-style layout-fixed layout-navbar-fixed">
 <head>
-<title><?php echo $Proj_Title; ?> | Attendance Report</title>
+<title><?php echo $Proj_Title; ?> | Attendance Summary Report</title>
 <meta charset="utf-8">
 <meta http-equiv="X-UA-Compatible" content="IE=edge" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=0, minimal-ui">
@@ -34,7 +34,7 @@ $Page = "Attendance-Report";
 <div class="layout-content">
 
 <div class="container-fluid flex-grow-1 container-p-y">
-<h4 class="font-weight-bold py-3 mb-0">Attendance Report</h4>
+<h4 class="font-weight-bold py-3 mb-0">Attendance Summary Report</h4>
 
 <div class="card" style="padding: 10px;">
      <div id="accordion2">

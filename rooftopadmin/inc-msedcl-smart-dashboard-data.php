@@ -6,15 +6,16 @@ function getMsedclSmartDashboardData()
 {
     msedclSmartEnsureTables();
 
-    $pmsgy = msedclSmartCount("Status=1 AND PmsgyApplied=1 AND CurrentStage='" . MSEDCL_SMART_STAGE_PMSGY . "'");
-    $mahadiscom = msedclSmartCount("Status=1 AND MahadiscomApplied=1 AND CurrentStage='" . MSEDCL_SMART_STAGE_MAHADISCOM . "'");
-    $paymentDone = msedclSmartCount('Status=1 AND PaymentDone=1');
-    $surveyPending = msedclSmartCount("Status=1 AND CurrentStage='" . MSEDCL_SMART_STAGE_SURVEY_PENDING . "' AND SurveyDone=0");
-    $surveyDone = msedclSmartCount('Status=1 AND SurveyDone=1');
-    $total = msedclSmartCount('Status=1');
+    $counts = msedclSmartDashboardCounts();
+    $total = $counts['total'];
+    $pmsgy = $counts['pmsgy'];
+    $mahadiscom = $counts['mahadiscom'];
+    $paymentDone = $counts['payment_done'];
+    $surveyPending = $counts['survey_pending'];
+    $surveyDone = $counts['survey_done'];
 
     $today = date('Y-m-d');
-    $importedToday = (int) getRow("SELECT id FROM tbl_rooftop_msedcl_smart_history WHERE DATE(CreatedDateTime)='$today' AND ActionType='pmsgy_import'");
+    $importedToday = msedclSmartCount("Status=1 AND DATE(CreatedDateTime)='$today'");
 
     $districtStats = getList("SELECT IFNULL(NULLIF(TRIM(District), ''), 'Unknown') AS District, COUNT(*) AS cnt
         FROM tbl_rooftop_msedcl_smart_customers WHERE Status=1
@@ -68,7 +69,6 @@ function getMsedclSmartDashboardData()
         'funnel' => [
             ['label' => 'PMSGY Portal', 'count' => $pmsgy, 'pct' => $pct($pmsgy, $total), 'color' => '#2563eb'],
             ['label' => 'Mahadiscom Portal', 'count' => $mahadiscom, 'pct' => $pct($mahadiscom, $total), 'color' => '#7c3aed'],
-            ['label' => 'Payment Done', 'count' => $paymentDone, 'pct' => $pct($paymentDone, $total), 'color' => '#059669'],
             ['label' => 'Survey Pending', 'count' => $surveyPending, 'pct' => $pct($surveyPending, $total), 'color' => '#d97706'],
             ['label' => 'Survey Done', 'count' => $surveyDone, 'pct' => $pct($surveyDone, $total), 'color' => '#64748b'],
         ],
