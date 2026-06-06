@@ -2,6 +2,7 @@
 session_start();
 include_once '../config.php';
 include_once '../auth.php';
+include_once '../inc-insurance-site.php';
 $user_id = $_SESSION['Admin']['id'];
 $MainPage = "Sell";
 $Page = "Add-Sell";
@@ -129,6 +130,7 @@ $sql7 = "SELECT tu.*,tb.Name As BranchName,ts.Name As Scheme,tc.Name As Country,
          LEFT JOIN tbl_state ts2 ON tu.StateId=ts2.id 
          LEFT JOIN tbl_city tc2 ON tu.CityId=tc2.id WHERE tu.id='$id'";
 $row7 = getRecord($sql7);
+$insuranceSiteHistory = insuranceGetSiteHistoryByCustomer((int) $id);
 $SellId = $row7['SellId'];
 $AccountName = $row7['AccountName'];
 $BankName = $row7['BankName'];
@@ -560,6 +562,46 @@ function commonMaster($id){
                                                 <th>Insurance Validity:</th>
                                                 <td><?php echo $row7["InsuranceValidity"]; ?></td>
                                             </tr>
+                                            <?php if (!empty($insuranceSiteHistory)) { ?>
+                                            <tr>
+                                                <th>Insurance Process History:</th>
+                                                <td>
+                                                    <div class="table-responsive">
+                                                        <table class="table table-sm table-bordered mb-0">
+                                                            <thead>
+                                                                <tr>
+                                                                    <th>Completed Date</th>
+                                                                    <th>Insurance Company</th>
+                                                                    <th>Policy No</th>
+                                                                    <th>Date Of Issue</th>
+                                                                    <th>Date Of Expiry</th>
+                                                                    <th>No of Year</th>
+                                                                    <th>Processed By</th>
+                                                                </tr>
+                                                            </thead>
+                                                            <tbody>
+                                                                <?php foreach ($insuranceSiteHistory as $insHistory) {
+                                                                    $processorName = trim($insHistory['ProcessedByName']);
+                                                                    if ($processorName === '') {
+                                                                        $processorName = trim($insHistory['ProcessorFname'] . ' ' . $insHistory['ProcessorLname']);
+                                                                    }
+                                                                    ?>
+                                                                <tr>
+                                                                    <td><?php echo htmlspecialchars(formatInsuranceDate($insHistory['CompletedDate'])); ?></td>
+                                                                    <td><?php echo htmlspecialchars($insHistory['InsuranceCompany']); ?></td>
+                                                                    <td><?php echo htmlspecialchars($insHistory['PolicyNo']); ?></td>
+                                                                    <td><?php echo htmlspecialchars(formatInsuranceDate($insHistory['DateOfIssue'])); ?></td>
+                                                                    <td><?php echo htmlspecialchars(formatInsuranceDate($insHistory['DateOfExpiry'])); ?></td>
+                                                                    <td><?php echo htmlspecialchars($insHistory['NoOfYear']); ?></td>
+                                                                    <td><?php echo htmlspecialchars($processorName); ?></td>
+                                                                </tr>
+                                                                <?php } ?>
+                                                            </tbody>
+                                                        </table>
+                                                    </div>
+                                                </td>
+                                            </tr>
+                                            <?php } ?>
                                             <tr>
                                                 <th>Installation Vendor Name:</th>
                                                 <td><?php echo $row7["InstallationVendor"]; ?></td>

@@ -33,7 +33,7 @@ if($dist !=''){
 }
 }
 if($roll == 'capacity'){
-$sql = "SELECT * FROM tbl_users WHERE PumpCapacity='$val2' AND ProjectType=2 AND  ProjectId='$ProjectId' AND District!='' AND ProjectSubHeadId='$ProjectSubHeadId'";
+$sql = "SELECT * FROM tbl_users WHERE (PumpCapacity='$val2' OR RooftopPlantCapacity='$val2') AND ProjectType=2 AND Roll=5 AND ProjectId='$ProjectId' AND District!='' AND ProjectSubHeadId='$ProjectSubHeadId'";
 if($dist !=''){
     $sql.=" AND District='$dist'";
 }

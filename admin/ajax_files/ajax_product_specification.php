@@ -57,19 +57,18 @@ if($_POST['action']=='view'){?>
   		$row2 = getRecord($sql2);
   ?>
            <tr>
-             <td><?php echo $srno; ?></td>
-             <input type="hidden" name="ProdId[]" class="form-control" value="<?php echo $nx['id'];?>">
-              <input type="hidden" name="ProdName[]" class="form-control" value='<?php echo $nx['ProductName'];?>'>
-              <input type="hidden" name="Unit[]" class="form-control" value="<?php echo $nx['Unit'];?>">
-             <td><?php echo $nx['ProductName']; ?></td>
-             <td><?php echo $nx['Unit']; ?></td>
-            <td><input type="number" name="Qty[]" class="form-control" value="<?php echo $row2['Qty'];?>"></td>
-            </tr>
+             <td><?php echo $srno; ?>
+               <input type="hidden" name="ProdId[]" value="<?php echo (int) $nx['id']; ?>">
+               <input type="hidden" name="ProdName[]" value="<?php echo htmlspecialchars($nx['ProductName'], ENT_QUOTES, 'UTF-8'); ?>">
+               <input type="hidden" name="Unit[]" value="<?php echo htmlspecialchars($nx['Unit'], ENT_QUOTES, 'UTF-8'); ?>">
+             </td>
+             <td><?php echo htmlspecialchars($nx['ProductName'], ENT_QUOTES, 'UTF-8'); ?></td>
+             <td><?php echo htmlspecialchars($nx['Unit'], ENT_QUOTES, 'UTF-8'); ?></td>
+             <td><input type="number" name="Qty[]" class="form-control" min="0" step="any" value="<?php echo htmlspecialchars((string) ($row2['Qty'] ?? ''), ENT_QUOTES, 'UTF-8'); ?>"></td>
+           </tr>
              <?php $srno++;} ?>
         </tbody>
     </table>
-
-    <button type="submit" name="submit" class="btn btn-primary btn-finish" style="width: 100px;">Submit</button>
     <script type="text/javascript">
       $(document).ready(function() {
       $('#example').DataTable( {
@@ -138,17 +137,18 @@ if($_POST['action']=='view'){?>
   	
   ?>
            <tr>
-             <td><?php echo $srno; ?></td>
-             <input type="hidden" name="ProdId[]" class="form-control" value="<?php echo $nx['id'];?>">
-             <input type="hidden" name="ProdName[]" class="form-control" value='<?php echo $nx['ProductName'];?>'>
-             <input type="hidden" name="Unit[]" class="form-control" value="<?php echo $nx['Unit'];?>">
-             <input type="hidden" name="Qty[]" class="form-control" value="<?php echo $nx['Qty'];?>">
-             <input type="hidden" name="SpecType[]" class="form-control" value="0">
-              <input type="hidden" name="Structure[]" class="form-control" value="0">
-             <td><?php echo $nx['ProductName']; ?></td>
-             <td><?php echo $nx['Unit']; ?></td>
-            <td><?php echo $nx['Qty'];?></td>
-            </tr>
+             <td><?php echo $srno; ?>
+               <input type="hidden" name="ProdId[]" value="<?php echo (int) $nx['id']; ?>">
+               <input type="hidden" name="ProdName[]" value="<?php echo htmlspecialchars($nx['ProductName'], ENT_QUOTES, 'UTF-8'); ?>">
+               <input type="hidden" name="Unit[]" value="<?php echo htmlspecialchars($nx['Unit'], ENT_QUOTES, 'UTF-8'); ?>">
+               <input type="hidden" name="Qty[]" value="<?php echo htmlspecialchars((string) $nx['Qty'], ENT_QUOTES, 'UTF-8'); ?>">
+               <input type="hidden" name="SpecType[]" value="0">
+               <input type="hidden" name="Structure[]" value="0">
+             </td>
+             <td><?php echo htmlspecialchars($nx['ProductName'], ENT_QUOTES, 'UTF-8'); ?></td>
+             <td><?php echo htmlspecialchars($nx['Unit'], ENT_QUOTES, 'UTF-8'); ?></td>
+             <td><?php echo htmlspecialchars((string) $nx['Qty'], ENT_QUOTES, 'UTF-8'); ?></td>
+           </tr>
              <?php $srno++;} ?>
         </tbody>
     </table>

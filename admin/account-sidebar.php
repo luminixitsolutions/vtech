@@ -4,7 +4,7 @@
 	$row77 = getRecord($sql77);
 	$Roll = $row77['Roll'];
 	$UserCat = $row77['CatId'];
-	$Options = explode(',',$row77['Options']);
+	$Options = adminResolveMenuOptionsFromUserRow($row77);
 	$BranchId = $row77['BranchId'];
  ?>
 <div class="page-loader">
@@ -29,6 +29,7 @@
                 
             </a>
         </li>
+        <?php if (userHasAnyMenuOption($Options, menuAccessUserAccountsOptionIds())) { ?>
         <li class="sidenav-item">
             <a href="account-managment-dashboard.php" class="sidenav-link">
                 <i class="sidenav-icon feather icon-home"></i>
@@ -36,6 +37,7 @@
                 
             </a>
         </li>
+        <?php } ?>
          
            <?php if(in_array("18", $Options)) {?>
 <li class="sidenav-item <?php if($MainPage=='Customers') {?> open active <?php } ?>">
@@ -318,6 +320,7 @@
 <?php } ?>
 </a>
 </li>
+<?php if(in_array("142", $Options)) { ?>
 <li class="sidenav-item">
 <a href="../report_management/contractor-commision-report.php" class="sidenav-link">
 <div> Contractor Commision Report</div>
@@ -328,6 +331,7 @@
 <?php } ?>
 </a>
 </li>
+<?php } ?>
 </ul>
 </li>
 <?php } if(in_array("128", $Options)) {?>

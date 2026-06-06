@@ -1,6 +1,6 @@
 <?php
+session_start();
 include '../config.php';
-include 'incuserdetails.php';
 ## Read value
 $ProjectId = $_POST['ProjectId'];
 $ProjectSubHeadId = $_POST['SubHeadId'];

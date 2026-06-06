@@ -246,7 +246,8 @@ else{
         </div>
     </main>
 
-    <?php include_once 'footer.php';?>
+    <?php $GLOBALS['adminapp_scripts_included'] = true; ?>
+<?php include_once 'footer.php';?>
 
 
     <!-- color settings style switcher -->

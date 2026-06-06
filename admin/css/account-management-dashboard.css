@@ -1,0 +1,310 @@
+/* Account / Employee Management Dashboard */
+
+.acct-dash-page {
+  padding: 0.25rem 0 2rem;
+}
+
+.acct-dash-hero {
+  background: linear-gradient(135deg, #0e7490 0%, #0891b2 42%, #06b6d4 100%);
+  border-radius: 18px;
+  padding: 1.75rem 1.75rem 1.5rem;
+  color: #fff;
+  margin-bottom: 1.5rem;
+  box-shadow: 0 14px 40px rgba(8, 145, 178, 0.28);
+  position: relative;
+  overflow: hidden;
+}
+
+.acct-dash-hero::before {
+  content: '';
+  position: absolute;
+  left: -30px;
+  bottom: -50px;
+  width: 160px;
+  height: 160px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.07);
+}
+
+.acct-dash-hero::after {
+  content: '';
+  position: absolute;
+  right: -40px;
+  top: -40px;
+  width: 180px;
+  height: 180px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.acct-dash-hero h4 {
+  margin: 0 0 0.35rem;
+  font-weight: 800;
+  font-size: 1.45rem;
+  position: relative;
+  z-index: 1;
+}
+
+.acct-dash-hero p {
+  margin: 0;
+  opacity: 0.92;
+  font-size: 0.95rem;
+  position: relative;
+  z-index: 1;
+}
+
+.acct-dash-hero-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  margin-top: 1.1rem;
+  position: relative;
+  z-index: 1;
+}
+
+.acct-dash-hero-pill {
+  background: rgba(255, 255, 255, 0.16);
+  border: 1px solid rgba(255, 255, 255, 0.22);
+  border-radius: 999px;
+  padding: 0.4rem 0.9rem;
+  font-size: 0.82rem;
+  font-weight: 600;
+}
+
+.acct-dash-shell {
+  border: none;
+  border-radius: 16px;
+  box-shadow: 0 4px 24px rgba(15, 23, 42, 0.08);
+  overflow: hidden;
+  background: #fff;
+  margin-bottom: 1.5rem;
+}
+
+.acct-dash-shell .acct-dash-body {
+  padding: 1.5rem 1.5rem 1.75rem;
+  background: linear-gradient(180deg, #f8fafc 0%, #ffffff 42%);
+}
+
+.acct-dash-header {
+  text-align: center;
+  padding: 1rem 1.5rem;
+  margin: 0;
+  border: none;
+  border-bottom: 1px solid #e2e8f0;
+  font-size: 0.92rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: #475569;
+  background: #f8fafc;
+}
+
+.acct-dash-summary-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(190px, 1fr));
+  gap: 1rem;
+}
+
+.acct-dash-summary-card {
+  background: #fff;
+  border: 1px solid #e2e8f0;
+  border-radius: 14px;
+  padding: 1.1rem 1.15rem;
+  text-align: center;
+  box-shadow: 0 2px 12px rgba(15, 23, 42, 0.05);
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.acct-dash-summary-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 20px rgba(15, 23, 42, 0.08);
+}
+
+.acct-dash-summary-icon {
+  width: 42px;
+  height: 42px;
+  margin: 0 auto 0.65rem;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #fff;
+  font-size: 1.05rem;
+}
+
+.acct-dash-summary-card h3 {
+  margin: 0;
+  font-size: 1.75rem;
+  font-weight: 800;
+  color: #0f172a;
+}
+
+.acct-dash-summary-card p {
+  margin: 0.25rem 0 0;
+  font-size: 0.76rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: #64748b;
+}
+
+.acct-dash-summary-total .acct-dash-summary-icon { background: linear-gradient(135deg, #0891b2, #0e7490); }
+.acct-dash-summary-active .acct-dash-summary-icon { background: linear-gradient(135deg, #10b981, #059669); }
+.acct-dash-summary-inactive .acct-dash-summary-icon { background: linear-gradient(135deg, #64748b, #475569); }
+.acct-dash-summary-types .acct-dash-summary-icon { background: linear-gradient(135deg, #6366f1, #4f46e5); }
+.acct-dash-summary-visible .acct-dash-summary-icon { background: linear-gradient(135deg, #06b6d4, #0891b2); }
+
+.acct-dash-stat-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(230px, 1fr));
+  gap: 1.15rem;
+}
+
+.acct-dash-stat-link {
+  display: block;
+  text-decoration: none !important;
+  color: inherit;
+  height: 100%;
+}
+
+.acct-dash-stat-card {
+  display: flex;
+  align-items: flex-start;
+  gap: 1rem;
+  min-height: 118px;
+  padding: 1.15rem 1.2rem;
+  background: #fff;
+  border: 1px solid #e2e8f0;
+  border-radius: 16px;
+  box-shadow: 0 2px 12px rgba(15, 23, 42, 0.06);
+  transition: transform 0.25s ease, box-shadow 0.25s ease;
+  height: 100%;
+}
+
+.acct-dash-stat-link:hover .acct-dash-stat-card {
+  transform: translateY(-4px);
+  box-shadow: 0 12px 28px rgba(15, 23, 42, 0.12);
+}
+
+.acct-dash-stat-icon {
+  width: 48px;
+  height: 48px;
+  border-radius: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.25rem;
+  color: #fff;
+  flex-shrink: 0;
+}
+
+.acct-dash-stat-label {
+  margin: 0 0 0.25rem;
+  font-size: 0.78rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: #64748b;
+  line-height: 1.3;
+}
+
+.acct-dash-stat-count {
+  margin: 0;
+  font-size: 1.85rem;
+  font-weight: 800;
+  line-height: 1.1;
+  color: #0f172a;
+}
+
+.acct-dash-stat-sub {
+  display: inline-block;
+  margin-top: 0.35rem;
+  font-size: 0.76rem;
+  color: #94a3b8;
+  font-weight: 600;
+}
+
+.acct-dash-tone-customers .acct-dash-stat-icon,
+.acct-dash-tone-customers .acct-dash-quick-icon { background: linear-gradient(135deg, #2563eb, #1d4ed8); }
+.acct-dash-tone-rooftop .acct-dash-stat-icon,
+.acct-dash-tone-rooftop .acct-dash-quick-icon { background: linear-gradient(135deg, #f59e0b, #d97706); }
+.acct-dash-tone-manufacture .acct-dash-stat-icon,
+.acct-dash-tone-manufacture .acct-dash-quick-icon { background: linear-gradient(135deg, #64748b, #475569); }
+.acct-dash-tone-company .acct-dash-stat-icon,
+.acct-dash-tone-company .acct-dash-quick-icon { background: linear-gradient(135deg, #6366f1, #4f46e5); }
+.acct-dash-tone-dealer .acct-dash-stat-icon,
+.acct-dash-tone-dealer .acct-dash-quick-icon { background: linear-gradient(135deg, #8b5cf6, #7c3aed); }
+.acct-dash-tone-agency .acct-dash-stat-icon,
+.acct-dash-tone-agency .acct-dash-quick-icon { background: linear-gradient(135deg, #ec4899, #db2777); }
+.acct-dash-tone-employee .acct-dash-stat-icon,
+.acct-dash-tone-employee .acct-dash-quick-icon { background: linear-gradient(135deg, #0891b2, #0e7490); }
+.acct-dash-tone-store .acct-dash-stat-icon,
+.acct-dash-tone-store .acct-dash-quick-icon { background: linear-gradient(135deg, #14b8a6, #0d9488); }
+.acct-dash-tone-dispatch .acct-dash-stat-icon,
+.acct-dash-tone-dispatch .acct-dash-quick-icon { background: linear-gradient(135deg, #3b82f6, #2563eb); }
+.acct-dash-tone-contractor .acct-dash-stat-icon,
+.acct-dash-tone-contractor .acct-dash-quick-icon { background: linear-gradient(135deg, #f97316, #ea580c); }
+.acct-dash-tone-installer .acct-dash-stat-icon,
+.acct-dash-tone-installer .acct-dash-quick-icon { background: linear-gradient(135deg, #06b6d4, #0891b2); }
+.acct-dash-tone-driver .acct-dash-stat-icon,
+.acct-dash-tone-driver .acct-dash-quick-icon { background: linear-gradient(135deg, #84cc16, #65a30d); }
+.acct-dash-tone-maintenance .acct-dash-stat-icon,
+.acct-dash-tone-maintenance .acct-dash-quick-icon { background: linear-gradient(135deg, #ef4444, #dc2626); }
+
+.acct-dash-quick-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+}
+
+.acct-dash-quick-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.55rem;
+  padding: 0.55rem 0.95rem 0.55rem 0.55rem;
+  border-radius: 999px;
+  background: #fff;
+  border: 1px solid #e2e8f0;
+  text-decoration: none !important;
+  color: #334155;
+  font-size: 0.82rem;
+  font-weight: 600;
+  box-shadow: 0 2px 8px rgba(15, 23, 42, 0.05);
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.acct-dash-quick-link:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 18px rgba(15, 23, 42, 0.1);
+  color: #0f172a;
+}
+
+.acct-dash-quick-icon {
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: #fff;
+  font-size: 0.85rem;
+  flex-shrink: 0;
+}
+
+.acct-dash-empty {
+  text-align: center;
+  padding: 2.5rem 1rem;
+  color: #64748b;
+  font-size: 0.95rem;
+}
+
+@media (max-width: 767px) {
+  .acct-dash-hero {
+    padding: 1.25rem;
+  }
+
+  .acct-dash-stat-grid,
+  .acct-dash-summary-grid {
+    grid-template-columns: 1fr;
+  }
+}

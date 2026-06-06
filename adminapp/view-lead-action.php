@@ -135,6 +135,7 @@ if($_REQUEST["action"]=="delete")
 </div>
 
 
+<?php $GLOBALS['adminapp_scripts_included'] = true; ?>
 <?php include_once 'footer.php'; ?>
 
 </div>

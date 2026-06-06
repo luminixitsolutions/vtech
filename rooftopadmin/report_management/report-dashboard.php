@@ -265,7 +265,22 @@ $Options = explode(',',$row77['Options']);
                                         <i class="lnr lnr-users hov-icon"></i>
                                      </div>
                                 </div></a>
-                            </div> 
+                            </div>
+<?php }
+$rowDash = getRecord("SELECT Roll, Options FROM tbl_users WHERE id='" . (int) $_SESSION['Admin']['id'] . "'");
+$dashRoll = (int) ($rowDash['Roll'] ?? 0);
+$dashOpts = isset($rowDash['Options']) ? explode(',', $rowDash['Options']) : array();
+if ($dashRoll === 1 || $dashRoll === 7 || $dashRoll === 26 || $dashRoll === 27
+    || in_array('183', $dashOpts) || in_array('165', $dashOpts) || in_array('166', $dashOpts) || in_array('72', $dashOpts)) { ?>
+                        <div class="col-sm-6 col-xl-2">
+                                <a href="serial-location-report.php">
+                               <div class="card bg-info text-white ui-hover-icon mb-4 bg-pattern-3">
+                                        <div class="card-body text-center">
+                                        <h6 class="mb-0">Serial No — Location Report</h6>
+                                        <i class="lnr lnr-map hov-icon"></i>
+                                     </div>
+                                </div></a>
+                            </div>
 <?php } if(in_array("110", $Options)) {?>
 <div class="col-sm-6 col-xl-2">
                                 <a href="before-installation-calling-report.php">

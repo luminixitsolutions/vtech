@@ -4,7 +4,7 @@
 	$row77 = getRecord($sql77);
 	$Roll = $row77['Roll'];
 	$UserCat = $row77['CatId'];
-	$Options = explode(',',$row77['Options']);
+	$Options = adminResolveMenuOptionsFromUserRow($row77);
 	$BranchId = $row77['BranchId'];
  ?>
 <div class="page-loader">
@@ -30,6 +30,7 @@
                 
             </a>
         </li>
+        <?php if(in_array("61", $Options)) {?>
         <li class="sidenav-item">
             <a href="warranty-dashboard.php" class="sidenav-link">
                  <i class="sidenav-icon feather icon-activity"></i>
@@ -37,6 +38,7 @@
                 
             </a>
         </li>
+        <?php } ?>
         <!-- <li class="sidenav-item">
             <a href="#" class="sidenav-link">
                  <i class="sidenav-icon feather icon-activity"></i>
@@ -51,6 +53,7 @@
                 
             </a>
         </li> -->
+        <?php if(in_array("61", $Options)) {?>
         <li class="sidenav-item">
             <a href="view-warranty-registration.php" class="sidenav-link">
                  <i class="sidenav-icon feather icon-activity"></i>
@@ -74,6 +77,7 @@
                 
             </a>
         </li>
+        <?php } ?>
         
         
     </ul>

@@ -5,13 +5,13 @@ require_once "exe-database.php";
 include_once 'auth.php';
 $user_id = $_SESSION['Admin']['id'];
 $MainPage = "Installation";
-$Page = "Installation";
+$Page = "Assign-Coordinator";
 ?>
 <!DOCTYPE html>
 <html lang="en" class="default-style layout-fixed layout-navbar-fixed">
 
 <head>
-    <title><?php echo $Proj_Title; ?> | View Sell List</title>
+    <title><?php echo $Proj_Title; ?> | Assign Coordinator</title>
     <meta charset="utf-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=0, minimal-ui">
@@ -116,7 +116,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['submit'])) {
 
                                                      <div class="form-group col-lg-4">
                                                         <label class="form-label"> Store<span class="text-danger">*</span></label>
-                                                        <select class="select2-demo form-control" name="StoreInchId2" id="StoreInchId2" required>
+                                                        <select class="select2-demo form-control" name="StoreInchId2" id="StoreInchId2">
                                                             <option selected="" value="">Select</option>
                                                             <?php
                                                             $sql12 = "SELECT * FROM tbl_branch WHERE Status='1'";
@@ -151,7 +151,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['submit'])) {
 <select class="select2-demo form-control" id="StateId" name="StateId">
 <option selected="" value="all">All State</option>
  <?php 
-        $CountryId = $row7['CountryId'];
         $q = "select * from tbl_state WHERE CountryId='1' ORDER BY Name ASC";
         $r = $conn->query($q);
         while($rw = $r->fetch_assoc())
@@ -210,9 +209,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['submit'])) {
     <div class="form-group col-md-2">
                                                         <label class="form-label">Assign Status </label>
                                                         <select class="form-control" id="StoreInchStatus" name="StoreInchStatus">
-                                                        <option value="all" selected>All</option>
-                                    <option value="1" <?php if($_REQUEST['StoreInchStatus']==1){ ?> selected <?php } ?> >Assign</option>
-                                    <option value="0"  <?php if($_REQUEST['StoreInchStatus']==0){ ?> selected <?php } ?> >Not Assign</option>
+                                                        <?php $assignStatus = isset($_REQUEST['StoreInchStatus']) ? (string) $_REQUEST['StoreInchStatus'] : 'all'; ?>
+                                                        <option value="all" <?php if ($assignStatus === 'all') { ?> selected <?php } ?>>All</option>
+                                    <option value="1" <?php if ($assignStatus === '1') { ?> selected <?php } ?>>Assign</option>
+                                    <option value="0" <?php if ($assignStatus === '0') { ?> selected <?php } ?>>Not Assign</option>
                                                           
                                                         </select>
                                                     </div>
@@ -234,37 +234,20 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['submit'])) {
                                             </form>
                                             
                             <form id="validation-form" method="post" enctype="multipart/form-data" action="">
-                                
-                                 <?php
-                                            $i = 1;
-                                            $sql = "SELECT tu.*,tu2.Fname As InchargeName FROM tbl_users tu 
-                                                    LEFT JOIN tbl_users tu2 ON tu2.id=tu.StoreInchId 
-                                                    WHERE tu.ProjectType=1 ORDER BY tu.CreatedDate DESC";
-                                                    $rncnt2 = getRow($sql);?>
-        <input type="hidden" name="rncnt2" value="<?php echo $rncnt2;?>">
-       
-        <?php
-                                            $i = 1;
-                                            $sql = "SELECT tp.*,tu.Fname As InchargeName FROM tbl_quotation tp 
-                    LEFT JOIN tbl_users tu ON tu.id=tp.StoreInchId 
-                    WHERE tp.PaidStatus=1
-            
-            ORDER BY tp.CreatedDate DESC";
-            $rncnt = getRow($sql);?>
-        <input type="hidden" name="rncnt" value="<?php echo $rncnt;?>">
-        
-        
                               <input type="hidden" name="selected_ids_combined" id="selected_ids_combined" />
                                 <div class="card-datatable table-responsive">
                                     
                                     <?php
 $i = 1;
+$showResults = isset($_REQUEST['Search']);
+
+if ($showResults) {
 
 $sql = "
 SELECT 
-    ts.*,
-    ti.InstallStatus,
-    ti.Type,
+    ts.id,
+    ts.CustId,
+    ts.CreatedDate,
     u.id AS UserId,
     u.Fname,
     u.Phone,
@@ -276,12 +259,16 @@ SELECT
     u.District,
     tb.Name AS InchargeName,
     st.Name AS StateName,
-    cm.Name AS Pump_Capacity
+    cm.Name AS Pump_Capacity,
+    f_active.id AS ActiveFlowId
 FROM tbl_sell ts
-LEFT JOIN tbl_installations ti 
-    ON ti.CustId = ts.CustId 
-    AND ti.Type = 2 
-    AND ti.InstallStatus = 'No'
+INNER JOIN (
+    SELECT CustId, MAX(id) AS latest_sell_id
+    FROM tbl_sell
+    WHERE ContractorAssignStatus = 1
+    AND ChallanType = 1
+    GROUP BY CustId
+) latest ON latest.latest_sell_id = ts.id
 LEFT JOIN tbl_users u 
     ON u.id = ts.CustId
 LEFT JOIN tbl_branch tb 
@@ -290,33 +277,56 @@ LEFT JOIN tbl_state st
     ON st.id = u.StateId
 LEFT JOIN tbl_common_master cm 
     ON cm.id = u.PumpCapacity
-WHERE ts.ContractorAssignStatus = 1
-AND ts.ChallanType = 1
-GROUP BY ts.CustId
+LEFT JOIN (
+    SELECT CustId, MIN(id) AS id
+    FROM tbl_installation_flow
+    WHERE is_completed = 0
+    GROUP BY CustId
+) f_active ON f_active.CustId = ts.CustId
+WHERE 1=1
 ";
 
-/* ===== Filters (unchanged logic) ===== */
-if ($_REQUEST['StoreInchId2'] != '' && $_REQUEST['StoreInchId2'] != 'all') {
-    $sql .= " AND u.StoreInchId='" . $_REQUEST['StoreInchId2'] . "'";
+if (!empty($_REQUEST['StoreInchId2']) && $_REQUEST['StoreInchId2'] != 'all') {
+    $storeId = mysqli_real_escape_string($conn, $_REQUEST['StoreInchId2']);
+    $sql .= " AND u.StoreInchId='" . $storeId . "'";
 }
-if ($_REQUEST['PumpCapacity'] != '' && $_REQUEST['PumpCapacity'] != 'all') {
-    $sql .= " AND u.PumpCapacity='" . $_REQUEST['PumpCapacity'] . "'";
+if (!empty($_REQUEST['PumpCapacity']) && $_REQUEST['PumpCapacity'] != 'all') {
+    $pumpCap = mysqli_real_escape_string($conn, $_REQUEST['PumpCapacity']);
+    $sql .= " AND u.PumpCapacity='" . $pumpCap . "'";
 }
-if ($_REQUEST['StateId'] != '' && $_REQUEST['StateId'] != 'all') {
-    $sql .= " AND u.StateId='" . $_REQUEST['StateId'] . "'";
+if (!empty($_REQUEST['StateId']) && $_REQUEST['StateId'] != 'all') {
+    $stateId = mysqli_real_escape_string($conn, $_REQUEST['StateId']);
+    $sql .= " AND u.StateId='" . $stateId . "'";
 }
-if ($_REQUEST['Taluka'] != '' && $_REQUEST['Taluka'] != 'all') {
-    $sql .= " AND u.Taluka='" . $_REQUEST['Taluka'] . "'";
+if (!empty($_REQUEST['Taluka']) && $_REQUEST['Taluka'] != 'all') {
+    $taluka = mysqli_real_escape_string($conn, $_REQUEST['Taluka']);
+    $sql .= " AND u.Taluka='" . $taluka . "'";
 }
-if ($_REQUEST['District'] != '' && $_REQUEST['District'] != 'all') {
-    $sql .= " AND u.District='" . $_REQUEST['District'] . "'";
+if (!empty($_REQUEST['District']) && $_REQUEST['District'] != 'all') {
+    $district = mysqli_real_escape_string($conn, $_REQUEST['District']);
+    $sql .= " AND u.District='" . $district . "'";
+}
+if (isset($_REQUEST['StoreInchStatus']) && $_REQUEST['StoreInchStatus'] !== '' && $_REQUEST['StoreInchStatus'] !== 'all') {
+    if ((string) $_REQUEST['StoreInchStatus'] === '1') {
+        $sql .= " AND f_active.id IS NOT NULL";
+    } elseif ((string) $_REQUEST['StoreInchStatus'] === '0') {
+        $sql .= " AND f_active.id IS NULL";
+    }
 }
 
 $sql .= " ORDER BY ts.CreatedDate DESC";
 
 $res = $conn->query($sql);
+$queryError = (!$res) ? $conn->error : '';
+$rowCount = 0;
+if ($res) {
+    $rowCount = $res->num_rows;
+}
 ?>
 
+<?php if ($queryError !== '') { ?>
+    <div class="alert alert-danger mb-0">Unable to load results: <?php echo htmlspecialchars($queryError, ENT_QUOTES, 'UTF-8'); ?></div>
+<?php } else { ?>
 
                                    <table id="example" class="table table-striped table-bordered" style="width:100%">
     <thead>
@@ -336,26 +346,19 @@ $res = $conn->query($sql);
     <tbody>
 
 <?php
+if ($res) {
 while ($row = $res->fetch_assoc()) {
 
-    // Already assigned check
-    $assigned = getRow("
-    SELECT id 
-    FROM tbl_installation_flow 
-    WHERE CustId='".$row['UserId']."' 
-    AND is_completed=0
-");
-
-    $bcolor = ($assigned > 0) ? "background-color:#b9efb9;" : "";
+    $assigned = !empty($row['ActiveFlowId']);
+    $bcolor = $assigned ? "background-color:#b9efb9;" : "";
 ?>
 <tr style="<?php echo $bcolor; ?>">
 
-   <td><?php if($assigned > 0){} else{?>
+   <td><?php if(!$assigned){?>
                     <label class="custom-control custom-checkbox">
                    <input type="checkbox"
        name="selected_sell_ids[]"
-       value="<?php echo $row['id']; ?>" class="custom-control-input is-valid"
-       class="sell-checkbox">
+       value="<?php echo $row['id']; ?>" class="custom-control-input is-valid sell-checkbox">
 
 
                     <span class="custom-control-label">&nbsp;</span>
@@ -373,10 +376,23 @@ while ($row = $res->fetch_assoc()) {
     <td><?php echo $row['District']; ?></td>
 
 </tr>
-<?php $i++; } ?>
+<?php $i++; } }
+?>
 
     </tbody>
 </table>
+
+<?php if ($rowCount === 0) { ?>
+    <div class="alert alert-warning mt-2 mb-0">No records found for the selected filters.</div>
+<?php } ?>
+
+<?php } ?>
+
+<?php } else { ?>
+    <div class="alert alert-info mb-0">
+        Select filters and click <strong>Search</strong> to load pending installation sites.
+    </div>
+<?php } ?>
 
                                 </div>
 
@@ -444,21 +460,33 @@ while ($row = $res->fetch_assoc()) {
     }
 
     $(document).ready(function () {
-        var table = $('#example').DataTable();
+        <?php if ($showResults && $queryError === '') { ?>
+        var table = $('#example').DataTable({
+            scrollX: true,
+            pageLength: 25,
+            deferRender: true
+        });
 
         // On checkbox click
-        $(document).on('change', '.rowCheckbox', function () {
-            toggleCheckbox(this);
+        $(document).on('change', '.sell-checkbox', function () {
+            const id = this.value;
+            if (this.checked) {
+                selectedIds[id] = true;
+            } else {
+                delete selectedIds[id];
+            }
+            updateHiddenField();
         });
 
         // On redraw (pagination/search)
         table.on('draw', function () {
-            $('.rowCheckbox').each(function () {
-                const id = this.getAttribute("data-id");
+            $('.sell-checkbox').each(function () {
+                const id = this.value;
                 this.checked = !!selectedIds[id];
             });
             updateHiddenField();
         });
+        <?php } ?>
     });
     
     function search(){
@@ -466,11 +494,11 @@ while ($row = $res->fetch_assoc()) {
     var StoreInchId2 = $('#StoreInchId2').val();
     var StateId = $('#StateId').val();
     var District = $('#District').val();
-    var Village = $('#Village').val();
+    var Village = $('#Village').val() || '';
     var Search = $('#Search').val();
     var Taluka = $('#Taluka').val();
     var StoreInchStatus = $('#StoreInchStatus').val();
-    window.location.href="assign-to-store-incharge.php?StoreInchId2="+StoreInchId2+"&StateId="+StateId+"&District="+District+"&Village="+Village+"&Search="+Search+"&PumpCapacity="+PumpCapacity+"&Taluka="+Taluka+"&StoreInchStatus="+StoreInchStatus;
+    window.location.href="pending-installations.php?StoreInchId2="+encodeURIComponent(StoreInchId2)+"&StateId="+encodeURIComponent(StateId)+"&District="+encodeURIComponent(District)+"&Village="+encodeURIComponent(Village)+"&Search="+encodeURIComponent(Search)+"&PumpCapacity="+encodeURIComponent(PumpCapacity)+"&Taluka="+encodeURIComponent(Taluka)+"&StoreInchStatus="+encodeURIComponent(StoreInchStatus);
 }
         function featured(id) {
             if ($('#Check_Id' + id).prop('checked') == true) {

@@ -2,6 +2,8 @@
 session_start();
 include_once 'config.php';
 include_once 'auth.php';
+include_once 'inc-store-dist-dispatch-status.php';
+require_once __DIR__ . '/inc-po-assignment-activity-log.php';
 
 $user_id = $_SESSION['Admin']['id'];
 $row77 = getRecord("SELECT Roll, Options, BranchId FROM tbl_users WHERE id='$user_id'");
@@ -48,18 +50,9 @@ foreach ($distIds as $did) {
 
 foreach ($distIds as $did) {
     $didInt = (int) $did;
-    $alreadyAssigned = getRecord("
-        SELECT h2.id, u2.Fname AS OfficerName
-        FROM tbl_distibute_items2 h2
-        LEFT JOIN tbl_users u2 ON u2.id = h2.StoreExeId
-        WHERE h2.Status='1'
-          AND h2.Narration LIKE '%DistId(s):%'
-          AND h2.Narration REGEXP CONCAT('(^|[^0-9])', '$didInt', '([^0-9]|$)')
-        ORDER BY h2.id DESC
-        LIMIT 1
-    ");
-    if (!empty($alreadyAssigned['id'])) {
-        $officer = isset($alreadyAssigned['OfficerName']) ? trim((string) $alreadyAssigned['OfficerName']) : '';
+    $alreadyAssigned = getStoreDistDispatchAssignment($conn, $didInt);
+    if ($alreadyAssigned !== null) {
+        $officer = $alreadyAssigned['OfficerName'];
         $msg = 'Store assignment #' . $didInt . ' is already assigned to dispatch';
         if ($officer !== '') {
             $msg .= ' (' . $officer . ')';
@@ -91,7 +84,7 @@ foreach ($headers as $h) {
 }
 
 $CreatedDateEsc = mysqli_real_escape_string($conn, $CreatedDate);
-$Narration = 'Dispatch handoff from store assign ¡¤ DistId(s): ' . implode(',', $distIds);
+$Narration = 'Dispatch handoff from store assign - DistId(s): ' . implode(',', $distIds);
 $NarrationEsc = mysqli_real_escape_string($conn, $Narration);
 $VehicalDateSql = ($VehicalDate !== null && $VehicalDate !== '') ? "'" . mysqli_real_escape_string($conn, $VehicalDate) . "'" : 'NULL';
 $VehicalNoEsc = mysqli_real_escape_string($conn, $VehicalNo);
@@ -149,8 +142,20 @@ try {
         throw new Exception('No line items to assign.');
     }
 
+    $officerRow = getRecord("SELECT Fname FROM tbl_users WHERE id='$StoreExeId' LIMIT 1");
+    $officerLabel = (is_array($officerRow) && !empty($officerRow['Fname'])) ? trim((string) $officerRow['Fname']) : '';
+    foreach ($distIds as $didLog) {
+        $remarks = 'Assigned to dispatch';
+        if ($officerLabel !== '') {
+            $remarks .= ': ' . $officerLabel;
+        }
+        $remarks .= ' (' . (int) $inserted . ' line(s))';
+        logStoreDistDispatchAction($conn, (int) $didLog, $newDist2Id, 'assign', $StoreExeId, (int) $user_id, $remarks);
+        logPoDispatchActivityFromStoreDist($conn, (int) $didLog, 'dispatch_assign', $StoreExeId, (int) $user_id, (int) $inserted, $remarks);
+    }
+
     $conn->commit();
-    echo "<script>alert('Assigned " . (int) $inserted . " line(s) to dispatch officer.');window.location.href='view-distribute-item-store-executive.php';</script>";
+    echo "<script>alert('Assigned " . (int) $inserted . " line(s) to dispatch officer.');window.location.href='view-distribute-item-store.php';</script>";
     exit;
 } catch (Exception $e) {
     $conn->rollback();

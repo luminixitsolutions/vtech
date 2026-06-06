@@ -237,7 +237,7 @@ alert("Excel Data Imported into the Database");
 <div class="form-group col-md-12">
    <label class="form-label">Upload Excel File <span class="text-danger">*</span> &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a href="../sample_files/sample_customer_excel.xlsx" download>Download & Upload Sample Excel File</a>
    &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a href="../sample_files/state_excel.xlsx" download>Download State Excel File For State Id</a>
-   &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a href="../sample_files/pump_capacity_excel.xlsx" download>Download Pump Capacity Excel File For Id</a></label>
+   &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a href="../sample_files/pump_capacity_excel.xlsx" download>Download Rooftop Capacity Excel File For Id</a></label>
     <input type="file" name="file" id="" class="form-control" placeholder="" autocomplete="off" required>
     <div class="clearfix"></div>
 </div>              

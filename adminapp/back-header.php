@@ -113,23 +113,7 @@ $sql11x = "select sum(debit) as debit,sum(credit) as credit from (SELECT (case w
 $mybalance = $row11x['credit'] - $row11x['debit'];
   ?>
   
- <div class="container-fluid h-100 loader-display">
-        <div class="row h-100">
-            <div class="align-self-center col">
-                <div class="logo-loading">
-                    <div class="icon  ">
-                        <img src="logoload.jpg" alt="">
-                    </div><br>
-                    <div class="loader-ellipsis">
-                        <div></div>
-                        <div></div>
-                        <div></div>
-                        <div></div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div> 
+ <?php include_once __DIR__ . '/inc-app-loader.php'; ?>
   <header class="header">
             <div class="row">
                 <div class="col-auto px-0">

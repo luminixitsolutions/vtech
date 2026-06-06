@@ -141,11 +141,14 @@ else{
             $sql2 = "SELECT * FROM tbl_branch WHERE id='$BranchId'";
             $row2 = getRecord($sql2);
             $StoreName = $row2['Name'];
-            $sql = "SELECT ProductId,ProductName FROM `tbl_distibute_item_details` WHERE BranchId='$BranchId' GROUP BY ProductId";
+            $sql = "SELECT ProductId, MAX(ProductName) AS ProductName FROM `tbl_distibute_item_details` WHERE BranchId='$BranchId' GROUP BY ProductId";
              
            //echo $sql;
             $res = $conn->query($sql);
-            while($row = $res->fetch_assoc())
+            if (!$res) {
+                echo '<tr><td colspan="5" class="text-danger">Unable to load stock data. Please try again.</td></tr>';
+            }
+            while ($res && ($row = $res->fetch_assoc()))
             {
                 $sql2 = "SELECT SUM(Qty) As Qty FROM `tbl_distibute_item_details` WHERE BranchId='$BranchId' AND ProductId='".$row['ProductId']."' ";
                 $row2 = getRecord($sql2);
@@ -221,6 +224,9 @@ else{
 <script type="text/javascript">
  
     $(document).ready(function() {
+    if (!$('#example').length) {
+        return;
+    }
     $('#example').DataTable({
         "scrollX": true,
         "pageLength":1000,

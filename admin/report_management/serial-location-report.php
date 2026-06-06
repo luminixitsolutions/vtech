@@ -11,7 +11,7 @@ $Roll = (int) ($row77['Roll'] ?? 0);
 $sessionBranchId = (int) ($row77['BranchId'] ?? 0);
 $Options = isset($row77['Options']) ? explode(',', $row77['Options']) : array();
 
-$canAccess = ($Roll === 1 || $Roll === 7 || in_array('101', $Options) || in_array('103', $Options));
+$canAccess = ($Roll === 1 || $Roll === 7 || in_array('183', $Options) || in_array('101', $Options) || in_array('103', $Options));
 if (!$canAccess) {
     echo "<script>alert('Access denied.'); window.location.href='report-dashboard.php';</script>";
     exit;

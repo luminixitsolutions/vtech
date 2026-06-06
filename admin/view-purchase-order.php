@@ -2,6 +2,7 @@
 session_start();
 include_once 'config.php';
 include_once 'auth.php';
+require_once __DIR__ . '/inc-po-assignment-activity-log.php';
 $user_id = $_SESSION['Admin']['id'];
 $MainPage = "Purchase-Order";
 $Page = "View-Purchase-Order";
@@ -162,6 +163,7 @@ else{
                <th>#</th>
                 <th>Print</th>
                 <th>Order Track</th>
+                <th>Store assign track</th>
                 <th>Product Head</th> 
                 <th>Company Name</th>
                 <th>Manufacture Name</th>
@@ -228,7 +230,16 @@ else{
             $sql.=" ORDER BY ts.id DESC";    
             //echo $sql;
             $res = $conn->query($sql);
-            while($row = $res->fetch_assoc())
+            $listRows = [];
+            $listPoIds = [];
+            if ($res) {
+                while ($row = $res->fetch_assoc()) {
+                    $listRows[] = $row;
+                    $listPoIds[] = (int) $row['id'];
+                }
+            }
+            $poStoreAssignMap = buildPoStoreAssignListSummaryMap($conn, $listPoIds);
+            foreach ($listRows as $row)
             {
                 // $sql2 = "SELECT SUM(PaidAmt) AS PaidAmt FROM tbl_general_ledger WHERE SellId='".$row['id']."' AND Type='PR'";
                 // $row2 = getRecord($sql2);
@@ -253,6 +264,11 @@ else{
                <td><?php echo $i; ?></td>
                 <td><a href="invoice.php?id=<?php echo $row['id']; ?>" target="_blank"><?php echo $row['InvoiceNo']; ?></a></td>
                 <td><a href="take-po-action.php?id=<?php echo $row['id']; ?>" target="_blank" class="badge badge-pill badge-secondary"><?php echo $Status;?></a></td>
+                <td class="align-top"><?php
+                    $poIdRow = (int) $row['id'];
+                    $poSum = isset($poStoreAssignMap[$poIdRow]) ? $poStoreAssignMap[$poIdRow] : ['assigned' => false];
+                    echo renderPoStoreAssignListCellHtml($poIdRow, $poSum);
+                ?></td>
                 <td><?php echo $row['ProductHead']; ?></td>
  <!-- <td><?php echo $row['Branch']; ?></td> -->
   <td><?php echo $row['CompanyName']; ?></td>
@@ -304,6 +320,23 @@ else{
 <div class="layout-overlay layout-sidenav-toggle"></div>
 </div>
 
+<div class="modal fade" id="modalPoAssignHistory" tabindex="-1" role="dialog" aria-labelledby="modalPoAssignHistoryLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="modalPoAssignHistoryLabel">PO assignment history</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+            </div>
+            <div class="modal-body">
+                <div id="poAssignHistoryWrap"><span class="text-muted small">Loading…</span></div>
+            </div>
+            <div class="modal-footer">
+                <a href="#" id="poAssignHistoryOpenPo" class="btn btn-outline-primary btn-sm mr-auto" target="_blank" style="display:none;">Open PO action</a>
+                <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
 
 <?php include_once 'footer_script.php'; ?>
 
@@ -311,7 +344,42 @@ else{
  
     $(document).ready(function() {
     $('#example').DataTable({
-        "scrollX": true
+        "scrollX": true,
+        order: [[0, 'asc']]
+    });
+
+    var currentPoHistoryId = null;
+    $(document).on('click', '.btn-po-assign-history', function (e) {
+        e.preventDefault();
+        currentPoHistoryId = $(this).data('po-id');
+        $('#modalPoAssignHistoryLabel').text('PO assignment history');
+        $('#poAssignHistoryWrap').html('<span class="text-muted">Loading…</span>');
+        $('#poAssignHistoryOpenPo').hide().attr('href', '#');
+        $('#modalPoAssignHistory').modal('show');
+    });
+    $('#modalPoAssignHistory').on('shown.bs.modal', function () {
+        if (!currentPoHistoryId) {
+            $('#poAssignHistoryWrap').html('<span class="text-danger small">No PO selected.</span>');
+            return;
+        }
+        $.post('ajax_po_assignment_history.php', { po_id: currentPoHistoryId }, function (res) {
+            if (res && res.ok) {
+                if (res.title) {
+                    $('#modalPoAssignHistoryLabel').text(res.title);
+                }
+                $('#poAssignHistoryWrap').html(res.html);
+                $('#poAssignHistoryOpenPo').attr('href', 'take-po-action.php?id=' + currentPoHistoryId).show();
+            } else {
+                $('#poAssignHistoryWrap').html('<div class="text-danger">' + (res && res.error ? res.error : 'Could not load history.') + '</div>');
+            }
+        }, 'json').fail(function () {
+            $('#poAssignHistoryWrap').html('<div class="text-danger">Request failed.</div>');
+        });
+    });
+    $('#modalPoAssignHistory').on('hidden.bs.modal', function () {
+        currentPoHistoryId = null;
+        $('#poAssignHistoryWrap').html('<span class="text-muted small">Loading…</span>');
+        $('#poAssignHistoryOpenPo').hide();
     });
 
  $(document).on("change", "#ModelNo", function(event) {

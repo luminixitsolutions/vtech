@@ -1,11 +1,22 @@
 <?php
 /**
- * Service complaints abstract — district-wise counts.
- * Status mapping (same ClainStatus values as complaint forms, Roll=6):
- *   Closed        => Close
- *   Material hold => In Process
- *   Total pending => not Close
+ * Service complaints abstract — grouped by abstract type.
+ * Status: Close = closed, In Process = material hold, pending = not Close.
  */
+
+function serviceAbstractNormalizeType($type) {
+    $t = strtolower(trim((string) $type));
+    $map = array(
+        'all' => 'all',
+        'district' => 'district',
+        'district_wise' => 'district',
+        'project_head' => 'project_head',
+        'project_head_wise' => 'project_head',
+        'sub_project_head' => 'sub_project_head',
+        'sub_project_head_wise' => 'sub_project_head',
+    );
+    return isset($map[$t]) ? $map[$t] : 'district';
+}
 
 function serviceAbstractDistrictKey($district) {
     $d = strtoupper(trim((string) $district));
@@ -38,34 +49,16 @@ function serviceAbstractDistrictKey($district) {
 
 function serviceAbstractDistrictRows() {
     return array(
-        'AHILYANAGAR',
-        'AKOLA',
-        'BEED',
-        'BHANDARA',
-        'BULDHANA',
-        'CH. SAMBHAJINAGAR',
-        'DHARASHIV',
-        'DHULE',
-        'GADCHIROLI',
-        'GONDIA',
-        'HINGOLI',
-        'JALGAON',
-        'JALNA',
-        'KOLHAPUR',
-        'LATUR',
-        'NASHIK (MALEGAON)',
-        'NANDED',
-        'NANDURBAR',
-        'PARBHANI',
-        'SOLAPUR',
-        'SANGLI',
-        'WASHIM',
+        'AHILYANAGAR', 'AKOLA', 'BEED', 'BHANDARA', 'BULDHANA', 'CH. SAMBHAJINAGAR',
+        'DHARASHIV', 'DHULE', 'GADCHIROLI', 'GONDIA', 'HINGOLI', 'JALGAON', 'JALNA',
+        'KOLHAPUR', 'LATUR', 'NASHIK (MALEGAON)', 'NANDED', 'NANDURBAR', 'PARBHANI',
+        'SOLAPUR', 'SANGLI', 'WASHIM',
     );
 }
 
 function serviceAbstractFiltersFromRequest() {
     return array(
-        'scope' => isset($_GET['scope']) ? $_GET['scope'] : 'mtskpy',
+        'abstract_type' => serviceAbstractNormalizeType(isset($_GET['abstract_type']) ? $_GET['abstract_type'] : 'district'),
         'projid' => isset($_GET['projid']) ? (int) $_GET['projid'] : 0,
         'subheadid' => isset($_GET['subheadid']) ? (int) $_GET['subheadid'] : 0,
         'district' => isset($_GET['district']) ? trim($_GET['district']) : '',
@@ -88,22 +81,15 @@ function serviceAbstractDistrictWhereClause($district) {
     return " AND $col = '$distEsc'";
 }
 
-function serviceAbstractBuildWhere($filters) {
+function serviceAbstractBuildWhere($filters, $exclude = array()) {
     $parts = array('tu.ProjectType = 1');
     $subheadid = (int) ($filters['subheadid'] ?? 0);
     $projid = (int) ($filters['projid'] ?? 0);
-    $scope = $filters['scope'] ?? 'mtskpy';
 
-    if ($subheadid > 0) {
+    if (!in_array('subheadid', $exclude, true) && $subheadid > 0) {
         $parts[] = "tu.ProjectSubHeadId = '$subheadid'";
-    } elseif ($projid > 0) {
+    } elseif (!in_array('projid', $exclude, true) && $projid > 0) {
         $parts[] = "tu.ProjectId = '$projid'";
-    } elseif ($scope === 'msedcl') {
-        $parts[] = 'tu.ProjectId = 103';
-    } elseif ($scope === 'mtskpy') {
-        $parts[] = "tu.ProjectSubHeadId IN (
-            SELECT id FROM tbl_project_sub_head WHERE UnderBy = 103 AND Name LIKE '%MTSKPY%'
-        )";
     }
 
     $distClause = serviceAbstractDistrictWhereClause($filters['district'] ?? '');
@@ -114,6 +100,38 @@ function serviceAbstractBuildWhere($filters) {
     return ' INNER JOIN tbl_users tu ON tu.id = ts.CustId WHERE ' . implode(' AND ', $parts);
 }
 
+/** Complaint counts keyed by tu.ProjectId or tu.ProjectSubHeadId. */
+function serviceAbstractGetCountMap($filters, $groupColumn, $exclude = array()) {
+    global $conn;
+    $where = serviceAbstractBuildWhere($filters, $exclude);
+    $sql = "SELECT
+        $groupColumn AS group_id,
+        COUNT(*) AS total_complaints,
+        SUM(CASE WHEN ts.ClainStatus = 'Close' THEN 1 ELSE 0 END) AS total_closed,
+        SUM(CASE WHEN ts.CreatedDate = CURDATE() THEN 1 ELSE 0 END) AS today_added,
+        SUM(CASE WHEN ts.ClainStatus = 'In Process' THEN 1 ELSE 0 END) AS material_hold,
+        SUM(CASE WHEN ts.ClainStatus <> 'Close' THEN 1 ELSE 0 END) AS total_pending
+        FROM tbl_service_complaint ts
+        $where
+        AND $groupColumn > 0
+        GROUP BY $groupColumn";
+
+    $map = array();
+    $res = $conn->query($sql);
+    if ($res) {
+        while ($row = $res->fetch_assoc()) {
+            $map[(int) $row['group_id']] = array(
+                'total_complaints' => (int) $row['total_complaints'],
+                'total_closed' => (int) $row['total_closed'],
+                'today_added' => (int) $row['today_added'],
+                'material_hold' => (int) $row['material_hold'],
+                'total_pending' => (int) $row['total_pending'],
+            );
+        }
+    }
+    return $map;
+}
+
 function serviceAbstractGetProjectHeads() {
     return getList("SELECT id, Name FROM tbl_common_master WHERE Status = 1 AND Roll = 24 ORDER BY Name ASC");
 }
@@ -121,14 +139,13 @@ function serviceAbstractGetProjectHeads() {
 function serviceAbstractGetSubHeads($projid) {
     $projid = (int) $projid;
     if ($projid <= 0) {
-        return array();
+        return getList("SELECT id, Name, UnderBy FROM tbl_project_sub_head WHERE Status = 1 ORDER BY Name ASC");
     }
-    return getList("SELECT id, Name FROM tbl_project_sub_head WHERE Status = 1 AND UnderBy = '$projid' ORDER BY Name ASC");
+    return getList("SELECT id, Name, UnderBy FROM tbl_project_sub_head WHERE Status = 1 AND UnderBy = '$projid' ORDER BY Name ASC");
 }
 
 function serviceAbstractGetDistrictOptions($filters) {
     global $conn;
-    $where = serviceAbstractBuildWhere($filters);
     $filtersNoDist = $filters;
     $filtersNoDist['district'] = '';
     $whereNoDist = serviceAbstractBuildWhere($filtersNoDist);
@@ -150,49 +167,71 @@ function serviceAbstractGetDistrictOptions($filters) {
     return $options;
 }
 
+function serviceAbstractColumnLabel($abstractType) {
+    if ($abstractType === 'project_head') {
+        return 'PROJECT HEAD';
+    }
+    if ($abstractType === 'sub_project_head') {
+        return 'SUB PROJECT HEAD';
+    }
+    if ($abstractType === 'all') {
+        return 'SUMMARY';
+    }
+    return 'DISTRICT';
+}
+
 function serviceAbstractBuildTitle($filters) {
-    global $conn;
-    $parts = array();
+    $type = $filters['abstract_type'] ?? 'district';
+    $parts = array('SERVICE COMPLAINTS ABSTRACT');
+
+    if ($type === 'district') {
+        $parts[0] = 'DISTRICT WISE COMPLAINTS ABSTRACT';
+    } elseif ($type === 'project_head') {
+        $parts[0] = 'PROJECT HEAD WISE COMPLAINTS ABSTRACT';
+    } elseif ($type === 'sub_project_head') {
+        $parts[0] = 'SUB PROJECT HEAD WISE COMPLAINTS ABSTRACT';
+    } else {
+        $parts[0] = 'ALL COMPLAINTS ABSTRACT';
+    }
 
     if (!empty($filters['subheadid'])) {
-        $row = getRecord("SELECT tps.Name AS SubName, tcm.Name AS HeadName
-            FROM tbl_project_sub_head tps
-            LEFT JOIN tbl_common_master tcm ON tcm.id = tps.UnderBy
-            WHERE tps.id = '" . (int) $filters['subheadid'] . "'");
-        if (!empty($row['SubName'])) {
-            $parts[] = strtoupper($row['SubName']);
+        $row = getRecord("SELECT Name FROM tbl_project_sub_head WHERE id = '" . (int) $filters['subheadid'] . "'");
+        if (!empty($row['Name'])) {
+            $parts[] = strtoupper($row['Name']);
         }
     } elseif (!empty($filters['projid'])) {
         $row = getRecord("SELECT Name FROM tbl_common_master WHERE id = '" . (int) $filters['projid'] . "'");
         if (!empty($row['Name'])) {
             $parts[] = strtoupper($row['Name']);
         }
-    } else {
-        $scope = $filters['scope'] ?? 'mtskpy';
-        if ($scope === 'all') {
-            $parts[] = 'ALL SERVICE PROJECTS';
-        } elseif ($scope === 'msedcl') {
-            $parts[] = 'MSEDCL';
-        } else {
-            $parts[] = 'MTSKPY';
-        }
+    }
+    if (!empty($filters['district'])) {
+        $parts[] = strtoupper($filters['district']);
     }
 
-    $title = (!empty($parts) ? implode(' — ', $parts) : 'SERVICE') . ' COMPLAINTS ABSTRACT';
-    if (!empty($filters['district']) && $filters['district'] !== 'all') {
-        $title .= ' — ' . strtoupper($filters['district']);
-    }
-    return $title;
+    return implode(' — ', $parts);
 }
 
-function getServiceAbstractData($filters = null) {
+function serviceAbstractEmptyCounts() {
+    return array(
+        'total_complaints' => 0,
+        'total_closed' => 0,
+        'today_added' => 0,
+        'material_hold' => 0,
+        'total_pending' => 0,
+    );
+}
+
+function serviceAbstractMergeCounts(&$target, $source) {
+    foreach ($source as $k => $v) {
+        $target[$k] += (int) $v;
+    }
+}
+
+function serviceAbstractBuildDistrictRows($filters) {
+    $where = serviceAbstractBuildWhere($filters);
     global $conn;
 
-    if ($filters === null) {
-        $filters = serviceAbstractFiltersFromRequest();
-    }
-
-    $where = serviceAbstractBuildWhere($filters);
     $sql = "SELECT
         UPPER(TRIM(COALESCE(NULLIF(ts.District, ''), tu.District, ''))) AS raw_dist,
         COUNT(*) AS total_complaints,
@@ -213,81 +252,162 @@ function getServiceAbstractData($filters = null) {
             }
             $key = serviceAbstractDistrictKey($row['raw_dist']);
             if (!isset($byKey[$key])) {
-                $byKey[$key] = array(
-                    'total_complaints' => 0,
-                    'total_closed' => 0,
-                    'today_added' => 0,
-                    'material_hold' => 0,
-                    'total_pending' => 0,
-                );
+                $byKey[$key] = serviceAbstractEmptyCounts();
             }
-            foreach ($byKey[$key] as $k => $v) {
-                $byKey[$key][$k] += (int) $row[$k];
-            }
+            serviceAbstractMergeCounts($byKey[$key], $row);
         }
     }
 
     $districtFilter = $filters['district'] ?? '';
     $showOnlyDistrict = ($districtFilter !== '' && $districtFilter !== 'all');
     $filterKey = $showOnlyDistrict ? serviceAbstractDistrictKey($districtFilter) : '';
-
-    $rows = array();
-    $totals = array(
-        'district' => 'TOTAL',
-        'total_complaints' => 0,
-        'total_closed' => 0,
-        'today_added' => 0,
-        'material_hold' => 0,
-        'total_pending' => 0,
-    );
-
     $districtList = $showOnlyDistrict ? array($filterKey) : serviceAbstractDistrictRows();
 
+    $out = array();
     foreach ($districtList as $label) {
-        $data = isset($byKey[$label]) ? $byKey[$label] : array(
-            'total_complaints' => 0,
-            'total_closed' => 0,
-            'today_added' => 0,
-            'material_hold' => 0,
-            'total_pending' => 0,
-        );
-        $row = array_merge(array('district' => $label), $data);
-        $rows[] = $row;
-        foreach ($totals as $k => $v) {
-            if ($k === 'district') {
-                continue;
-            }
-            $totals[$k] += (int) $row[$k];
-        }
+        $counts = isset($byKey[$label]) ? $byKey[$label] : serviceAbstractEmptyCounts();
+        $out[] = array(
+            'label' => $label,
+            'group_kind' => 'district',
+            'group_id' => $label,
+        ) + $counts;
     }
 
     if (!$showOnlyDistrict) {
-        foreach ($byKey as $label => $data) {
+        foreach ($byKey as $label => $counts) {
             if (in_array($label, serviceAbstractDistrictRows(), true)) {
                 continue;
             }
-            $row = array_merge(array('district' => $label), $data);
-            $rows[] = $row;
-            foreach ($totals as $k => $v) {
-                if ($k === 'district') {
-                    continue;
-                }
-                $totals[$k] += (int) $row[$k];
-            }
+            $out[] = array(
+                'label' => $label,
+                'group_kind' => 'district',
+                'group_id' => $label,
+            ) + $counts;
         }
+    }
+
+    return $out;
+}
+
+function serviceAbstractBuildProjectHeadRows($filters) {
+    $heads = serviceAbstractGetProjectHeads();
+    $projid = (int) ($filters['projid'] ?? 0);
+    if ($projid > 0) {
+        $heads = array_values(array_filter($heads, function ($h) use ($projid) {
+            return (int) $h['id'] === $projid;
+        }));
+    }
+
+    $counts = serviceAbstractGetCountMap($filters, 'tu.ProjectId', array('projid'));
+
+    $out = array();
+    foreach ($heads as $head) {
+        $id = (int) $head['id'];
+        $c = isset($counts[$id]) ? $counts[$id] : serviceAbstractEmptyCounts();
+        $out[] = array(
+            'label' => $head['Name'],
+            'group_kind' => 'project_head',
+            'group_id' => $id,
+        ) + $c;
+    }
+    return $out;
+}
+
+function serviceAbstractBuildSubProjectHeadRows($filters) {
+    $projid = (int) ($filters['projid'] ?? 0);
+    $subheadid = (int) ($filters['subheadid'] ?? 0);
+
+    if ($subheadid > 0) {
+        $row = getRecord("SELECT id, Name FROM tbl_project_sub_head WHERE id = '$subheadid' AND Status = 1");
+        $subHeads = $row ? array($row) : array();
+    } else {
+        $subHeads = serviceAbstractGetSubHeads($projid);
+    }
+
+    $counts = serviceAbstractGetCountMap($filters, 'tu.ProjectSubHeadId', array('subheadid'));
+
+    $out = array();
+    foreach ($subHeads as $head) {
+        $id = (int) $head['id'];
+        $c = isset($counts[$id]) ? $counts[$id] : serviceAbstractEmptyCounts();
+        $out[] = array(
+            'label' => $head['Name'],
+            'group_kind' => 'sub_project_head',
+            'group_id' => $id,
+        ) + $c;
+    }
+    return $out;
+}
+
+function serviceAbstractBuildAllRows($filters) {
+    global $conn;
+    $where = serviceAbstractBuildWhere($filters);
+    $sql = "SELECT
+        COUNT(*) AS total_complaints,
+        SUM(CASE WHEN ts.ClainStatus = 'Close' THEN 1 ELSE 0 END) AS total_closed,
+        SUM(CASE WHEN ts.CreatedDate = CURDATE() THEN 1 ELSE 0 END) AS today_added,
+        SUM(CASE WHEN ts.ClainStatus = 'In Process' THEN 1 ELSE 0 END) AS material_hold,
+        SUM(CASE WHEN ts.ClainStatus <> 'Close' THEN 1 ELSE 0 END) AS total_pending
+        FROM tbl_service_complaint ts
+        $where";
+    $row = getRecord($sql);
+    if (!$row) {
+        $row = serviceAbstractEmptyCounts();
+    }
+    return array(array(
+        'label' => 'ALL',
+        'group_kind' => 'all',
+        'group_id' => 0,
+        'total_complaints' => (int) $row['total_complaints'],
+        'total_closed' => (int) $row['total_closed'],
+        'today_added' => (int) $row['today_added'],
+        'material_hold' => (int) $row['material_hold'],
+        'total_pending' => (int) $row['total_pending'],
+    ));
+}
+
+function getServiceAbstractData($filters = null) {
+    if ($filters === null) {
+        $filters = serviceAbstractFiltersFromRequest();
+    }
+
+    $abstractType = $filters['abstract_type'];
+
+    if ($abstractType === 'all') {
+        $rows = serviceAbstractBuildAllRows($filters);
+    } elseif ($abstractType === 'project_head') {
+        $rows = serviceAbstractBuildProjectHeadRows($filters);
+    } elseif ($abstractType === 'sub_project_head') {
+        $rows = serviceAbstractBuildSubProjectHeadRows($filters);
+    } else {
+        $rows = serviceAbstractBuildDistrictRows($filters);
+    }
+
+    $totals = array_merge(
+        array('label' => 'TOTAL', 'group_kind' => 'total', 'group_id' => 0),
+        serviceAbstractEmptyCounts()
+    );
+
+    foreach ($rows as $row) {
+        $totals['total_complaints'] += (int) $row['total_complaints'];
+        $totals['total_closed'] += (int) $row['total_closed'];
+        $totals['today_added'] += (int) $row['today_added'];
+        $totals['material_hold'] += (int) $row['material_hold'];
+        $totals['total_pending'] += (int) $row['total_pending'];
     }
 
     return array(
         'rows' => $rows,
         'totals' => $totals,
         'title' => serviceAbstractBuildTitle($filters),
+        'column_label' => serviceAbstractColumnLabel($abstractType),
         'filters' => $filters,
     );
 }
 
 function serviceAbstractExportUrl($filters) {
     $params = array(
-        'scope' => $filters['scope'] ?? 'mtskpy',
+        'abstract_type' => $filters['abstract_type'] ?? 'district',
     );
     if (!empty($filters['projid'])) {
         $params['projid'] = (int) $filters['projid'];
@@ -301,22 +421,32 @@ function serviceAbstractExportUrl($filters) {
     return 'export-service-abstract.php?' . http_build_query($params);
 }
 
-function serviceAbstractListUrl($district, $filters, $filter = '') {
+function serviceAbstractListUrl($row, $filters, $filter = '') {
     $params = array(
         'abstract' => '1',
-        'scope' => $filters['scope'] ?? 'mtskpy',
+        'abstract_type' => $filters['abstract_type'] ?? 'district',
     );
-    if (!empty($filters['projid'])) {
+
+    if (is_array($row) && ($row['label'] ?? '') !== 'TOTAL' && ($row['group_kind'] ?? '') !== 'total') {
+        if ($row['group_kind'] === 'project_head' && !empty($row['group_id'])) {
+            $params['projid'] = (int) $row['group_id'];
+        } elseif ($row['group_kind'] === 'sub_project_head' && !empty($row['group_id'])) {
+            $params['subheadid'] = (int) $row['group_id'];
+        } elseif ($row['group_kind'] === 'district' && ($row['group_id'] ?? '') !== '') {
+            $params['District'] = $row['group_id'];
+        }
+    }
+
+    if (!empty($filters['projid']) && empty($params['projid'])) {
         $params['projid'] = (int) $filters['projid'];
     }
-    if (!empty($filters['subheadid'])) {
+    if (!empty($filters['subheadid']) && empty($params['subheadid'])) {
         $params['subheadid'] = (int) $filters['subheadid'];
     }
-    if ($district !== '' && $district !== 'TOTAL') {
-        $params['District'] = $district;
-    } elseif (!empty($filters['district']) && $filters['district'] !== 'all') {
+    if (!empty($filters['district']) && empty($params['District'])) {
         $params['District'] = $filters['district'];
     }
+
     if ($filter === 'closed') {
         $params['ClainStatus'] = 'Close';
     } elseif ($filter === 'today') {

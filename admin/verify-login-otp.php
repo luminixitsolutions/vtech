@@ -192,7 +192,11 @@ $(document).ready(function(){
                 }
                 if (res.Status == 1) {
                     success_otp();
-                    setTimeout(function(){ window.location.href = 'file-submission-reminder.php'; }, 1200);
+                    var dest = 'dashboard.php';
+                    if (res.Redirect && /^[a-z0-9\-_.]+\.php$/i.test(res.Redirect)) {
+                        dest = res.Redirect;
+                    }
+                    setTimeout(function(){ window.location.href = dest; }, 1200);
                 } else {
                     error_otp(res.Msg || 'Invalid OTP');
                 }

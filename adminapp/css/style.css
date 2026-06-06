@@ -11363,6 +11363,8 @@ p:last-child {
   position: fixed;
   top: 0;
   left: 0;
+  width: 100%;
+  height: 100%;
   background: #f0f3f7 fixed;
   background-position: center top;
   background-size: cover;

@@ -1,6 +1,7 @@
 <?php
 session_start();
 include_once '../config.php';
+require_once dirname(__DIR__) . '/inc-employee-menu-options.php';
 $user_id = $_SESSION['Admin']['id'];
 if($_POST['action'] == 'Save'){
 $id = $_POST['id'];
@@ -31,12 +32,7 @@ $UnderUser = addslashes(trim($_POST['UnderUser']));
 $Status = $_POST['Status'];
 $CatId = $_POST['CatId'];
 $Roll = $_POST['Roll'];
-if($_POST['Options']!=''){
-$Options = implode(",", $_POST['Options']);
-}
-else{
-   $Options = 0; 
-}
+$Options = employeeMenuResolveOptionsForSave($_POST['Options'] ?? null, $Roll, $id);
 
 $PanNo = addslashes(trim($_POST['PanNo']));
 $CompId = addslashes(trim($_POST['CompId']));
@@ -149,6 +145,13 @@ if($_POST['action'] == 'deletePhoto'){
     $q = "UPDATE tbl_users SET Photo='' WHERE id=$id";
     $conn->query($q);
     echo "File Deleted Successfully";
+}
+
+if (isset($_POST['action']) && $_POST['action'] === 'getDefaultOptionsByRoll') {
+    $roll = (int) ($_POST['Roll'] ?? 0);
+    header('Content-Type: application/json; charset=utf-8');
+    echo json_encode(employeeMenuDefaultOptionIdsForRoll($roll));
+    exit;
 }
 
 if($_POST['action'] == 'getUserDetails'){

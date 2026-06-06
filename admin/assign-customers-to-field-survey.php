@@ -380,10 +380,12 @@ $sql12 = "SELECT * FROM tbl_users WHERE Status='1' AND Roll IN(40)";
 <div class="layout-overlay layout-sidenav-toggle"></div>
 </div>
 
+<?php include_once 'inc-beneficiary-import-modal.php'; ?>
 
     <script src="<?php echo $SiteUrl;?>/assets/js/jquery.min.js"></script>
     <script src="<?php echo $SiteUrl;?>/assets/libs/popper/popper.js"></script>
     <script src="<?php echo $SiteUrl;?>/assets/js/bootstrap.js"></script>
+    <script src="js/beneficiary-import-result.js"></script>
     <script src="<?php echo $SiteUrl;?>/assets/js/datatables.min.js"></script>
     <script src="<?php echo $SiteUrl;?>/assets/js/pace.js"></script>
     <script src="<?php echo $SiteUrl;?>/assets/js/sidenav.js"></script>
@@ -487,11 +489,16 @@ function search(){
             }
         });
 
-        var notInList = 0;
-        for (var k in lookup) {
-            if (lookup.hasOwnProperty(k) && !foundInTable[k]) {
-                notInList++;
+        var missingIds = [];
+        var missingSeen = {};
+        for (i = 0; i < ids.length; i++) {
+            var rawId = String(ids[i]).trim();
+            var normId = rawId.toUpperCase();
+            if (normId === '' || foundInTable[normId] || missingSeen[normId]) {
+                continue;
             }
+            missingSeen[normId] = true;
+            missingIds.push(rawId);
         }
 
         var $tbody = $('#example tbody');
@@ -506,17 +513,11 @@ function search(){
         initFieldSurveyTable();
         fieldSurveyTable.page(0).draw(false);
 
-        var msg = matched + ' record(s) selected and shown at the top.';
-        if (notInList > 0) {
-            msg += ' ' + notInList + ' ID(s) from Excel were not found in this list.';
-        }
-        if (skippedAssigned > 0) {
-            msg += ' ' + skippedAssigned + ' matched ID(s) are already assigned (no checkbox). Use filter "Not Assign" only.';
-        }
-        if (matched === 0 && skippedAssigned === 0) {
-            msg = 'No matching beneficiary IDs found in the current list. Check filters or IDs in the file.';
-        }
-        alert(msg);
+        showBeneficiaryImportResult({
+            matched: matched,
+            skippedAssigned: skippedAssigned,
+            missingIds: missingIds
+        });
     }
 
     $('#btnFieldSurveyImportDropdownToggle').on('click', function(e) {
@@ -560,7 +561,7 @@ function search(){
                 if (res.success && res.beneficiary_ids) {
                     applyImportedBeneficiaryIds(res.beneficiary_ids);
                 } else {
-                    alert(res.message || 'Import failed.');
+                    showBeneficiaryImportResult({ errorMessage: res.message || 'Import failed.' });
                 }
             },
             error: function(xhr) {
@@ -579,7 +580,7 @@ function search(){
                         }
                     }
                 }
-                alert(msg);
+                showBeneficiaryImportResult({ errorMessage: msg });
             }
         });
     });

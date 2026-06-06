@@ -142,11 +142,11 @@ function error_toast(){
       location: isRtl ? 'tl' : 'tr'
     });
   }
-    function success_toast(){
+    function otp_sent_toast(){
     var isRtl = $('body').attr('dir') === 'rtl' || $('html').attr('dir') === 'rtl';
    $.growl.notice({
-      title:    'Success',
-      message:  'Login Successfull! Please Wait...',
+      title:    'OTP sent',
+      message:  'Enter the code on the next screen.',
       location: isRtl ? 'tl' : 'tr'
     });
   }
@@ -160,31 +160,37 @@ function error_toast(){
                 data:new FormData(this),  
                 contentType:false,  
                 processData:false,  
+                timeout: 60000,
                  beforeSend:function(){
      $('#submit').attr('disabled','disabled');
      $('#submit').text('Please Wait...');
     },
                 success:function(data){ 
-                  //alert(data);
-                  res = JSON.parse(data);
-                  Status = res.Status;
-                  Roll = res.Roll;
-                     if(Status == 1){
-                         success_toast();
-                     setTimeout(function(){  
-                   
-                 window.location.href = 'dashboard.php'; 
-                 
-                    }, 2000);
-                     
+                  var res;
+                  try {
+                    res = typeof data === 'object' ? data : JSON.parse(data);
+                  } catch (e) {
+                    error_toast();
+                    return;
+                  }
+                  var Status = res.Status;
+                     if(Status == 2){
+                         otp_sent_toast();
+                     setTimeout(function(){
+                 window.location.href = 'verify-login-otp.php';
+                    }, 1200);
                      }
                      else{
                     error_toast();
-                  
                      }
+                },
+                error: function () {
+                    error_toast();
+                },
+                complete: function () {
                       $('#submit').attr('disabled',false);
                     $('#submit').text('Sign In');
-                }  
+                }
            })  
 
 

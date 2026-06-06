@@ -4,7 +4,8 @@ $sql77 = "SELECT * FROM tbl_users WHERE id='$user_id'";
 $row77 = getRecord($sql77);
 $Roll = $row77['Roll'];
 $UserCat = $row77['CatId'];
-$Options = explode(',',$row77['Options']);
+require_once __DIR__ . '/../inc-menu-option-groups.php';
+$Options = adminResolveMenuOptionsFromUserRow($row77);
 ?>
 
             <!-- [ Layout navbar ( Header ) ] End -->
@@ -35,6 +36,7 @@ $Options = explode(',',$row77['Options']);
                 
             </a>
         </li>
+        <?php if (userHasAnyMenuOption($Options, menuAccessMpuvnlOptionIds())) { ?>
         <li class="sidenav-item">
             <a href="mpuvnl-dashboard.php" class="sidenav-link">
                 <i class="sidenav-icon feather icon-activity"></i>
@@ -259,6 +261,7 @@ $Options = explode(',',$row77['Options']);
 
 </ul>
 </li>
+<?php } ?>
 
     </ul>
 </div>

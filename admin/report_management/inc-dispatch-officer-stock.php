@@ -49,7 +49,7 @@ function dispatch_officer_stock_compute_rows($conn, $BranchId, $StoreExeId, $Fro
     $TotDebitQty = 0;
     $rows = [];
 
-    $sql = "SELECT ProductId, ProductName FROM `tbl_distibute_item_details2` WHERE BranchId='$BranchId' AND StoreExeId='$StoreExeId' GROUP BY ProductId";
+    $sql = "SELECT ProductId, MAX(ProductName) AS ProductName FROM `tbl_distibute_item_details2` WHERE BranchId='$BranchId' AND StoreExeId='$StoreExeId' GROUP BY ProductId";
     $res = $conn->query($sql);
     if (!$res) {
         return ['rows' => [], 'totCredit' => 0, 'totDebit' => 0];

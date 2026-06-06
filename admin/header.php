@@ -4,11 +4,14 @@ $sql77 = "SELECT * FROM tbl_users WHERE id='$user_id'";
 $row77 = getRecord($sql77);
 $Roll = $row77['Roll'];
 $UserCat = $row77['CatId'];
-$Options = explode(',',$row77['Options']);
+include_once __DIR__ . '/inc-menu-option-groups.php';
+$Options = adminResolveMenuOptionsFromUserRow($row77);
 $BranchId = $row77['BranchId'];
 $ImmediateBoss = $row77['ImmediateBoss'];
 $MulBranchId = $row77['MulBranchId'];
-$fileSubmissionReminderCount = getFileSubmissionReminderCount();
+$fileSubmissionReminderCount = function_exists('getFileSubmissionReminderCount')
+    ? getFileSubmissionReminderCount()
+    : 0;
 $fileSubmissionReminderAlert = $fileSubmissionReminderCount > 0;
 ?>
 <style>
@@ -60,12 +63,14 @@ $fileSubmissionReminderAlert = $fileSubmissionReminderCount > 0;
             </a>
         </li> 
 
+        <?php if (userHasAnyMenuOption($Options, menuAccessFileSubmissionOptionIds())) { ?>
         <li class="sidenav-item<?php if (!empty($MainPage) && $MainPage === 'File-Submission-Reminder') { ?> active<?php } ?><?php if (!empty($fileSubmissionReminderAlert)) { ?> file-submission-reminder-alert<?php } ?>">
             <a href="file-submission-reminder.php" class="sidenav-link">
                 <i class="sidenav-icon feather icon-bell"></i>
                 <div>File submission reminder</div>
             </a>
         </li>
+        <?php } ?>
 
         <li class="sidenav-item <?php if (!empty($MainPage) && $MainPage === 'Leave-Requests') { ?>active<?php } ?>">
             <a href="leave-requests.php" class="sidenav-link">
@@ -74,34 +79,43 @@ $fileSubmissionReminderAlert = $fileSubmissionReminderCount > 0;
             </a>
         </li>
         
+         <?php if (userHasAnyMenuOption($Options, menuAccessMpuvnlOptionIds())) { ?>
          <li class="sidenav-item">
             <a href="mpuvnl_management/mpuvnl-dashboard.php" class="sidenav-link">
                 <i class="sidenav-icon feather icon-home"></i>
                 <div>MPUVNL Management</div>
                 
             </a>
-        </li> 
+        </li>
+        <?php } ?>
 
     
-     <?php  if(in_array("149", $Options) || in_array("150", $Options) || in_array("151", $Options) || in_array("152", $Options) || in_array("153", $Options) || in_array("44", $Options) || in_array("45", $Options) || in_array("46", $Options) || in_array("47", $Options) || in_array("48", $Options) || in_array("49", $Options) || in_array("50", $Options) || in_array("51", $Options) || in_array("52", $Options) || in_array("63", $Options)) { ?>
+     <?php if (userHasAnyMenuOption($Options, getMenuOptionGroups()['Lead Management'])) { ?>
      
         <li class="sidenav-item">
-            <a href="lead_management/lead-management-dashboard.php" class="sidenav-link">
+            <a href="<?php echo htmlspecialchars(menuAccessLeadModuleEntryUrl($Options), ENT_QUOTES, 'UTF-8'); ?>" class="sidenav-link">
                <i class="sidenav-icon feather icon-layers"></i>
                 <div>Lead Management</div>
                 
             </a>
         </li>
-        <?php } if(in_array("154", $Options) || in_array("155", $Options) || in_array("156", $Options) || in_array("157", $Options) || in_array("158", $Options) || in_array("159", $Options)) { ?>
+        <?php } if (userHasAnyMenuOption($Options, getMenuOptionGroups()['Pump Application Management'])) { ?>
+        <li class="sidenav-item">
+            <a href="<?php echo htmlspecialchars(menuAccessPumpApplicationEntryUrl($Options), ENT_QUOTES, 'UTF-8'); ?>" class="sidenav-link">
+               <i class="sidenav-icon feather icon-layers"></i>
+                <div>Pump Application Management</div>
+            </a>
+        </li>
+        <?php } if(userHasAnyMenuOption($Options, menuAccessDealerLeadOptionIds())) { ?>
      
         <li class="sidenav-item">
-            <a href="dealer_lead_management/lead-management-dashboard.php" class="sidenav-link">
+            <a href="<?php echo htmlspecialchars(menuAccessDealerLeadEntryUrl($Options), ENT_QUOTES, 'UTF-8'); ?>" class="sidenav-link">
                <i class="sidenav-icon feather icon-layers"></i>
                 <div>Dealer Lead Management</div>
                 
             </a>
         </li>
- <?php }  if(in_array("1", $Options) || in_array("2", $Options) || in_array("3", $Options) || in_array("4", $Options) || in_array("5", $Options) || in_array("6", $Options) || in_array("7", $Options) || in_array("8", $Options) || in_array("9", $Options) || in_array("12", $Options) || in_array("13", $Options) || in_array("15", $Options) || in_array("16", $Options) || in_array("53", $Options) || in_array("54", $Options)) { ?>
+ <?php }  if(userHasAnyMenuOption($Options, getMenuOptionGroups()['Master Management'])) { ?>
         <li class="sidenav-item">
             <a href="master_management/masters-dashboard.php" class="sidenav-link">
                 <i class="sidenav-icon feather icon-package"></i>
@@ -119,11 +133,11 @@ $fileSubmissionReminderAlert = $fileSubmissionReminderCount > 0;
                 
             </a>
         </li>
-<?php } if(in_array("18", $Options) || in_array("19", $Options) || in_array("20", $Options) || in_array("21", $Options) || in_array("22", $Options) || in_array("23", $Options)) {?>
+<?php } if(userHasAnyMenuOption($Options, getMenuOptionGroups()['User Accounts'])) {?>
         <li class="sidenav-item">
             <a href="user_management/account-managment-dashboard.php" class="sidenav-link">
                 <i class="sidenav-icon feather icon-users"></i>
-                <div>User Account Management</div>
+                <div>Employee/User Management</div>
                 
             </a>
         </li>
@@ -452,6 +466,18 @@ $fileSubmissionReminderAlert = $fileSubmissionReminderCount > 0;
                 <i class="sidenav-icon feather icon-share-2"></i>
                 <div>Assign Beneficiary To Store</div>
                 <?php if($Page=='Assign-Store-Incharge') {?>
+                <div class="pl-1 ml-auto">
+                    <span class="badge badge-dot badge-primary"></span>
+                </div>
+                <?php } ?>
+            </a>
+        </li>
+        <?php } if(in_array("59", $Options)) {?>
+         <li class="sidenav-item">
+            <a href="approve-store-incharge.php" class="sidenav-link">
+                <i class="sidenav-icon feather icon-check-circle"></i>
+                <div>Approve By Store Incharge</div>
+                <?php if($Page=='Approve-Store-Incharge') {?>
                 <div class="pl-1 ml-auto">
                     <span class="badge badge-dot badge-primary"></span>
                 </div>
@@ -801,7 +827,7 @@ $fileSubmissionReminderAlert = $fileSubmissionReminderCount > 0;
 <?php } ?>
 </a>
 </li>
-<?php } ?>
+<?php } if(in_array("28", $Options)) {?>
 <li class="sidenav-item">
 <a href="view-service-module.php" class="sidenav-link">
 <div> View Service Complaint</div>
@@ -822,16 +848,19 @@ $fileSubmissionReminderAlert = $fileSubmissionReminderCount > 0;
 <?php } ?>
 </a>
 </li>
+<?php } ?>
 </ul>
 </li>
 <?php } ?>
 
+<?php if(in_array("168", $Options) || in_array("169", $Options) || in_array("170", $Options) || in_array("171", $Options) || in_array("172", $Options) || in_array("173", $Options) || in_array("121", $Options)) {?>
 <li class="sidenav-item <?php if($MainPage=='Insurance') {?> open active <?php } ?>">
 <a href="javascript:" class="sidenav-link sidenav-toggle">
 <i class="sidenav-icon feather icon-shield"></i>
 <div>Insurance Site</div>
 </a>
 <ul class="sidenav-menu">
+<?php if(in_array("168", $Options) || in_array("121", $Options)) {?>
 <li class="sidenav-item <?php if($Page=='Insurance-Dashboard') {?> active <?php } ?>">
 <a href="insurance-dashboard.php" class="sidenav-link">
 <div>Dashboard</div>
@@ -842,6 +871,7 @@ $fileSubmissionReminderAlert = $fileSubmissionReminderCount > 0;
 <?php } ?>
 </a>
 </li>
+<?php } if(in_array("169", $Options)) {?>
 <li class="sidenav-item <?php if($Page=='Pending-Insurance') {?> active <?php } ?>">
 <a href="pending-insurance.php" class="sidenav-link">
 <div>Pending Insurance</div>
@@ -852,6 +882,7 @@ $fileSubmissionReminderAlert = $fileSubmissionReminderCount > 0;
 <?php } ?>
 </a>
 </li>
+<?php } if(in_array("170", $Options)) {?>
 <li class="sidenav-item <?php if($Page=='Completed-Insurance') {?> active <?php } ?>">
 <a href="completed-insurance.php" class="sidenav-link">
 <div>Completed Insurance</div>
@@ -862,9 +893,10 @@ $fileSubmissionReminderAlert = $fileSubmissionReminderCount > 0;
 <?php } ?>
 </a>
 </li>
+<?php } if(in_array("171", $Options)) {?>
 <li class="sidenav-item <?php if($Page=='Renewal-Insurance') {?> active <?php } ?>">
 <a href="renewal-insurance.php" class="sidenav-link">
-<div>Renewal Insurance</div>
+<div>Upcoming Renewal Insurance</div>
 <?php if($Page=='Renewal-Insurance') {?>
 <div class="pl-1 ml-auto">
 <span class="badge badge-dot badge-primary"></span>
@@ -872,8 +904,32 @@ $fileSubmissionReminderAlert = $fileSubmissionReminderCount > 0;
 <?php } ?>
 </a>
 </li>
+<?php } if(in_array("172", $Options)) {?>
+<li class="sidenav-item <?php if($Page=='Expired-Insurance') {?> active <?php } ?>">
+<a href="expired-insurance.php" class="sidenav-link">
+<div>Expired Insurance</div>
+<?php if($Page=='Expired-Insurance') {?>
+<div class="pl-1 ml-auto">
+<span class="badge badge-dot badge-primary"></span>
+</div>
+<?php } ?>
+</a>
+</li>
+<?php } if(in_array("173", $Options)) {?>
+<li class="sidenav-item <?php if($Page=='Renewed-Insurance') {?> active <?php } ?>">
+<a href="renewed-insurance.php" class="sidenav-link">
+<div>Renewed Insurance</div>
+<?php if($Page=='Renewed-Insurance') {?>
+<div class="pl-1 ml-auto">
+<span class="badge badge-dot badge-primary"></span>
+</div>
+<?php } ?>
+</a>
+</li>
+<?php } ?>
 </ul>
 </li>
+<?php } ?>
 
 <?php if(in_array("93", $Options)) {?>
 <li class="sidenav-item">
@@ -998,6 +1054,72 @@ $fileSubmissionReminderAlert = $fileSubmissionReminderCount > 0;
 
 </ul>
 </li> -->
+<?php if(userHasAnyMenuOption($Options, getMenuOptionGroups()['Installation Workflow'])) {?>
+      <li class="sidenav-item <?php if($MainPage=='Installation'){?> open active <?php } ?>">
+<a href="javascript:" class="sidenav-link sidenav-toggle">
+    <i class="sidenav-icon feather icon-activity"></i>
+    <div>Installation Workflow</div>
+</a>
+
+<ul class="sidenav-menu">
+<?php if(in_array("174", $Options)) {?>
+    <li class="sidenav-item <?php if($Page=='Installation-Dashboard'){?> active <?php } ?>">
+        <a href="admin-installation-dashboard.php" class="sidenav-link">
+            <div>Installation Dashboard</div>
+        </a>
+    </li>
+<?php } if(in_array("175", $Options)) {?>
+    <li class="sidenav-item <?php if($Page=='Assign-Coordinator'){?> active <?php } ?>">
+        <a href="pending-installations.php" class="sidenav-link">
+            <div>Assign Coordinator</div>
+        </a>
+    </li>
+<?php } if(in_array("176", $Options)) {?>
+    <li class="sidenav-item <?php if($Page=='Coordinator-Sites'){?> active <?php } ?>">
+        <a href="coordinator-assigned-sites.php" class="sidenav-link">
+            <div>Coordinator Action</div>
+        </a>
+    </li>
+<?php } if(in_array("177", $Options)) {?>
+    <li class="sidenav-item <?php if($Page=='Manager-Pending'){?> active <?php } ?>">
+        <a href="manager-pending-installations.php" class="sidenav-link">
+            <div>Manager Action</div>
+        </a>
+    </li>
+<?php } if(in_array("178", $Options)) {?>
+    <li class="sidenav-item <?php if($Page=='GM-Pending'){?> active <?php } ?>">
+        <a href="gm-pending-installations.php" class="sidenav-link">
+            <div>General Manager Action</div>
+        </a>
+    </li>
+<?php } if(in_array("179", $Options)) {?>
+    <li class="sidenav-item <?php if($Page=='GM-Extensions'){?> active <?php } ?>">
+        <a href="gm-extension-requests.php" class="sidenav-link">
+            <div>GM Extension Requests</div>
+        </a>
+    </li>
+<?php } if(in_array("180", $Options)) {?>
+    <li class="sidenav-item <?php if($Page=='BH-Pending'){?> active <?php } ?>">
+        <a href="business-head-pending.php" class="sidenav-link">
+            <div>Business Head Action</div>
+        </a>
+    </li>
+<?php } if(in_array("181", $Options)) {?>
+    <li class="sidenav-item <?php if($Page=='BH-Extensions'){?> active <?php } ?>">
+        <a href="bh-extension-requests.php" class="sidenav-link">
+            <div>BH Extension Requests</div>
+        </a>
+    </li>
+<?php } if(in_array("182", $Options)) {?>
+    <li class="sidenav-item <?php if($Page=='Dispute-Sites'){?> active <?php } ?>">
+        <a href="dispute-sites.php" class="sidenav-link">
+            <div>Dispute Sites</div>
+        </a>
+    </li>
+<?php } ?>
+</ul>
+</li>
+<?php } ?>
 <?php if(in_array("138", $Options) || in_array("139", $Options)) {?>
 <li class="sidenav-item <?php if($MainPage=='Trip-Details') {?> open active <?php } ?>">
 <a href="javascript:" class="sidenav-link sidenav-toggle">
@@ -1020,38 +1142,6 @@ $fileSubmissionReminderAlert = $fileSubmissionReminderCount > 0;
 <li class="sidenav-item">
 <a href="completed-trips.php" class="sidenav-link">
 <div> Completed Trips</div>
-<?php if($Page=='Completed-Trips') {?>
-<div class="pl-1 ml-auto">
-<span class="badge badge-dot badge-primary"></span>
-</div>
-<?php } ?>
-</a>
-</li>
-<?php } ?>
-</ul>
-</li>
-<?php } if(in_array("161", $Options) || in_array("162", $Options)) {?>
-<li class="sidenav-item <?php if($MainPage=='Trip-Details') {?> open active <?php } ?>">
-<a href="javascript:" class="sidenav-link sidenav-toggle">
- <i class="sidenav-icon feather icon-activity"></i>
-<div>Pending File Submission</div>
-</a>
-<ul class="sidenav-menu">
-<?php if(in_array("161", $Options)) {?>
-<li class="sidenav-item">
-<a href="assign-pending-file-submission-sites.php" class="sidenav-link">
-<div> Assign Pending File Submissions</div>
-<?php if($Page=='Running-Trips') {?>
-<div class="pl-1 ml-auto">
-<span class="badge badge-dot badge-primary"></span>
-</div>
-<?php } ?>
-</a>
-</li>
-<?php } if(in_array("162", $Options)) {?>
-<li class="sidenav-item">
-<a href="pending-file-submission-sites.php" class="sidenav-link">
-<div> Pending File Submission Lists</div>
 <?php if($Page=='Completed-Trips') {?>
 <div class="pl-1 ml-auto">
 <span class="badge badge-dot badge-primary"></span>
@@ -1089,13 +1179,15 @@ $fileSubmissionReminderAlert = $fileSubmissionReminderCount > 0;
 <?php } ?>
 
 
+ <?php if (userHasAnyMenuOption($Options, menuAccessTaskOptionIds())) { ?>
  <li class="sidenav-item">
             <a href="task_management/task-dashboard.php" class="sidenav-link">
                 <i class="sidenav-icon feather icon-activity"></i>
                 <div>Task Management</div>
                 
             </a>
-        </li> 
+        </li>
+ <?php } ?>
         
 <?php  if(in_array("37", $Options)) {?>
        <!--  <li class="sidenav-item">
@@ -1107,7 +1199,7 @@ $fileSubmissionReminderAlert = $fileSubmissionReminderCount > 0;
         </li> -->
  
 
-<?php } if(in_array("29", $Options) || in_array("30", $Options) || in_array("31", $Options) || in_array("38", $Options) || in_array("40", $Options) || in_array("65", $Options) || in_array("99", $Options) || in_array("100", $Options) || in_array("101", $Options) || in_array("102", $Options) || in_array("103", $Options) || in_array("104", $Options) || in_array("105", $Options) || in_array("106", $Options) || in_array("107", $Options) || in_array("108", $Options) || in_array("109", $Options) || in_array("110", $Options) || in_array("111", $Options) || in_array("112", $Options)) {?>
+<?php } if(userHasAnyMenuOption($Options, getMenuOptionGroups()['Reports'])) {?>
 
    <li class="sidenav-item">
             <a href="report_management/report-dashboard.php" class="sidenav-link">
@@ -1118,8 +1210,8 @@ $fileSubmissionReminderAlert = $fileSubmissionReminderCount > 0;
         </li>
         
      <?php } ?>
-     
-      <li class="sidenav-item">
+
+<li class="sidenav-item">
             <a href="logout.php" class="sidenav-link">
                 <i class="sidenav-icon feather icon-activity"></i>
                 <div>Logout</div>
@@ -1134,92 +1226,6 @@ $fileSubmissionReminderAlert = $fileSubmissionReminderCount > 0;
                 
             </a>
         </li>
-        
-      <li class="sidenav-item <?php if($MainPage=='Installation'){?> open active <?php } ?>">
-<a href="javascript:" class="sidenav-link sidenav-toggle">
-    <i class="sidenav-icon feather icon-activity"></i>
-    <div>Installation Workflow</div>
-</a>
-
-<ul class="sidenav-menu">
-
-    <!-- 🔹 INSTALLATION DASHBOARD -->
-   
-    <li class="sidenav-item <?php if($Page=='Installation-Dashboard'){?> active <?php } ?>">
-        <a href="admin-installation-dashboard.php" class="sidenav-link">
-            <div>Installation Dashboard</div>
-        </a>
-    </li>
-    
-
-    <!-- 🔹 ASSIGN COORDINATOR -->
-   
-    <li class="sidenav-item <?php if($Page=='Assign-Coordinator'){?> active <?php } ?>">
-        <a href="pending-installations.php" class="sidenav-link">
-            <div>Assign Coordinator</div>
-        </a>
-    </li>
-   
-
-    <!-- 🔹 COORDINATOR -->
-    
-    <li class="sidenav-item <?php if($Page=='Coordinator-Sites'){?> active <?php } ?>">
-        <a href="coordinator-assigned-sites.php" class="sidenav-link">
-            <div>Coordinator Action</div>
-        </a>
-    </li>
- 
-
-    <!-- 🔹 MANAGER -->
-   
-    <li class="sidenav-item <?php if($Page=='Manager-Pending'){?> active <?php } ?>">
-        <a href="manager-pending-installations.php" class="sidenav-link">
-            <div>Manager Action</div>
-        </a>
-    </li>
-    
-
-    <!-- 🔹 GENERAL MANAGER -->
-    
-    <li class="sidenav-item <?php if($Page=='GM-Pending'){?> active <?php } ?>">
-        <a href="gm-pending-installations.php" class="sidenav-link">
-            <div>General Manager Action</div>
-        </a>
-    </li>
-
-    <li class="sidenav-item <?php if($Page=='GM-Extensions'){?> active <?php } ?>">
-        <a href="gm-extension-requests.php" class="sidenav-link">
-            <div>GM Extension Requests</div>
-        </a>
-    </li>
-    
-
-    <!-- 🔹 BUSINESS HEAD -->
-   
-    <li class="sidenav-item <?php if($Page=='BH-Pending'){?> active <?php } ?>">
-        <a href="business-head-pending.php" class="sidenav-link">
-            <div>Business Head Action</div>
-        </a>
-    </li>
-
-    <li class="sidenav-item <?php if($Page=='BH-Extensions'){?> active <?php } ?>">
-        <a href="bh-extension-requests.php" class="sidenav-link">
-            <div>BH Extension Requests</div>
-        </a>
-    </li>
-    
-
-    <!-- 🔹 DISPUTE -->
-   
-    <li class="sidenav-item <?php if($Page=='Dispute-Sites'){?> active <?php } ?>">
-        <a href="dispute-sites.php" class="sidenav-link">
-            <div>Dispute Sites</div>
-        </a>
-    </li>
-   
-
-</ul>
-</li>
 
     </ul>
 </div>

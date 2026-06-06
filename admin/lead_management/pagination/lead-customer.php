@@ -60,7 +60,7 @@ while ($row = mysqli_fetch_assoc($empRecords)) {
     $data[] = array(
     		"id"=>$i,
     		"TicketNo"=>'<a href="view-lead-action.php?id='.$row['id'].'" target="_new">'.$row['TicketNo'].'</a>',
-            "ClainReason"=>$row['ClainReason']." ".$row['Fname'],
+            "ClainReason"=>leadSourceDisplayHtml($row['ClainReason'], $row['Fname']),
             "CustName"=>$row['CustName'],
             "CellNo"=>$row['CellNo'],
             "Address"=>$row['Address'],

@@ -127,6 +127,7 @@ if($_REQUEST["action"]=="delete")
 <input type="hidden" id="ClainReason" value="<?php echo $_GET['ClainReason'];?>">
 <input type="hidden" id="ClaimStatus" value="<?php echo $_GET['ClainStatus'];?>">
 
+<?php $GLOBALS['adminapp_scripts_included'] = true; ?>
 <?php include_once 'footer.php'; ?>
 
 </div>

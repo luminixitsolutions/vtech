@@ -26,6 +26,7 @@
 }
 
 </style>
+<?php include_once __DIR__ . '/inc-app-loader.php'; ?>
 <div class="footer" style="background: #405189;">
         <div class="row no-gutters justify-content-center" style="padding-top: 12px;">
 
@@ -61,3 +62,4 @@
 
     </div>
        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
+<?php include_once __DIR__ . '/inc-adminapp-scripts.php'; ?>

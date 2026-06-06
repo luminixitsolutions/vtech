@@ -16,16 +16,16 @@ if($_POST['action']=='view'){?>
         </thead>
         <tbody>
           <?php 
-          $AcDc = $_POST['AcDc']; 
-    $Surface = $_POST['Surface'];
-    $PumpCapacity = $_POST['PumpCapacity'];
-    $ModuleWatt = $_POST['ModuleWatt'];
-    $ModuleQty = $_POST['ModuleQty'];
-    $Structure = $_POST['Structure'];
-    $ModuleMake = $_POST['ModuleMake'];
-    $StructureMake = $_POST['StructureMake'];
-    $AgencyId = $_POST['AgencyId'];
-    $SchemeId = $_POST['SchemeId'];
+          $AcDc = $_POST['AcDc'] ?? ''; 
+    $Surface = $_POST['Surface'] ?? '';
+    $PumpCapacity = $_POST['PumpCapacity'] ?? '';
+    $ModuleWatt = $_POST['ModuleWatt'] ?? '';
+    $ModuleQty = $_POST['ModuleQty'] ?? '';
+    $Structure = $_POST['Structure'] ?? '';
+    $ModuleMake = $_POST['ModuleMake'] ?? '';
+    $StructureMake = $_POST['StructureMake'] ?? '';
+    $AgencyId = $_POST['AgencyId'] ?? '';
+    $SchemeId = $_POST['SchemeId'] ?? '';
  $srno = 1;
   $sql = "SELECT * FROM tbl_products WHERE Status='1' AND ProdSpec=2 ORDER BY id DESC";
    $rx = $conn->query($sql);
@@ -61,7 +61,7 @@ if($_POST['action']=='view'){?>
       if($SchemeId!=''){
         $sql2.=" AND SchemeId='$SchemeId'";
       }
-      //echo $sql2;
+      $sql2 .= " ORDER BY id DESC LIMIT 1";
   		$row2 = getRecord($sql2);
   		if($row2['Qty'] > 0){
   		    $Qty = $row2['Qty'];
@@ -72,26 +72,18 @@ if($_POST['action']=='view'){?>
   ?>
            <tr>
              <td><?php echo $srno; ?></td>
-             <input type="hidden" name="ProdId[]" class="form-control" value="<?php echo $nx['id'];?>">
-              <input type="hidden" name="ProdName[]" class="form-control" value='<?php echo $nx['ProductName'];?>'>
-              <input type="hidden" name="Unit[]" class="form-control" value="<?php echo $nx['Unit'];?>">
-             <td><?php echo $nx['ProductName']; ?></td>
-             <td><?php echo $nx['Unit']; ?></td>
-            <td><input type="number" name="Qty[]" class="form-control" value="<?php echo $Qty;?>"></td>
+             <td><?php echo htmlspecialchars($nx['ProductName'], ENT_QUOTES, 'UTF-8'); ?></td>
+             <td><?php echo htmlspecialchars($nx['Unit'], ENT_QUOTES, 'UTF-8'); ?></td>
+            <td>
+               <input type="hidden" name="ProdId[]" value="<?php echo (int) $nx['id']; ?>">
+               <input type="hidden" name="ProdName[]" value="<?php echo htmlspecialchars($nx['ProductName'], ENT_QUOTES, 'UTF-8'); ?>">
+               <input type="hidden" name="Unit[]" value="<?php echo htmlspecialchars($nx['Unit'], ENT_QUOTES, 'UTF-8'); ?>">
+               <input type="number" name="Qty[]" class="form-control struct-qty-input" min="0" step="any" value="<?php echo htmlspecialchars((string) $Qty, ENT_QUOTES, 'UTF-8'); ?>">
+            </td>
             </tr>
              <?php $srno++;} ?>
         </tbody>
     </table>
-
-    <button type="submit" name="submit" class="btn btn-primary btn-finish" style="width: 100px;">Submit</button>
-    <script type="text/javascript">
-      $(document).ready(function() {
-      $('#example').DataTable( {
-        responsive: true,
-        "pageLength":1000
-      });
-      });
-    </script>
  <?php } 
 
 

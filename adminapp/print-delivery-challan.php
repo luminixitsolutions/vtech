@@ -5,6 +5,7 @@ include_once 'config.php';
 <!DOCTYPE html>
 <html>
 <body>
+<?php include_once __DIR__ . '/inc-app-loader.php'; ?>
 <style>
 body {
   font-family:"Calibri", sans-serif;

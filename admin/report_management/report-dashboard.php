@@ -9,7 +9,7 @@ $sql77 = "SELECT * FROM tbl_users WHERE id='$user_id'";
 $row77 = getRecord($sql77);
 $Roll = $row77['Roll'];
 $UserCat = $row77['CatId'];
-$Options = explode(',',$row77['Options']);
+$Options = adminResolveMenuOptionsFromUserRow($row77);
 ?>
 <!DOCTYPE html>
 <html lang="en" class="default-style layout-fixed layout-navbar-fixed">
@@ -131,6 +131,7 @@ $Options = explode(',',$row77['Options']);
                                 </div></a>
                             </div>  
                             
+                            <?php } if(in_array("185", $Options) || in_array("99", $Options)) {?>
                             <div class="col-sm-6 col-xl-2">
                                 <a href="attendance-report-2.php">
                                <div class="card bg-warning text-white ui-hover-icon mb-4 bg-pattern-3">
@@ -176,6 +177,7 @@ $Options = explode(',',$row77['Options']);
                                 </div></a>
                             </div>   
 
+                        <?php } if(in_array("184", $Options) || in_array("101", $Options)) {?>
                         <div class="col-sm-6 col-xl-2">
                                 <a href="store-stock-report-2.php">
                                <div class="card bg-warning text-white ui-hover-icon mb-4 bg-pattern-3">
@@ -186,6 +188,7 @@ $Options = explode(',',$row77['Options']);
                                      </div>
                                 </div></a>
                             </div>
+                        <?php } if(in_array("183", $Options) || in_array("101", $Options) || in_array("103", $Options)) {?>
                         <div class="col-sm-6 col-xl-2">
                                 <a href="serial-location-report.php">
                                <div class="card bg-warning text-white ui-hover-icon mb-4 bg-pattern-3">
@@ -195,8 +198,9 @@ $Options = explode(',',$row77['Options']);
                                      </div>
                                 </div></a>
                             </div>
+                        <?php } ?>
 
-                      <?php } if(in_array("102", $Options)) {?>   
+                      <?php if(in_array("102", $Options)) {?>   
                       
                       <div class="col-sm-6 col-xl-2">
                                 <a href="store-item-report.php">
@@ -275,17 +279,6 @@ $Options = explode(',',$row77['Options']);
                                      </div>
                                 </div></a>
                             </div>
-                        <?php if (!in_array("101", $Options)) { ?>
-                        <div class="col-sm-6 col-xl-2">
-                                <a href="serial-location-report.php">
-                               <div class="card bg-warning text-white ui-hover-icon mb-4 bg-pattern-3">
-                                        <div class="card-body text-center">
-                                        <h6 class="mb-0">Serial Location Report</h6>
-                                        <i class="lnr lnr-users hov-icon"></i>
-                                     </div>
-                                </div></a>
-                            </div>
-                        <?php } ?>
 <?php } if(in_array("110", $Options)) {?>
 <div class="col-sm-6 col-xl-2">
                                 <a href="before-installation-calling-report.php">
@@ -330,7 +323,27 @@ $Options = explode(',',$row77['Options']);
                                      </div>
                                 </div></a>
                             </div>                           
-<?php } ?>                            
+<?php } ?>
+<?php if ((function_exists('adminUserHasFullMenuAccess') && adminUserHasFullMenuAccess($Roll)) || in_array('187', $Options)) { ?>
+                        <div class="col-sm-6 col-xl-2">
+                                <a href="employee-tracking-dashboard.php">
+                               <div class="card text-white ui-hover-icon mb-4" style="background:linear-gradient(135deg,#4f46e5,#7c3aed);">
+                                        <div class="card-body text-center">
+                                        <h6 class="mb-0">Employee Tracking Dashboard</h6>
+                                        <i class="lnr lnr-chart-bars hov-icon"></i>
+                                     </div>
+                                </div></a>
+                            </div>
+                        <div class="col-sm-6 col-xl-2">
+                                <a href="employee-tracking-report.php">
+                               <div class="card text-white ui-hover-icon mb-4" style="background:linear-gradient(135deg,#6366f1,#0ea5e9);">
+                                        <div class="card-body text-center">
+                                        <h6 class="mb-0">Employee Tracking Report</h6>
+                                        <i class="lnr lnr-list hov-icon"></i>
+                                     </div>
+                                </div></a>
+                            </div>
+<?php } ?>
 
     </div>
 </div>

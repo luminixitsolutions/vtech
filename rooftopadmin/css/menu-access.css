@@ -1,0 +1,122 @@
+.menu-access-panel {
+    margin-bottom: 1.5rem;
+}
+
+.menu-access-panel .menu-access-intro {
+    font-size: 0.875rem;
+    color: #6c757d;
+    margin-bottom: 1rem;
+}
+
+.menu-access-table {
+    width: 100%;
+    border-collapse: collapse;
+    background: #fff;
+    border: 1px solid #e8e8e8;
+}
+
+.menu-access-table thead th {
+    background: #f8f9fa;
+    font-weight: 600;
+    font-size: 0.8125rem;
+    padding: 0.65rem 0.75rem;
+    border-bottom: 1px solid #e8e8e8;
+    text-align: center;
+    vertical-align: middle;
+}
+
+.menu-access-table thead th:first-child {
+    text-align: left;
+}
+
+.menu-access-table tbody td {
+    padding: 0.5rem 0.75rem;
+    border-bottom: 1px solid #f0f0f0;
+    vertical-align: middle;
+    text-align: center;
+}
+
+.menu-access-table tbody td.module-name-cell {
+    text-align: left;
+    font-weight: 600;
+}
+
+.menu-access-toggle {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 1.5rem;
+    height: 1.5rem;
+    margin-right: 0.35rem;
+    padding: 0;
+    border: 1px solid #28a745;
+    border-radius: 50%;
+    background: #fff;
+    color: #28a745;
+    font-size: 1rem;
+    line-height: 1;
+    cursor: pointer;
+    vertical-align: middle;
+}
+
+.menu-access-toggle:hover {
+    background: #e8f5e9;
+}
+
+.menu-access-toggle.is-open {
+    border-color: #17a2b8;
+    color: #17a2b8;
+}
+
+.menu-access-submenu-row > td {
+    padding: 0 !important;
+    background: #fafbfc;
+    border-bottom: 1px solid #e8e8e8;
+}
+
+.menu-access-submenu-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 0;
+}
+
+.menu-access-submenu-table thead th {
+    background: #f1f3f5;
+    font-weight: 600;
+    font-size: 0.75rem;
+    padding: 0.45rem 0.75rem;
+    border-bottom: 1px solid #e0e0e0;
+    text-align: center;
+}
+
+.menu-access-submenu-table thead th:first-child {
+    text-align: left;
+}
+
+.menu-access-submenu-table tbody td {
+    padding: 0.4rem 0.75rem;
+    font-size: 0.875rem;
+    border-bottom: 1px solid #eee;
+    text-align: center;
+}
+
+.menu-access-submenu-table tbody td:first-child {
+    text-align: left;
+    color: #444;
+}
+
+.menu-access-submenu-table tbody tr:last-child td {
+    border-bottom: none;
+}
+
+.menu-access-check {
+    width: 1rem;
+    height: 1rem;
+    cursor: pointer;
+    vertical-align: middle;
+}
+
+.menu-access-action-row td:first-child {
+    font-weight: 600;
+    color: #5b6abf;
+}

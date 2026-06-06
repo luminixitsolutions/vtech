@@ -50,7 +50,11 @@ $Page = "Add-Dispatch-Officer";
                 $id = $_GET['id'];
                 $sql7 = "SELECT * FROM tbl_users WHERE id='$id'";
                 $row7 = getRecord($sql7);
-                $row7['Options'] = explode(',', $row7['Options']);
+                include_once __DIR__ . '/../inc-employee-menu-options.php';
+                $row7['Options'] = employeeMenuOptionsForAccountForm(
+                    explode(',', (string) ($row7['Options'] ?? '')),
+                    (int) ($row7['Roll'] ?? 26)
+                );
                 $row7['MulRooftopBranchId'] = explode(',', $row7['MulRooftopBranchId']);
                 $row7['MulBranchId'] = explode(',', $row7['MulBranchId']);
                 ?>
@@ -287,150 +291,10 @@ $Page = "Add-Dispatch-Officer";
 
                                     <br>
 
-                                    <div class="row">
-                                        <div class="form-group col-md-12">
-                                            <label class="form-label"> Assign Lead Management</label>
-                                        </div>
-                                        <?php
-                                        $sql33 = "SELECT * FROM tbl_options WHERE id IN(64,44,45,46,47,63,51)";
-                                        $row33 = getList($sql33);
-                                        foreach ($row33 as $result) {
-                                        ?>
-                                            <div class="form-group col-md-4">
-                                                <label class="custom-control custom-checkbox">
-                                                    <input type="checkbox" class="custom-control-input" name="Options[]" value="<?php echo $result['id']; ?>" <?php if (in_array($result["id"], $row7['Options'])) { ?>
-
-                                                        checked="checked" <?php } ?>>
-                                                    <span class="custom-control-label"><?php echo $result['Name']; ?></span>
-                                                </label>
-                                            </div>
-                                        <?php } ?>
-                                    </div>
-
-                                    <div class="row">
-                                        <div class="form-group col-md-12">
-                                            <label class="form-label"> Assign Master Management</label>
-                                        </div>
-                                        <?php
-                                        $sql33 = "SELECT * FROM tbl_options WHERE id IN(1,56,2,3,4,5,6,7,72,73,74,75,76,77,97,98,8,9,12,13,34,15,16,53,54,89,90,91,92,117,140,141)";
-                                        $row33 = getList($sql33);
-                                        foreach ($row33 as $result) {
-                                        ?>
-                                            <div class="form-group col-md-4">
-                                                <label class="custom-control custom-checkbox">
-                                                    <input type="checkbox" class="custom-control-input" name="Options[]" value="<?php echo $result['id']; ?>" <?php if (in_array($result["id"], $row7['Options'])) { ?>
-
-                                                        checked="checked" <?php } ?>>
-                                                    <span class="custom-control-label"><?php echo $result['Name']; ?></span>
-                                                </label>
-                                            </div>
-                                        <?php } ?>
-                                    </div>
-
-                                    <div class="row">
-                                        <div class="form-group col-md-12">
-                                            <label class="form-label"> Assign User Accounts</label>
-                                        </div>
-                                        <?php
-                                        $sql33 = "SELECT * FROM tbl_options WHERE id IN(18,122,19,20,21,125,126,127,128,116,22,23,129)";
-                                        $row33 = getList($sql33);
-                                        foreach ($row33 as $result) {
-                                        ?>
-                                            <div class="form-group col-md-4">
-                                                <label class="custom-control custom-checkbox">
-                                                    <input type="checkbox" class="custom-control-input" name="Options[]" value="<?php echo $result['id']; ?>" <?php if (in_array($result["id"], $row7['Options'])) { ?>
-
-                                                        checked="checked" <?php } ?>>
-                                                    <span class="custom-control-label"><?php echo $result['Name']; ?></span>
-                                                </label>
-                                            </div>
-                                        <?php } ?>
-                                    </div>
-
-                                    <div class="row">
-                                        <div class="form-group col-md-12">
-                                            <label class="form-label"> Assign Other Access</label>
-                                        </div>
-                                        <?php
-                                        $sql33 = "SELECT * FROM tbl_options WHERE id IN(55,79,18,130,131,80,81,132,133,134,25,58,70,60,71,26,82,83,68,84,84,93,94,95,96,118,138,139,165,166)";
-                                        $row33 = getList($sql33);
-                                        foreach ($row33 as $result) {
-                                        ?>
-                                            <div class="form-group col-md-4">
-                                                <label class="custom-control custom-checkbox">
-                                                    <input type="checkbox" class="custom-control-input" name="Options[]" value="<?php echo $result['id']; ?>" <?php if (in_array($result["id"], $row7['Options'])) { ?>
-
-                                                        checked="checked" <?php } ?>>
-                                                    <span class="custom-control-label"><?php echo $result['Name']; ?></span>
-                                                </label>
-                                            </div>
-                                        <?php } ?>
-                                    </div>
-
-                                    <div class="row">
-                                        <div class="form-group col-md-12">
-                                            <label class="form-label"> Assign Service Complaint Access</label>
-                                        </div>
-                                        <?php
-                                        $sql33 = "SELECT * FROM tbl_options WHERE id IN(28,135,137,136)";
-                                        $row33 = getList($sql33);
-                                        foreach ($row33 as $result) {
-                                        ?>
-                                            <div class="form-group col-md-4">
-                                                <label class="custom-control custom-checkbox">
-                                                    <input type="checkbox" class="custom-control-input" name="Options[]" value="<?php echo $result['id']; ?>" <?php if (in_array($result["id"], $row7['Options'])) { ?>
-
-                                                        checked="checked" <?php } ?>>
-                                                    <span class="custom-control-label"><?php echo $result['Name']; ?></span>
-                                                </label>
-                                            </div>
-                                        <?php } ?>
-                                    </div>
-
-
-
-
-                                    <div class="row">
-                                        <div class="form-group col-md-12">
-                                            <label class="form-label"> Assign Reports</label>
-                                        </div>
-                                        <?php
-                                        $sql33 = "SELECT * FROM tbl_options WHERE id IN(29,30,31,38,39,65,99,100,101,102,103,104,105,106,107,108,109,110,111,112,142)";
-                                        $row33 = getList($sql33);
-                                        foreach ($row33 as $result) {
-                                        ?>
-                                            <div class="form-group col-md-4">
-                                                <label class="custom-control custom-checkbox">
-                                                    <input type="checkbox" class="custom-control-input" name="Options[]" value="<?php echo $result['id']; ?>" <?php if (in_array($result["id"], $row7['Options'])) { ?>
-
-                                                        checked="checked" <?php } ?>>
-                                                    <span class="custom-control-label"><?php echo $result['Name']; ?></span>
-                                                </label>
-                                            </div>
-                                        <?php } ?>
-                                    </div>
-
-                                    <div class="row">
-                                        <div class="form-group col-md-12">
-                                            <label class="form-label"> Assign Rights</label>
-                                        </div>
-
-                                        <?php
-                                        $sql33 = "SELECT * FROM tbl_options WHERE id IN(10,11,14)";
-                                        $row33 = getList($sql33);
-                                        foreach ($row33 as $result) {
-                                        ?>
-                                            <div class="form-group col-md-4">
-                                                <label class="custom-control custom-checkbox">
-                                                    <input type="checkbox" class="custom-control-input" name="Options[]" value="<?php echo $result['id']; ?>" <?php if (in_array($result["id"], $row7['Options'])) { ?>
-
-                                                        checked="checked" <?php } ?>>
-                                                    <span class="custom-control-label"><?php echo $result['Name']; ?></span>
-                                                </label>
-                                            </div>
-                                        <?php } ?>
-                                    </div>
-
+                                    <?php
+                                    include_once __DIR__ . '/../inc-menu-option-groups.php';
+                                    renderMenuAccessAccordion($row7['Options']);
+                                    ?>
 
                                     <div class="row">
                                         <div class="form-group col-md-4">
@@ -507,6 +371,7 @@ $Page = "Add-Dispatch-Officer";
 
 
     <?php include_once '../footer_script.php'; ?>
+    <?php include_once __DIR__ . '/../inc-menu-access-account-script.php'; renderMenuAccessAccountScript(26); ?>
 
     <script type="text/javascript">
         function getRoll(val) {

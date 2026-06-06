@@ -1,0 +1,158 @@
+/* Installation Workflow Dashboard */
+
+.inst-dash-page {
+  padding: 0.25rem 0 2rem;
+}
+
+.inst-dash-shell {
+  border: none;
+  border-radius: 16px;
+  box-shadow: 0 4px 24px rgba(15, 23, 42, 0.08);
+  overflow: hidden;
+  background: #fff;
+  margin-bottom: 1.5rem;
+}
+
+.inst-dash-shell .inst-dash-body {
+  padding: 1.5rem 1.5rem 1.75rem;
+  background: linear-gradient(180deg, #f8fafc 0%, #ffffff 42%);
+}
+
+.inst-dash-header {
+  text-align: center;
+  padding: 1rem 1.5rem;
+  margin: 0;
+  border: none;
+  border-bottom: 1px solid #e2e8f0;
+  font-size: 0.92rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: #475569;
+  background: #f8fafc;
+}
+
+.inst-dash-summary-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  gap: 1rem;
+  margin-bottom: 1.25rem;
+}
+
+.inst-dash-summary-card {
+  background: #fff;
+  border: 1px solid #e2e8f0;
+  border-radius: 14px;
+  padding: 1rem 1.1rem;
+  text-align: center;
+  box-shadow: 0 2px 12px rgba(15, 23, 42, 0.05);
+}
+
+.inst-dash-summary-card h3 {
+  margin: 0;
+  font-size: 1.65rem;
+  font-weight: 800;
+  color: #0f172a;
+}
+
+.inst-dash-summary-card p {
+  margin: 0.25rem 0 0;
+  font-size: 0.76rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: #64748b;
+}
+
+.inst-dash-stat-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  gap: 1.15rem;
+}
+
+.inst-dash-stat-link {
+  display: block;
+  text-decoration: none !important;
+  color: inherit;
+  height: 100%;
+}
+
+.inst-dash-stat-card {
+  display: flex;
+  align-items: flex-start;
+  gap: 1rem;
+  min-height: 118px;
+  padding: 1.15rem 1.2rem;
+  background: #fff;
+  border: 1px solid #e2e8f0;
+  border-radius: 16px;
+  box-shadow: 0 2px 12px rgba(15, 23, 42, 0.06);
+  transition: transform 0.25s ease, box-shadow 0.25s ease;
+  height: 100%;
+}
+
+.inst-dash-stat-link:hover .inst-dash-stat-card {
+  transform: translateY(-4px);
+  box-shadow: 0 12px 28px rgba(15, 23, 42, 0.12);
+}
+
+.inst-dash-stat-icon {
+  width: 48px;
+  height: 48px;
+  border-radius: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.25rem;
+  color: #fff;
+  flex-shrink: 0;
+}
+
+.inst-dash-stat-label {
+  margin: 0 0 0.25rem;
+  font-size: 0.78rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: #64748b;
+  line-height: 1.3;
+}
+
+.inst-dash-stat-count {
+  margin: 0;
+  font-size: 1.85rem;
+  font-weight: 800;
+  line-height: 1.1;
+  color: #0f172a;
+}
+
+.inst-dash-stat-sub {
+  display: inline-block;
+  margin-top: 0.35rem;
+  font-size: 0.76rem;
+  color: #94a3b8;
+  font-weight: 600;
+}
+
+.inst-dash-tone-assign .inst-dash-stat-icon { background: linear-gradient(135deg, #10b981, #059669); }
+.inst-dash-tone-coordinator .inst-dash-stat-icon { background: linear-gradient(135deg, #0891b2, #0e7490); }
+.inst-dash-tone-manager .inst-dash-stat-icon { background: linear-gradient(135deg, #f59e0b, #d97706); }
+.inst-dash-tone-gm .inst-dash-stat-icon { background: linear-gradient(135deg, #8b5cf6, #7c3aed); }
+.inst-dash-tone-gmext .inst-dash-stat-icon { background: linear-gradient(135deg, #6366f1, #4f46e5); }
+.inst-dash-tone-bh .inst-dash-stat-icon { background: linear-gradient(135deg, #ef4444, #dc2626); }
+.inst-dash-tone-bhext .inst-dash-stat-icon { background: linear-gradient(135deg, #ec4899, #db2777); }
+.inst-dash-tone-dispute .inst-dash-stat-icon { background: linear-gradient(135deg, #475569, #334155); }
+
+.inst-dash-empty {
+  text-align: center;
+  padding: 2.5rem 1rem;
+  color: #64748b;
+  font-size: 0.95rem;
+}
+
+@media (max-width: 767px) {
+  .inst-dash-stat-grid,
+  .inst-dash-summary-grid {
+    grid-template-columns: 1fr;
+  }
+}

@@ -33,6 +33,7 @@ $Page = "Product-Feedback";
     <!-- Libs -->
     <link rel="stylesheet" href="<?php echo $SiteUrl;?>/assets/libs/perfect-scrollbar/perfect-scrollbar.css">
     <link rel="stylesheet" href="<?php echo $SiteUrl;?>/assets/libs/datatables/datatables.css">
+    <?php echo leadSourceIconsStylesheetTag(); ?>
     
   
 </head>

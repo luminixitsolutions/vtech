@@ -1,5 +1,9 @@
 <?php
 session_start();
+include_once __DIR__ . '/config.php';
+if (!empty($_SESSION['Admin']['id']) && function_exists('addEmployeeLog')) {
+    addEmployeeLog(['action_type' => EMP_ACT_LOGOUT]);
+}
 unset(
     $_SESSION['UserId'],
     $_SESSION['Admin'],

@@ -65,7 +65,7 @@ while ($row = mysqli_fetch_assoc($empRecords)) {
     		"id"=>$i,
             "CustName"=>$row['CustName'],
             "CellNo"=>$row['CellNo'],
-            "ClainReason"=>$row['ClainReason']." ".$row['Fname'],
+            "ClainReason"=>leadSourceDisplayHtml($row['ClainReason'], $row['Fname']),
             "ClainStatus"=>$row['ClainStatus']
     	);
 $i++;}

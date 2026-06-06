@@ -5,44 +5,47 @@ include_once 'incuserdetails.php';
 $user_id = $_SESSION['Admin']['id'];
 $sql77 = "SELECT * FROM tbl_users WHERE id='$user_id'";
 $row77 = getRecord($sql77);
-$Options = explode(',',$row77['Options']);
+$Options = explode(',', (string)($row77['Options'] ?? ''));
+
+function rooftopCommonMasterNumeric($value) {
+    $value = trim((string)$value);
+    return ($value === '') ? '0' : $value;
+}
+
 if($_POST['action'] == 'Add'){
-$Name = addslashes(trim($_POST["Name"]));
-$Roll = addslashes(trim($_POST["Roll"]));
-$PumpHeadId = addslashes(trim($_POST["PumpHeadId"]));
-$Level = addslashes(trim($_POST["Level"]));
-$Address = addslashes(trim($_POST["Address"]));
-$RangeFrom = addslashes(trim($_POST["RangeFrom"]));
-$RangeTo = addslashes(trim($_POST["RangeTo"]));
-$ExpTitle = addslashes(trim($_POST["ExpTitle"]));
-$Status = $_POST["Status"];
+$Name = mysqli_real_escape_string($conn, trim($_POST["Name"]));
+$Roll = mysqli_real_escape_string($conn, trim($_POST["Roll"]));
+$PumpHeadId = rooftopCommonMasterNumeric($_POST["PumpHeadId"] ?? '');
+$Level = rooftopCommonMasterNumeric($_POST["Level"] ?? '');
+$RangeFrom = rooftopCommonMasterNumeric($_POST["RangeFrom"] ?? '');
+$RangeTo = rooftopCommonMasterNumeric($_POST["RangeTo"] ?? '');
+$ExpTitle = mysqli_real_escape_string($conn, trim($_POST["ExpTitle"] ?? ''));
+$Status = (int)$_POST["Status"];
+if (!empty($_FILES['Photo']['name'])) {
 $randno = rand(1,100);
 $src = $_FILES['Photo']['tmp_name'];
-$fnm = substr($_FILES["Photo"]["name"], 0,strrpos($_FILES["Photo"]["name"],'.')); 
+$fnm = substr($_FILES["Photo"]["name"], 0, strrpos($_FILES["Photo"]["name"], '.'));
 $fnm = str_replace(" ","_",$fnm);
-$ext = substr($_FILES["Photo"]["name"],strpos($_FILES["Photo"]["name"],"."));
+$ext = substr($_FILES["Photo"]["name"], strpos($_FILES["Photo"]["name"], "."));
 $dest = '../../uploads/'. $randno . "_".$fnm . $ext;
 $imagepath =  $randno . "_".$fnm . $ext;
-if(move_uploaded_file($src, $dest))
-{
-$Photo = $imagepath ;
-} 
-else{
-  //$Photo = $_POST['OldPhoto'];
+if (move_uploaded_file($src, $dest)) {
+$Photo = $imagepath;
 }
-$CreatedDate = date('Y-m-d');
-/*$query = "SELECT * FROM tbl_rooftop_common_master WHERE Name = '$Name' AND Roll='$Roll'";
+}
+$query = "SELECT id FROM tbl_rooftop_common_master WHERE Name = '$Name' AND Roll='$Roll' LIMIT 1";
 $result = $conn->query($query);
-$row_cnt = mysqli_num_rows($result);
-if($row_cnt > 0){
+if ($result && mysqli_num_rows($result) > 0) {
   echo 0;
+} else {
+$qx = "INSERT INTO tbl_rooftop_common_master SET RangeFrom = '$RangeFrom',RangeTo='$RangeTo',PumpHeadId='$PumpHeadId',Level='$Level',PumpHeadVal='0',Name = '$Name',Status='$Status',Roll='$Roll',ExpTitle='$ExpTitle'";
+	if ($conn->query($qx)) {
+	  echo 1;
+	} else {
+	  echo 2;
+	}
 }
-else{*/
-$qx = "INSERT INTO tbl_rooftop_common_master SET RangeFrom = '$RangeFrom',RangeTo='$RangeTo',PumpHeadId='$PumpHeadId',Level='$Level',Name = '$Name',Status='$Status',Roll='$Roll',ExpTitle='$ExpTitle'";
-	$conn->query($qx);
-	echo 1;
 }
-/*}*/
 
 if($_POST['action'] == 'fetch_record'){
  $id = $_POST['id'];
@@ -55,45 +58,48 @@ if($_POST['action'] == 'fetch_record'){
 }
 
 if($_POST['action'] == 'Edit') {
-     $id = $_POST['id'];
-$Name = addslashes(trim($_POST["Name"]));
-$Status = $_POST["Status"];
-$Roll = addslashes(trim($_POST["Roll"]));
-$PumpHeadId = addslashes(trim($_POST["PumpHeadId"]));
-$Level = addslashes(trim($_POST["Level"]));
-$Address = addslashes(trim($_POST["Address"]));
-$RangeFrom = addslashes(trim($_POST["RangeFrom"]));
-$RangeTo = addslashes(trim($_POST["RangeTo"]));
-$ExpTitle = addslashes(trim($_POST["ExpTitle"]));
-$OldPhoto = $_POST['OldPhoto'];
+     $id = (int)$_POST['id'];
+$Name = mysqli_real_escape_string($conn, trim($_POST["Name"]));
+$Status = (int)$_POST["Status"];
+$Roll = mysqli_real_escape_string($conn, trim($_POST["Roll"]));
+$PumpHeadId = rooftopCommonMasterNumeric($_POST["PumpHeadId"] ?? '');
+$Level = rooftopCommonMasterNumeric($_POST["Level"] ?? '');
+$RangeFrom = rooftopCommonMasterNumeric($_POST["RangeFrom"] ?? '');
+$RangeTo = rooftopCommonMasterNumeric($_POST["RangeTo"] ?? '');
+$ExpTitle = mysqli_real_escape_string($conn, trim($_POST["ExpTitle"] ?? ''));
+$OldPhoto = $_POST['OldPhoto'] ?? '';
+if (!empty($_FILES['Photo']['name'])) {
 $randno = rand(1,100);
 $src = $_FILES['Photo']['tmp_name'];
-$fnm = substr($_FILES["Photo"]["name"], 0,strrpos($_FILES["Photo"]["name"],'.')); 
+$fnm = substr($_FILES["Photo"]["name"], 0, strrpos($_FILES["Photo"]["name"], '.'));
 $fnm = str_replace(" ","_",$fnm);
-$ext = substr($_FILES["Photo"]["name"],strpos($_FILES["Photo"]["name"],"."));
+$ext = substr($_FILES["Photo"]["name"], strpos($_FILES["Photo"]["name"], "."));
 $dest = '../../uploads/'. $randno . "_".$fnm . $ext;
 $imagepath =  $randno . "_".$fnm . $ext;
-if(move_uploaded_file($src, $dest))
-{
-  $src = "../../uploads/$OldPhoto";
-  unlink($src); 
-$Photo = $imagepath ;
-} 
-else{
-  $Photo = $_POST['OldPhoto'];
+if (move_uploaded_file($src, $dest)) {
+  if ($OldPhoto !== '') {
+    $oldSrc = "../../uploads/$OldPhoto";
+    if (is_file($oldSrc)) {
+      unlink($oldSrc);
+    }
+  }
+$Photo = $imagepath;
 }
-$ModifiedDate = date('Y-m-d');
-/*$query = "SELECT * FROM tbl_rooftop_common_master WHERE Name = '$Name' AND id != '$id' AND Roll='$Roll'";
+} else {
+  $Photo = $OldPhoto;
+}
+$query = "SELECT id FROM tbl_rooftop_common_master WHERE Name = '$Name' AND id != '$id' AND Roll='$Roll' LIMIT 1";
 $result = $conn->query($query);
-$row_cnt = mysqli_num_rows($result);
-if($row_cnt > 0){
+if ($result && mysqli_num_rows($result) > 0) {
   echo 0;
-}
-else{*/
+} else {
   $query2 = "UPDATE tbl_rooftop_common_master SET RangeFrom = '$RangeFrom',RangeTo='$RangeTo',PumpHeadId='$PumpHeadId',Level='$Level',Name = '$Name', Status='$Status',Roll='$Roll',ExpTitle='$ExpTitle' WHERE id = '$id'";
- 	$conn->query($query2);
- /*}*/
-  echo 1;
+  if ($conn->query($query2)) {
+    echo 1;
+  } else {
+    echo 2;
+  }
+}
 }
 
   if($_POST['action'] == 'delete') {
@@ -123,7 +129,7 @@ if($_POST['action'] == 'deletePhoto'){
 <table id="example" class="table table-striped table-bordered dt-responsive nowrap" style="width:100%">
         <thead>
             <tr>
-              <th>#</th>
+              <th>ID</th>
               <?php if($Roll == 14){?>
                 <th>Pump Head</th>
                 <th>Level</th>
@@ -152,7 +158,7 @@ if($_POST['action'] == 'deletePhoto'){
         $row2 = getRecord($sql2);
   ?>
            <tr>
-             <td><?php echo $srno; ?></td>
+             <td><?php echo $nx['id']; ?></td>
              <?php if($Roll == 14){?>
                <td><?php echo $row2['PumpHead']; ?></td>
              <td><?php if($nx['Level']=='1'){echo "<span style='color:green;'>Summer Level</span>";} else { echo "<span style='color:red;'>Depth Level</span>";} ?></td>
@@ -179,7 +185,12 @@ if($_POST['action'] == 'deletePhoto'){
     <script type="text/javascript">
       $(document).ready(function() {
       $('#example').DataTable( {
-        responsive: true
+        responsive: true,
+         "scrollX": true,
+        dom: 'Bfrtip',
+        buttons: [
+            'excelHtml5'
+        ],
       });
       });
     </script>

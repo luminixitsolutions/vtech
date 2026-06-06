@@ -4,7 +4,7 @@ $sql77 = "SELECT * FROM tbl_users WHERE id='$user_id'";
 $row77 = getRecord($sql77);
 $Roll = $row77['Roll'];
 $UserCat = $row77['CatId'];
-$Options = explode(',',$row77['Options']);
+$Options = adminResolveMenuOptionsFromUserRow($row77);
 ?>
 
             <!-- [ Layout navbar ( Header ) ] End -->
@@ -35,6 +35,7 @@ $Options = explode(',',$row77['Options']);
                 
             </a>
         </li>
+        <?php if (userHasAnyMenuOption($Options, getMenuOptionGroups()['Master Management'])) { ?>
         <li class="sidenav-item">
             <a href="masters-dashboard.php" class="sidenav-link">
                 <i class="sidenav-icon feather icon-activity"></i>
@@ -42,6 +43,7 @@ $Options = explode(',',$row77['Options']);
                 
             </a>
         </li> 
+        <?php } ?>
         
         <?php if(in_array("1", $Options)) {?>
     <li class="sidenav-item <?php if($Page=='Location') {?> open active <?php } ?>">

@@ -153,7 +153,7 @@ else{
             $sql2 = "SELECT * FROM tbl_rooftop_branch WHERE id='$BranchId'";
             $row2 = getRecord($sql2);
             $StoreName = $row2['Name'];
-            $sql = "SELECT ProductId,ProductName FROM `tbl_rooftop_distibute_item_details2` WHERE BranchId='$BranchId'";
+            $sql = "SELECT ProductId, MAX(ProductName) AS ProductName FROM `tbl_rooftop_distibute_item_details2` WHERE BranchId='$BranchId'";
            if($_POST['StoreExeId']){
                 $StoreExeId = $_POST['StoreExeId'];
                 if($StoreExeId == 'all'){

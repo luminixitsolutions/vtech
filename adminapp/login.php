@@ -34,6 +34,7 @@
 
 </head>   
 <body class="gradiant-bg" style="background-color:#fff;">
+<?php include_once __DIR__ . '/inc-app-loader.php'; ?>
 <div class="page-wraper" style="background-color:#fff;">
     
 

@@ -305,11 +305,11 @@ function product_lists(){
   }
   });
     }
-  function error_toast(){
+  function error_toast(message){
     var isRtl = $('body').attr('dir') === 'rtl' || $('html').attr('dir') === 'rtl';
    $.growl.error({
       title:    'Error',
-      message:  ' Name Already Exists',
+      message:  message || 'Could not save record. Please try again.',
       location: isRtl ? 'tl' : 'tr'
     });
   }
@@ -379,7 +379,8 @@ function update_toast(){
      $('#submit').attr('disabled','disabled');
      $('#submit').text('Please Wait...');
     },
-                success:function(data){ 
+                success:function(data){
+                    data = $.trim(String(data));
                     if(data == 1){
                       if(action == 'Edit'){
                         update_toast();
@@ -389,8 +390,12 @@ function update_toast(){
                       }
                       $('.insert_frm').modal('hide'); 
                     }
+                    else if(data == 0){
+                      error_toast('This name already exists for this master type.');
+                      $('.insert_frm').modal('show'); 
+                    }
                     else{
-                      error_toast();
+                      error_toast('Could not save record. Please try again.');
                       $('.insert_frm').modal('show'); 
                     }
                   product_lists();

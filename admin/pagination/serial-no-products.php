@@ -40,13 +40,27 @@ $empQuery = $sql." ".$searchQuery." order by ".$columnName." ".$columnSortOrder.
 $empRecords = mysqli_query($conn, $empQuery);
 $data = array();
 $i=1;
+
+$cartIds = [];
+if (!empty($_SESSION['cart_item']) && is_array($_SESSION['cart_item'])) {
+    foreach ($_SESSION['cart_item'] as $cartItem) {
+        if (isset($cartItem['id'])) {
+            $cartIds[(string) $cartItem['id']] = true;
+        }
+    }
+}
+
 while ($row = mysqli_fetch_assoc($empRecords)) {
-       
+    $rowId = (string) $row['id'];
+    $isChecked = isset($cartIds[$rowId]);
+    $checkVal = $isChecked ? 1 : 0;
+    $checkedAttr = $isChecked ? ' checked' : '';
+
             $checkbox = '<label class="custom-control custom-checkbox">
-                    <input type="checkbox" id="Check_Id'.$row['id'].'" value="0" class="custom-control-input is-valid" onclick="featured('.$row['id'].')">
+                    <input type="checkbox" id="Check_Id'.$row['id'].'" value="'.$checkVal.'" class="custom-control-input is-valid" onclick="featured('.$row['id'].')"'.$checkedAttr.'>
                     <span class="custom-control-label">&nbsp;</span>
                  </label>
-                 <input type="hidden" value="0" name="CheckId[]" id="CheckId'.$row['id'].'">
+                 <input type="hidden" value="'.$checkVal.'" name="CheckId[]" id="CheckId'.$row['id'].'">
                  ';
     $data[] = array(
             "id"=>$checkbox,

@@ -9,6 +9,7 @@ $abstract = getServiceAbstractData($filters);
 $rows = $abstract['rows'];
 $totals = $abstract['totals'];
 $reportTitle = $abstract['title'];
+$columnLabel = $abstract['column_label'];
 $exportDate = date('d.m.Y');
 
 $filename = 'Service_Abstract_' . date('Y-m-d') . '.xls';
@@ -25,7 +26,7 @@ echo "\xEF\xBB\xBF";
     table { border-collapse: collapse; }
     th, td { border: 1px solid #000000; font-size: 11pt; padding: 4px; text-align: center; }
     th { background: #e9ecef; font-weight: bold; }
-    .district { text-align: left; font-weight: bold; }
+    .label-col { text-align: left; font-weight: bold; }
     .total td { background: #e9ecef; font-weight: bold; }
     .title { font-size: 14pt; font-weight: bold; text-align: center; }
 </style>
@@ -37,7 +38,7 @@ echo "\xEF\xBB\xBF";
     <tr><td colspan="6" class="title">Update as on <?php echo $exportDate; ?></td></tr>
     <tr><td colspan="6"></td></tr>
     <tr>
-        <th>DISTRICT</th>
+        <th><?php echo htmlspecialchars($columnLabel); ?></th>
         <th>Total Complaints</th>
         <th>Total complaints closed</th>
         <th>TODAY COMPLAINTS ADD</th>
@@ -46,7 +47,7 @@ echo "\xEF\xBB\xBF";
     </tr>
     <?php foreach ($rows as $row) { ?>
     <tr>
-        <td class="district"><?php echo htmlspecialchars($row['district']); ?></td>
+        <td class="label-col"><?php echo htmlspecialchars($row['label']); ?></td>
         <td><?php echo (int) $row['total_complaints']; ?></td>
         <td><?php echo (int) $row['total_closed']; ?></td>
         <td><?php echo (int) $row['today_added']; ?></td>
@@ -56,7 +57,7 @@ echo "\xEF\xBB\xBF";
     <?php } ?>
     <?php if (count($rows) > 1) { ?>
     <tr class="total">
-        <td class="district"><?php echo htmlspecialchars($totals['district']); ?></td>
+        <td class="label-col"><?php echo htmlspecialchars($totals['label']); ?></td>
         <td><?php echo (int) $totals['total_complaints']; ?></td>
         <td><?php echo (int) $totals['total_closed']; ?></td>
         <td><?php echo (int) $totals['today_added']; ?></td>

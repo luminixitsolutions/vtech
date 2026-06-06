@@ -1,0 +1,207 @@
+/* Top navbar — search + profile */
+
+.layout-navbar.top-header-bar {
+  min-height: 56px;
+  padding-top: 0.35rem;
+  padding-bottom: 0.35rem;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.12);
+  overflow: visible;
+}
+
+.top-header-bar .navbar-collapse {
+  overflow: visible;
+  flex-grow: 1;
+}
+
+@media (min-width: 992px) {
+  .top-header-bar .navbar-collapse {
+    display: flex !important;
+    flex-wrap: nowrap;
+    align-items: center;
+  }
+
+  .top-header-bar .navbar-collapse .navbar-nav {
+    flex-shrink: 0;
+  }
+}
+
+.top-header-search-wrap {
+  flex: 1;
+  max-width: 420px;
+  margin: 0 1rem 0 0.5rem;
+  position: relative;
+  min-width: 0;
+}
+
+.top-header-search-form {
+  position: relative;
+  margin: 0;
+}
+
+.top-header-search-form .form-control {
+  border-radius: 999px;
+  padding-left: 2.35rem;
+  padding-right: 1rem;
+  height: 38px;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  background: rgba(255, 255, 255, 0.12);
+  color: #fff;
+  font-size: 0.88rem;
+}
+
+.top-header-search-form .form-control::placeholder {
+  color: rgba(255, 255, 255, 0.55);
+}
+
+.top-header-search-form .form-control:focus {
+  background: rgba(255, 255, 255, 0.18);
+  border-color: rgba(255, 255, 255, 0.35);
+  color: #fff;
+  box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.35);
+}
+
+.top-header-search-icon {
+  position: absolute;
+  left: 0.85rem;
+  top: 50%;
+  transform: translateY(-50%);
+  color: rgba(255, 255, 255, 0.65);
+  font-size: 1rem;
+  pointer-events: none;
+  z-index: 2;
+}
+
+#topHeaderProfileDropdown {
+  position: relative;
+}
+
+.top-header-profile .nav-link {
+  padding: 0.35rem 0.5rem 0.35rem 0.65rem;
+  border-radius: 999px;
+  transition: background 0.15s ease;
+}
+
+.top-header-profile .nav-link:hover,
+.top-header-profile.show .nav-link {
+  background: rgba(255, 255, 255, 0.12);
+}
+
+.top-header-profile-name {
+  color: #fff;
+  font-weight: 600;
+  font-size: 0.88rem;
+  max-width: 160px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.top-header-avatar {
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 2px solid rgba(255, 255, 255, 0.35);
+}
+
+.top-header-profile .dropdown-menu,
+#topHeaderProfileMenu {
+  position: absolute;
+  top: calc(100% + 4px);
+  right: 0;
+  left: auto;
+  min-width: 200px;
+  margin: 0;
+  border: none;
+  border-radius: 12px;
+  box-shadow: 0 12px 32px rgba(15, 23, 42, 0.18);
+  padding: 0.35rem 0;
+  z-index: 1085;
+  transform: none !important;
+  animation: none;
+}
+
+.top-header-profile .dropdown-menu.show,
+#topHeaderProfileMenu.show {
+  display: block !important;
+  visibility: visible !important;
+  opacity: 1 !important;
+  pointer-events: auto !important;
+}
+
+.top-header-search-results {
+  display: none;
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: calc(100% + 6px);
+  max-height: 320px;
+  overflow-y: auto;
+  background: #fff;
+  border-radius: 12px;
+  box-shadow: 0 12px 32px rgba(15, 23, 42, 0.2);
+  z-index: 1090;
+}
+
+.top-header-search-results.is-open {
+  display: block;
+}
+
+.top-header-search-item {
+  display: block;
+  width: 100%;
+  text-align: left;
+  border: 0;
+  background: transparent;
+  padding: 0.6rem 1rem;
+  cursor: pointer;
+}
+
+.top-header-search-item:hover,
+.top-header-search-item:focus {
+  background: #f3f4f6;
+  outline: none;
+}
+
+.top-header-search-item-title {
+  display: block;
+  font-size: 0.88rem;
+  font-weight: 600;
+  color: #111827;
+}
+
+.top-header-search-item-group {
+  display: block;
+  font-size: 0.75rem;
+  color: #6b7280;
+}
+
+.top-header-search-empty {
+  padding: 0.75rem 1rem;
+  font-size: 0.85rem;
+  color: #6b7280;
+}
+
+.top-header-profile .dropdown-item {
+  font-size: 0.88rem;
+  padding: 0.55rem 1rem;
+  font-weight: 500;
+}
+
+.top-header-profile .dropdown-item i {
+  width: 18px;
+  margin-right: 0.35rem;
+}
+
+@media (max-width: 991.98px) {
+  .top-header-search-wrap {
+    max-width: 100%;
+    margin: 0.75rem 0 0.5rem;
+    order: 3;
+    width: 100%;
+  }
+
+  .top-header-bar .navbar-collapse {
+    padding-bottom: 0.5rem;
+  }
+}

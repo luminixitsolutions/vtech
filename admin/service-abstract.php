@@ -13,10 +13,13 @@ $abstract = getServiceAbstractData($filters);
 $rows = $abstract['rows'];
 $totals = $abstract['totals'];
 $reportTitle = $abstract['title'];
+$columnLabel = $abstract['column_label'];
 
 $projectHeads = serviceAbstractGetProjectHeads();
 $subHeads = serviceAbstractGetSubHeads($filters['projid']);
 $districtOptions = serviceAbstractGetDistrictOptions($filters);
+
+$abstractType = $filters['abstract_type'];
 ?>
 <!DOCTYPE html>
 <html lang="en" class="default-style layout-fixed layout-navbar-fixed">
@@ -40,7 +43,7 @@ $districtOptions = serviceAbstractGetDistrictOptions($filters);
         background-color: #e9ecef;
         font-weight: 700;
     }
-    .service-abstract-table td.district-col {
+    .service-abstract-table td.label-col {
         text-align: left;
         font-weight: 600;
     }
@@ -77,14 +80,15 @@ $districtOptions = serviceAbstractGetDistrictOptions($filters);
                     <div class="card mb-3" style="padding: 12px;">
                         <form method="get" id="abstractFilterForm" class="form-row align-items-end">
                             <div class="form-group col-md-3 mb-2">
-                                <label class="form-label">Project scope</label>
-                                <select name="scope" class="form-control">
-                                    <option value="mtskpy" <?php if ($filters['scope'] === 'mtskpy') { ?>selected<?php } ?>>MTSKPY (MSEDCL)</option>
-                                    <option value="msedcl" <?php if ($filters['scope'] === 'msedcl') { ?>selected<?php } ?>>All MSEDCL</option>
-                                    <option value="all" <?php if ($filters['scope'] === 'all') { ?>selected<?php } ?>>All service projects</option>
+                                <label class="form-label">Abstract type</label>
+                                <select name="abstract_type" id="abstract_type" class="form-control">
+                                    <option value="all" <?php if ($abstractType === 'all') { ?>selected<?php } ?>>All</option>
+                                    <option value="district" <?php if ($abstractType === 'district') { ?>selected<?php } ?>>District wise</option>
+                                    <option value="project_head" <?php if ($abstractType === 'project_head') { ?>selected<?php } ?>>Project head wise</option>
+                                    <option value="sub_project_head" <?php if ($abstractType === 'sub_project_head') { ?>selected<?php } ?>>Sub project head wise</option>
                                 </select>
                             </div>
-                            <div class="form-group col-md-3 mb-2">
+                            <div class="form-group col-md-3 mb-2 filter-projid">
                                 <label class="form-label">Project head</label>
                                 <select name="projid" id="projid" class="form-control select2-demo" onchange="loadSubHeads(this.value)">
                                     <option value="">All Project Head</option>
@@ -93,7 +97,7 @@ $districtOptions = serviceAbstractGetDistrictOptions($filters);
                                     <?php } ?>
                                 </select>
                             </div>
-                            <div class="form-group col-md-3 mb-2">
+                            <div class="form-group col-md-3 mb-2 filter-subhead">
                                 <label class="form-label">Sub project head</label>
                                 <select name="subheadid" id="subheadid" class="form-control select2-demo">
                                     <option value="">All Sub Project Head</option>
@@ -102,7 +106,7 @@ $districtOptions = serviceAbstractGetDistrictOptions($filters);
                                     <?php } ?>
                                 </select>
                             </div>
-                            <div class="form-group col-md-3 mb-2">
+                            <div class="form-group col-md-3 mb-2 filter-district">
                                 <label class="form-label">District</label>
                                 <select name="district" id="district" class="form-control select2-demo">
                                     <option value="">All District</option>
@@ -128,7 +132,7 @@ $districtOptions = serviceAbstractGetDistrictOptions($filters);
                             <table class="table table-bordered service-abstract-table mb-0">
                                 <thead>
                                     <tr>
-                                        <th>DISTRICT</th>
+                                        <th><?php echo htmlspecialchars($columnLabel); ?></th>
                                         <th>Total Complaints</th>
                                         <th>Total complaints closed</th>
                                         <th>TODAY COMPLAINTS ADD</th>
@@ -137,34 +141,33 @@ $districtOptions = serviceAbstractGetDistrictOptions($filters);
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    <?php foreach ($rows as $row) {
-                                        $dist = $row['district'];
-                                    ?>
+                                    <?php foreach ($rows as $row) { ?>
                                     <tr>
-                                        <td class="district-col"><?php echo htmlspecialchars($dist); ?></td>
-                                        <td><a href="<?php echo serviceAbstractListUrl($dist, $filters, ''); ?>" target="_blank"><?php echo (int) $row['total_complaints']; ?></a></td>
-                                        <td><a href="<?php echo serviceAbstractListUrl($dist, $filters, 'closed'); ?>" target="_blank"><?php echo (int) $row['total_closed']; ?></a></td>
-                                        <td><a href="<?php echo serviceAbstractListUrl($dist, $filters, 'today'); ?>" target="_blank"><?php echo (int) $row['today_added']; ?></a></td>
-                                        <td><a href="<?php echo serviceAbstractListUrl($dist, $filters, 'material'); ?>" target="_blank"><?php echo (int) $row['material_hold']; ?></a></td>
-                                        <td><a href="<?php echo serviceAbstractListUrl($dist, $filters, 'pending'); ?>" target="_blank"><?php echo (int) $row['total_pending']; ?></a></td>
+                                        <td class="label-col"><?php echo htmlspecialchars($row['label']); ?></td>
+                                        <td><a href="<?php echo serviceAbstractListUrl($row, $filters, ''); ?>" target="_blank"><?php echo (int) $row['total_complaints']; ?></a></td>
+                                        <td><a href="<?php echo serviceAbstractListUrl($row, $filters, 'closed'); ?>" target="_blank"><?php echo (int) $row['total_closed']; ?></a></td>
+                                        <td><a href="<?php echo serviceAbstractListUrl($row, $filters, 'today'); ?>" target="_blank"><?php echo (int) $row['today_added']; ?></a></td>
+                                        <td><a href="<?php echo serviceAbstractListUrl($row, $filters, 'material'); ?>" target="_blank"><?php echo (int) $row['material_hold']; ?></a></td>
+                                        <td><a href="<?php echo serviceAbstractListUrl($row, $filters, 'pending'); ?>" target="_blank"><?php echo (int) $row['total_pending']; ?></a></td>
                                     </tr>
                                     <?php } ?>
                                     <?php if (count($rows) > 1) { ?>
                                     <tr class="total-row">
-                                        <td class="district-col"><?php echo htmlspecialchars($totals['district']); ?></td>
-                                        <td><a href="<?php echo serviceAbstractListUrl('', $filters, ''); ?>" target="_blank"><?php echo (int) $totals['total_complaints']; ?></a></td>
-                                        <td><a href="<?php echo serviceAbstractListUrl('', $filters, 'closed'); ?>" target="_blank"><?php echo (int) $totals['total_closed']; ?></a></td>
-                                        <td><a href="<?php echo serviceAbstractListUrl('', $filters, 'today'); ?>" target="_blank"><?php echo (int) $totals['today_added']; ?></a></td>
-                                        <td><a href="<?php echo serviceAbstractListUrl('', $filters, 'material'); ?>" target="_blank"><?php echo (int) $totals['material_hold']; ?></a></td>
-                                        <td><a href="<?php echo serviceAbstractListUrl('', $filters, 'pending'); ?>" target="_blank"><?php echo (int) $totals['total_pending']; ?></a></td>
+                                        <td class="label-col"><?php echo htmlspecialchars($totals['label']); ?></td>
+                                        <td><a href="<?php echo serviceAbstractListUrl($totals, $filters, ''); ?>" target="_blank"><?php echo (int) $totals['total_complaints']; ?></a></td>
+                                        <td><a href="<?php echo serviceAbstractListUrl($totals, $filters, 'closed'); ?>" target="_blank"><?php echo (int) $totals['total_closed']; ?></a></td>
+                                        <td><a href="<?php echo serviceAbstractListUrl($totals, $filters, 'today'); ?>" target="_blank"><?php echo (int) $totals['today_added']; ?></a></td>
+                                        <td><a href="<?php echo serviceAbstractListUrl($totals, $filters, 'material'); ?>" target="_blank"><?php echo (int) $totals['material_hold']; ?></a></td>
+                                        <td><a href="<?php echo serviceAbstractListUrl($totals, $filters, 'pending'); ?>" target="_blank"><?php echo (int) $totals['total_pending']; ?></a></td>
                                     </tr>
                                     <?php } ?>
                                 </tbody>
                             </table>
                         </div>
                         <p class="text-muted small mt-3 mb-0">
-                            Filters apply to beneficiary complaints (Project Type = Pump). Project head / sub head override scope when selected.
-                            <strong>Close</strong> = closed; <strong>In Process</strong> = material hold; total pending = not closed.
+                            <strong>Abstract type</strong> controls the first column grouping.
+                            Optional filters narrow the complaint set. <strong>Close</strong> = closed;
+                            <strong>In Process</strong> = material hold; total pending = not closed.
                         </p>
                     </div>
                 </div>

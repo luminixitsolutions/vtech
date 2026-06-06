@@ -1,0 +1,147 @@
+/* Lead source brand icons */
+.lead-source-icon {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    vertical-align: middle;
+}
+
+.lead-source-icon__badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 10px;
+    background: var(--lsi-gradient, linear-gradient(135deg, #64748b, #475569));
+    color: #fff;
+    box-shadow: 0 4px 14px rgba(15, 23, 42, 0.18);
+    transition: transform 0.2s ease, box-shadow 0.25s ease;
+}
+
+.lead-source-icon__badge .feather {
+    stroke-width: 2.25px;
+}
+
+.lead-source-icon:hover .lead-source-icon__badge {
+    transform: translateY(-2px) scale(1.06);
+    box-shadow: 0 8px 22px rgba(15, 23, 42, 0.22);
+}
+
+.lead-source-icon--sm .lead-source-icon__badge {
+    width: 28px;
+    height: 28px;
+    border-radius: 8px;
+}
+
+.lead-source-icon--sm .feather {
+    width: 14px;
+    height: 14px;
+}
+
+.lead-source-icon--md .lead-source-icon__badge {
+    width: 36px;
+    height: 36px;
+}
+
+.lead-source-icon--md .feather {
+    width: 18px;
+    height: 18px;
+}
+
+.lead-source-icon--lg .lead-source-icon__badge {
+    width: 48px;
+    height: 48px;
+    border-radius: 12px;
+}
+
+.lead-source-icon--lg .feather {
+    width: 22px;
+    height: 22px;
+}
+
+.lead-source-icon--xl .lead-source-icon__badge {
+    width: 56px;
+    height: 56px;
+    border-radius: 14px;
+}
+
+.lead-source-icon--xl .feather {
+    width: 26px;
+    height: 26px;
+}
+
+.lead-source-icon__text {
+    font-size: 0.875rem;
+    font-weight: 500;
+    color: #334155;
+}
+
+.lead-source-cell {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    min-width: 0;
+}
+
+.lead-source-cell__label {
+    font-size: 0.8125rem;
+    color: #1e293b;
+    line-height: 1.3;
+}
+
+/* Dashboard cards */
+.lead-source-stat-card {
+    border: 0;
+    border-radius: 12px;
+    overflow: hidden;
+    transition: transform 0.2s ease, box-shadow 0.25s ease;
+    background: #fff;
+    box-shadow: 0 2px 12px rgba(15, 23, 42, 0.08);
+}
+
+.lead-source-stat-card:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 10px 28px rgba(15, 23, 42, 0.12);
+    text-decoration: none;
+}
+
+.lead-source-stat-card .card-body {
+    padding: 1rem 1.1rem;
+}
+
+.lead-source-stat-card__inner {
+    display: flex;
+    align-items: center;
+    gap: 0.85rem;
+}
+
+.lead-source-stat-card__meta h6 {
+    margin: 0 0 0.15rem;
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: #475569;
+    line-height: 1.25;
+}
+
+.lead-source-stat-card__meta .text-large {
+    font-size: 1.35rem;
+    font-weight: 700;
+    color: #0f172a;
+    line-height: 1.2;
+}
+
+.lead-source-stat-card--total .lead-source-icon__badge {
+    background: linear-gradient(135deg, #334155 0%, #1e293b 100%);
+}
+
+.lead-source-stat-card.lead-source-icon--instagram:hover .lead-source-icon__badge,
+.lead-source-stat-card:has(.lead-source-icon--instagram) .lead-source-icon__badge {
+    box-shadow: 0 6px 20px rgba(225, 48, 108, 0.35);
+}
+
+.lead-source-stat-card:has(.lead-source-icon--facebook) .lead-source-icon__badge {
+    box-shadow: 0 6px 20px rgba(24, 119, 242, 0.3);
+}
+
+.lead-source-stat-card:has(.lead-source-icon--whatsapp) .lead-source-icon__badge {
+    box-shadow: 0 6px 20px rgba(37, 211, 102, 0.3);
+}

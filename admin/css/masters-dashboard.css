@@ -1,0 +1,263 @@
+/* Master Management Dashboard */
+
+.masters-dash-page {
+  padding: 0.25rem 0 2rem;
+}
+
+.masters-dash-hero {
+  background: linear-gradient(135deg, #1e3a8a 0%, #3730a3 42%, #6366f1 100%);
+  border-radius: 18px;
+  padding: 1.75rem 1.75rem 1.5rem;
+  color: #fff;
+  margin-bottom: 1.5rem;
+  box-shadow: 0 14px 40px rgba(55, 48, 163, 0.28);
+  position: relative;
+  overflow: hidden;
+}
+
+.masters-dash-hero::before {
+  content: '';
+  position: absolute;
+  left: -30px;
+  bottom: -50px;
+  width: 160px;
+  height: 160px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.07);
+}
+
+.masters-dash-hero::after {
+  content: '';
+  position: absolute;
+  right: -40px;
+  top: -40px;
+  width: 180px;
+  height: 180px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.masters-dash-hero h4 {
+  margin: 0 0 0.35rem;
+  font-weight: 800;
+  font-size: 1.45rem;
+  position: relative;
+  z-index: 1;
+}
+
+.masters-dash-hero p {
+  margin: 0;
+  opacity: 0.92;
+  font-size: 0.95rem;
+  position: relative;
+  z-index: 1;
+}
+
+.masters-dash-hero-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  margin-top: 1.1rem;
+  position: relative;
+  z-index: 1;
+}
+
+.masters-dash-hero-pill {
+  background: rgba(255, 255, 255, 0.16);
+  border: 1px solid rgba(255, 255, 255, 0.22);
+  border-radius: 999px;
+  padding: 0.4rem 0.9rem;
+  font-size: 0.82rem;
+  font-weight: 600;
+}
+
+.masters-dash-shell {
+  border: none;
+  border-radius: 16px;
+  box-shadow: 0 4px 24px rgba(15, 23, 42, 0.08);
+  overflow: hidden;
+  background: #fff;
+  margin-bottom: 1.5rem;
+}
+
+.masters-dash-shell .masters-dash-body {
+  padding: 1.5rem 1.5rem 1.75rem;
+  background: linear-gradient(180deg, #f8fafc 0%, #ffffff 42%);
+}
+
+.masters-dash-header {
+  text-align: center;
+  padding: 1rem 1.5rem;
+  margin: 0;
+  border: none;
+  border-bottom: 1px solid #e2e8f0;
+  font-size: 0.92rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: #475569;
+  background: #f8fafc;
+}
+
+.masters-dash-summary-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 1rem;
+  margin-bottom: 0.25rem;
+}
+
+.masters-dash-summary-card {
+  background: #fff;
+  border: 1px solid #e2e8f0;
+  border-radius: 14px;
+  padding: 1rem 1.1rem;
+  text-align: center;
+  box-shadow: 0 2px 12px rgba(15, 23, 42, 0.05);
+}
+
+.masters-dash-summary-card h3 {
+  margin: 0;
+  font-size: 1.75rem;
+  font-weight: 800;
+  color: #0f172a;
+}
+
+.masters-dash-summary-card p {
+  margin: 0.25rem 0 0;
+  font-size: 0.76rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: #64748b;
+}
+
+.masters-dash-stat-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 1.15rem;
+}
+
+.masters-dash-stat-link {
+  display: block;
+  text-decoration: none !important;
+  color: inherit;
+  height: 100%;
+}
+
+.masters-dash-stat-card {
+  display: flex;
+  align-items: flex-start;
+  gap: 1rem;
+  min-height: 118px;
+  padding: 1.15rem 1.2rem;
+  background: #fff;
+  border: 1px solid #e2e8f0;
+  border-radius: 16px;
+  box-shadow: 0 2px 12px rgba(15, 23, 42, 0.06);
+  transition: transform 0.25s ease, box-shadow 0.25s ease;
+  height: 100%;
+}
+
+.masters-dash-stat-link:hover .masters-dash-stat-card {
+  transform: translateY(-4px);
+  box-shadow: 0 12px 28px rgba(15, 23, 42, 0.12);
+}
+
+.masters-dash-stat-icon {
+  width: 48px;
+  height: 48px;
+  border-radius: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.25rem;
+  color: #fff;
+  flex-shrink: 0;
+}
+
+.masters-dash-stat-label {
+  margin: 0 0 0.25rem;
+  font-size: 0.78rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: #64748b;
+  line-height: 1.3;
+}
+
+.masters-dash-stat-count {
+  margin: 0;
+  font-size: 1.85rem;
+  font-weight: 800;
+  line-height: 1.1;
+  color: #0f172a;
+}
+
+.masters-dash-stat-sub {
+  display: inline-block;
+  margin-top: 0.35rem;
+  font-size: 0.76rem;
+  color: #94a3b8;
+  font-weight: 600;
+}
+
+.masters-dash-tone-location .masters-dash-stat-icon { background: linear-gradient(135deg, #0891b2, #0e7490); }
+.masters-dash-tone-store .masters-dash-stat-icon { background: linear-gradient(135deg, #6366f1, #4f46e5); }
+.masters-dash-tone-issues .masters-dash-stat-icon { background: linear-gradient(135deg, #ef4444, #dc2626); }
+.masters-dash-tone-scheme .masters-dash-stat-icon { background: linear-gradient(135deg, #f97316, #ea580c); }
+.masters-dash-tone-usertype .masters-dash-stat-icon { background: linear-gradient(135deg, #8b5cf6, #7c3aed); }
+.masters-dash-tone-project .masters-dash-stat-icon { background: linear-gradient(135deg, #334155, #1e293b); }
+.masters-dash-tone-pump .masters-dash-stat-icon { background: linear-gradient(135deg, #2563eb, #1d4ed8); }
+.masters-dash-tone-rooftop .masters-dash-stat-icon { background: linear-gradient(135deg, #f59e0b, #d97706); }
+.masters-dash-tone-insurance .masters-dash-stat-icon { background: linear-gradient(135deg, #10b981, #059669); }
+.masters-dash-tone-leads .masters-dash-stat-icon { background: linear-gradient(135deg, #a855f7, #9333ea); }
+.masters-dash-tone-questions .masters-dash-stat-icon { background: linear-gradient(135deg, #ec4899, #db2777); }
+.masters-dash-tone-products .masters-dash-stat-icon { background: linear-gradient(135deg, #14b8a6, #0d9488); }
+
+.masters-dash-chart-card {
+  border: none;
+  border-radius: 16px;
+  box-shadow: 0 4px 24px rgba(15, 23, 42, 0.08);
+  background: #fff;
+  padding: 1.25rem 1.25rem 1rem;
+  height: 100%;
+}
+
+.masters-dash-chart-title {
+  margin: 0 0 1rem;
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: #334155;
+}
+
+.masters-dash-chart-wrap {
+  position: relative;
+  height: 320px;
+}
+
+.masters-dash-chart-wrap--sm {
+  height: 280px;
+}
+
+.masters-dash-empty {
+  text-align: center;
+  padding: 2.5rem 1rem;
+  color: #64748b;
+  font-size: 0.95rem;
+}
+
+@media (max-width: 767px) {
+  .masters-dash-hero {
+    padding: 1.25rem;
+  }
+
+  .masters-dash-stat-grid,
+  .masters-dash-summary-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .masters-dash-chart-wrap,
+  .masters-dash-chart-wrap--sm {
+    height: 260px;
+  }
+}

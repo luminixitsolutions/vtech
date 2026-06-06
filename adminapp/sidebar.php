@@ -1,4 +1,5 @@
 
+<?php include_once __DIR__ . '/inc-app-loader.php'; ?>
 <?php 
 $UserId = $_SESSION['User']['id'];
 $user_id = $_SESSION['User']['id'];

@@ -2,6 +2,7 @@
 session_start();
 include_once 'config.php';
 include_once 'auth.php';
+require_once __DIR__ . '/inc-rooftop-po-assignment-activity-log.php';
 require_once('vendor/php-excel-reader/excel_reader2.php');
 require_once('vendor/SpreadsheetReader.php');
 $user_id = $_SESSION['Admin']['id'];
@@ -12,6 +13,49 @@ $id = $_GET['id'];
 $sql7 = "SELECT tpo.*,tu.Fname FROM tbl_rooftop_purchase_order tpo LEFT JOIN tbl_users tu ON tpo.EmpId=tu.id WHERE tpo.id='$id'";
 $row7 = getRecord($sql7);
 $InvoiceNo = $row7['InvoiceNo'];
+
+/**
+ * @return array{rows: array, blocked: bool, has_transferable: bool}
+ */
+function rooftop_po_collect_po_stock_preview($conn, $poId, $poRow)
+{
+    $rows = [];
+    $hasTransferable = false;
+    $poId = intval($poId);
+    $vd = isset($poRow['VehicalDate']) ? $poRow['VehicalDate'] : '';
+    $vn = isset($poRow['VehicalNo']) ? $poRow['VehicalNo'] : '';
+
+    $sqlStk = "SELECT ts.*, tp.Unit AS TPUnit FROM tbl_rooftop_stocks ts LEFT JOIN tbl_rooftop_products tp ON ts.ProductId = tp.id WHERE ts.SellId='$poId' AND ts.SellType='Purchase' ORDER BY ts.id ASC";
+    $resStk = $conn->query($sqlStk);
+    if (!$resStk) {
+        return ['rows' => [], 'blocked' => true, 'has_transferable' => false];
+    }
+    while ($stk = $resStk->fetch_assoc()) {
+        $qty = floatval($stk['Qty']);
+        if ($qty <= 0) {
+            continue;
+        }
+        $pt = isset($stk['ProdType']) ? intval($stk['ProdType']) : 0;
+        $asgInfo = rooftop_po_line_store_assignment_info($conn, $stk, $vd, $vn);
+        $assigned = !empty($asgInfo['assigned']);
+        if (!$assigned) {
+            $hasTransferable = true;
+        }
+        $typeLabel = ($pt === 1 || $pt === 2) ? 'Serial' : 'Regular';
+        $serialDisp = isset($stk['SerialNo']) ? $stk['SerialNo'] : '';
+        $rows[] = [
+            'stk' => $stk,
+            'stock_id' => intval($stk['id']),
+            'qty' => $qty,
+            'type_label' => $typeLabel,
+            'prod_type' => $pt,
+            'assigned' => $assigned,
+            'assigned_store_name' => isset($asgInfo['store_name']) ? $asgInfo['store_name'] : '',
+            'serial_disp' => $serialDisp,
+        ];
+    }
+    return ['rows' => $rows, 'blocked' => !$hasTransferable, 'has_transferable' => $hasTransferable];
+}
 ?>
 <!DOCTYPE html>
 <html lang="en" class="default-style layout-fixed layout-navbar-fixed">
@@ -405,6 +449,144 @@ alert("Excel Data Imported into the Database");
         $message = "Invalid File Type. Upload Excel File.";
   }
   
+}
+
+if (isset($_POST['submit_po_store_transfer_confirm'])) {
+    $poId = intval($id);
+    $BranchIdStore = intval($_POST['PoStoreBranchId']);
+    $TransferDate = mysqli_real_escape_string($conn, trim($_POST['PoStoreTransferDate']));
+    $userStoreBranchId = (int) ($RooftopBranchId ?? $BranchId ?? 0);
+
+    $poRow = getRecord("SELECT * FROM tbl_rooftop_purchase_order WHERE id='$poId'");
+    if (empty($poRow) || intval($poRow['DeliveredStatus']) !== 1) {
+        echo "<script>alert('Order must be delivered before assigning items to a store.');window.location.href='take-po-action.php?id=$poId';</script>";
+        exit;
+    }
+    if ($BranchIdStore <= 0 || empty($TransferDate)) {
+        echo "<script>alert('Please select store and transfer date.');window.location.href='take-po-action.php?id=$poId';</script>";
+        exit;
+    }
+    if ($Roll != 1 && $Roll != 7 && $BranchIdStore != $userStoreBranchId) {
+        echo "<script>alert('Invalid store selection.');window.location.href='take-po-action.php?id=$poId';</script>";
+        exit;
+    }
+
+    $dup = getRecord("SELECT id FROM tbl_rooftop_distibute_items WHERE Narration REGEXP '__ROOFTOPPOID".$poId."__' LIMIT 1");
+    if (!empty($dup['id'])) {
+        echo "<script>alert('This purchase order was already transferred to a store.');window.location.href='take-po-action.php?id=$poId';</script>";
+        exit;
+    }
+
+    $previewData = rooftop_po_collect_po_stock_preview($conn, $poId, $poRow);
+    if (empty($previewData['rows'])) {
+        echo "<script>alert('No delivered stock lines found for this PO. Complete delivery first.');window.location.href='take-po-action.php?id=$poId';</script>";
+        exit;
+    }
+    if (empty($previewData['has_transferable'])) {
+        echo "<script>alert('All items or serial numbers are already assigned to a store.');window.location.href='take-po-action.php?id=$poId';</script>";
+        exit;
+    }
+
+    $selectedStockIds = [];
+    if (isset($_POST['PoStoreStockIds']) && is_array($_POST['PoStoreStockIds'])) {
+        foreach ($_POST['PoStoreStockIds'] as $sid) {
+            $sid = intval($sid);
+            if ($sid > 0) {
+                $selectedStockIds[$sid] = true;
+            }
+        }
+    }
+    if (empty($selectedStockIds)) {
+        echo "<script>alert('Please select at least one line with status OK to transfer.');window.location.href='take-po-action.php?id=$poId';</script>";
+        exit;
+    }
+
+    $linesToTransfer = [];
+    foreach ($previewData['rows'] as $line) {
+        $stockId = isset($line['stock_id']) ? intval($line['stock_id']) : intval($line['stk']['id']);
+        if (empty($selectedStockIds[$stockId])) {
+            continue;
+        }
+        if (!empty($line['assigned'])) {
+            echo "<script>alert('One or more selected lines are already assigned to a store. Review items and try again.');window.location.href='take-po-action.php?id=$poId';</script>";
+            exit;
+        }
+        $linesToTransfer[] = $line;
+    }
+    if (empty($linesToTransfer)) {
+        echo "<script>alert('No valid lines selected for transfer.');window.location.href='take-po-action.php?id=$poId';</script>";
+        exit;
+    }
+
+    $VehicalDateEsc = mysqli_real_escape_string($conn, $poRow['VehicalDate']);
+    $VehicalNoEsc = mysqli_real_escape_string($conn, $poRow['VehicalNo']);
+    $NarrationEsc = mysqli_real_escape_string($conn, 'Rooftop Purchase Order '.$poRow['InvoiceNo'].' · Store transfer __ROOFTOPPOID'.$poId.'__');
+
+    $conn->begin_transaction();
+    try {
+        $sqlIns = "INSERT INTO tbl_rooftop_distibute_items SET VehicalNo='$VehicalNoEsc',VehicalDate='$VehicalDateEsc',BranchId='$BranchIdStore',StoreInchId='0',CreatedDate='$TransferDate',Narration='$NarrationEsc',Status='1'";
+        if (!$conn->query($sqlIns)) {
+            throw new Exception($conn->error);
+        }
+        $DistId = mysqli_insert_id($conn);
+
+        $detailRows = 0;
+        foreach ($linesToTransfer as $line) {
+            $stk = $line['stk'];
+            $qty = floatval($stk['Qty']);
+            if ($qty <= 0) {
+                continue;
+            }
+            if (!empty(rooftop_po_line_store_assignment_info($conn, $stk, $poRow['VehicalDate'], $poRow['VehicalNo'])['assigned'])) {
+                throw new Exception('Item already assigned');
+            }
+            $detailRows++;
+            $ProductName = mysqli_real_escape_string($conn, $stk['ProductName']);
+            $purityRaw = $stk['Unit'] !== null && $stk['Unit'] !== '' ? $stk['Unit'] : (isset($stk['TPUnit']) ? $stk['TPUnit'] : '');
+            if ($purityRaw === '' || $purityRaw === null) {
+                $purityRaw = '-';
+            }
+            $Purity = mysqli_real_escape_string($conn, (string) $purityRaw);
+            $ProductId = mysqli_real_escape_string($conn, $stk['ProductId']);
+            $ModelNo = mysqli_real_escape_string($conn, isset($stk['ModelNo']) ? $stk['ModelNo'] : '');
+            $SerialNo = mysqli_real_escape_string($conn, $stk['SerialNo'] !== null && $stk['SerialNo'] !== '' ? $stk['SerialNo'] : 'N/A');
+            $pt = isset($stk['ProdType']) ? intval($stk['ProdType']) : 0;
+            $ptDb = ($pt === 1) ? '1' : (($pt === 2) ? '2' : '0');
+            $qtyEsc = mysqli_real_escape_string($conn, (string) $qty);
+            $detailCode = mysqli_real_escape_string($conn, substr('RPO' . $poId . 'D' . $DistId . '_' . $detailRows . '_' . bin2hex(random_bytes(6)), 0, 255));
+
+            $sqlDet = "INSERT INTO tbl_rooftop_distibute_item_details SET VehicalNo='$VehicalNoEsc',VehicalDate='$VehicalDateEsc',BranchId='$BranchIdStore',DistId='$DistId',StoreInchId='0',ProductName='$ProductName',Purity='$Purity',Qty='$qtyEsc',ProductId='$ProductId',ModelNo='$ModelNo',CreatedDate='$TransferDate',SerialNo='$SerialNo',ProdType='$ptDb',code='$detailCode'";
+            if (!$conn->query($sqlDet)) {
+                throw new Exception($conn->error);
+            }
+        }
+        if ($detailRows === 0) {
+            throw new Exception('No quantities to transfer');
+        }
+
+        $storeBr = getRecord("SELECT Name FROM tbl_rooftop_branch WHERE id='$BranchIdStore' LIMIT 1");
+        $storeLabel = (is_array($storeBr) && !empty($storeBr['Name'])) ? trim((string) $storeBr['Name']) : '';
+        $logRemarks = 'PO ' . $poRow['InvoiceNo'] . ' assigned to store';
+        if ($storeLabel !== '') {
+            $logRemarks .= ': ' . $storeLabel;
+        }
+        $logRemarks .= ' (regular/serial lines: ' . (int) $detailRows . ')';
+        if (!logRooftopPoAssignmentActivity($conn, $poId, (int) $DistId, 'po_to_store', $BranchIdStore, (int) $user_id, (int) $detailRows, $logRemarks)) {
+            throw new Exception('Could not write activity log.');
+        }
+
+        $conn->commit();
+        echo "<script>alert('Selected PO item(s) assigned to store only. Dispatch officer assignment is a separate step from Assign Item To Store list.');window.location.href='take-po-action.php?id=$poId';</script>";
+        exit;
+    } catch (Exception $e) {
+        $conn->rollback();
+        $errMsg = trim($e->getMessage() . ($conn->error ? ' — ' . $conn->error : ''));
+        if ($errMsg === '') {
+            $errMsg = 'Transfer failed. Please try again.';
+        }
+        echo "<script>alert(" . json_encode($errMsg, JSON_HEX_TAG | JSON_HEX_APOS) . ");window.location.href='take-po-action.php?id=$poId';</script>";
+        exit;
+    }
 }
 ?>
 
@@ -803,6 +985,265 @@ alert("Excel Data Imported into the Database");
     </div>
 </form> 
 </fieldset>
+
+<?php
+$rooftopUserStoreBranchId = (int) ($RooftopBranchId ?? $BranchId ?? 0);
+$poAlreadyTransfer = getRecord("SELECT di.id, tb.Name AS StoreName, di.CreatedDate FROM tbl_rooftop_distibute_items di LEFT JOIN tbl_rooftop_branch tb ON di.BranchId = tb.id WHERE di.Narration REGEXP '__ROOFTOPPOID".intval($id)."__' LIMIT 1");
+if (!is_array($poAlreadyTransfer)) {
+    $poAlreadyTransfer = [];
+}
+if (empty($poAlreadyTransfer['id'])) {
+    $poStockAssignSum = summarizeRooftopPoStoreAssignFromStockLines($conn, intval($id), isset($row7['VehicalDate']) ? $row7['VehicalDate'] : '', isset($row7['VehicalNo']) ? $row7['VehicalNo'] : '');
+    if (!empty($poStockAssignSum['assigned'])) {
+        $poAlreadyTransfer = [
+            'id' => 0,
+            'StoreName' => $poStockAssignSum['store_name'],
+            'CreatedDate' => '',
+            'from_stock_lines' => true,
+        ];
+    }
+}
+$poStoreAssignedComplete = !empty($poAlreadyTransfer['id']) || !empty($poAlreadyTransfer['from_stock_lines']);
+
+$poPreviewShow = false;
+$poPreviewLines = [];
+$poPreviewBlocked = false;
+$poPreviewBranchId = 0;
+$poPreviewTransferDate = '';
+$poPreviewPostBranch = isset($_POST['PoStoreBranchId']) ? intval($_POST['PoStoreBranchId']) : 0;
+$poPreviewPostDate = isset($_POST['PoStoreTransferDate']) ? trim($_POST['PoStoreTransferDate']) : '';
+$poPreviewTransferDateRaw = '';
+
+if (isset($_POST['submit_po_store_preview']) && intval($row7['DeliveredStatus']) === 1 && !$poStoreAssignedComplete) {
+    $poPreviewBranchId = intval($_POST['PoStoreBranchId']);
+    $poPreviewTransferDateRaw = isset($_POST['PoStoreTransferDate']) ? trim($_POST['PoStoreTransferDate']) : '';
+    if ($poPreviewBranchId > 0 && $poPreviewTransferDateRaw !== '') {
+        if ($Roll == 1 || $Roll == 7 || $poPreviewBranchId === $rooftopUserStoreBranchId) {
+            $pv = rooftop_po_collect_po_stock_preview($conn, intval($id), $row7);
+            $poPreviewLines = $pv['rows'];
+            $poPreviewHasTransferable = !empty($pv['has_transferable']);
+            $poPreviewBlocked = empty($poPreviewHasTransferable);
+            $poPreviewShow = true;
+        }
+    }
+}
+?>
+<?php if (intval($row7['DeliveredStatus']) === 1) { ?>
+<fieldset>
+    <legend>Assign Purchase Order items to Store</legend>
+    <?php if ($poStoreAssignedComplete) { ?>
+        <div class="alert alert-success mb-0">
+            Already assigned to store: <strong><?php echo htmlspecialchars($poAlreadyTransfer['StoreName']); ?></strong>
+            <?php if (!empty($poAlreadyTransfer['CreatedDate'])) { ?>
+                &nbsp;·&nbsp; Date: <strong><?php echo date('d M Y', strtotime(str_replace('-', '/', $poAlreadyTransfer['CreatedDate']))); ?></strong>
+            <?php } ?>
+            <?php if (!empty($poAlreadyTransfer['from_stock_lines'])) { ?>
+            <p class="small mt-2 text-muted">All PO lines match existing store stock records (assigned outside the formal PO store transfer batch).</p>
+            <?php } else { ?>
+            <p class="small mt-2 text-muted">Items are at the store only until you use <strong>Assign Item To Store List</strong> → <em>Assign to dispatch</em> (not done automatically from this PO screen).</p>
+            <?php } ?>
+            <div class="mt-2">
+                <a href="view-distribute-item-store.php" class="btn btn-sm btn-outline-primary">Open assign list (dispatch step)</a>
+                <?php if (!empty($poAlreadyTransfer['id'])) { ?>
+                <a href="view-assigning-items.php?id=<?php echo intval($poAlreadyTransfer['id']); ?>" class="btn btn-sm btn-outline-secondary">View line items</a>
+                <?php } ?>
+            </div>
+        </div>
+        <div class="mt-3">
+            <h6 class="font-weight-bold">Assignment activity log</h6>
+            <?php echo renderRooftopPoAssignmentActivityLogHtml($conn, intval($id)); ?>
+        </div>
+    <?php } else {
+        $poStockLines = getRow("SELECT id FROM tbl_rooftop_stocks WHERE SellId='".intval($id)."' AND SellType='Purchase' LIMIT 1");
+        if ($poStockLines < 1) { ?>
+            <div class="alert alert-warning mb-0">Deliver stock items first (regular and/or serial products above). Transfer becomes available once stock lines exist for this PO.</div>
+        <?php } else {
+            $defaultTransferDate = !empty($row7['DeliveredDate']) ? $row7['DeliveredDate'] : date('Y-m-d');
+        ?>
+
+        <?php if ($poPreviewShow) { ?>
+            <?php if ($poPreviewBlocked) { ?>
+                <div class="alert alert-danger">
+                    <strong>Cannot assign to store:</strong> all lines are already assigned to a store (existing record in store assignment).
+                    Regular items are matched by product, vehicle date/no, qty and model; serial lines by product + serial number.
+                </div>
+            <?php } else { ?>
+                <div class="alert alert-info mb-3">
+                    Review the lines below. Lines with status <strong>OK</strong> are selected by default.
+                    Click <strong>Submit</strong> to assign only the checked regular / serial lines to the <strong>store</strong> (not to a dispatch officer).
+                    Dispatch assignment is done later from <a href="view-distribute-item-store.php">Assign Item To Store List</a>.
+                    Or <a href="take-po-action.php?id=<?php echo intval($id); ?>">change store / date</a>.
+                </div>
+                <?php
+                $poPreviewSomeAssigned = false;
+                foreach ($poPreviewLines as $pline) {
+                    if (!empty($pline['assigned'])) {
+                        $poPreviewSomeAssigned = true;
+                        break;
+                    }
+                }
+                if ($poPreviewSomeAssigned) { ?>
+                <div class="alert alert-warning">
+                    Some lines are already in a store and cannot be selected. Only checked <strong>OK</strong> lines will be transferred.
+                </div>
+                <?php } ?>
+            <?php } ?>
+
+            <?php if ($poPreviewShow && !$poPreviewBlocked && !empty($poPreviewLines)) { ?>
+            <form method="post" autocomplete="off" id="poStoreTransferForm" onsubmit="return poStoreTransferConfirm();">
+                <input type="hidden" name="PoStoreBranchId" value="<?php echo intval($poPreviewBranchId); ?>">
+                <input type="hidden" name="PoStoreTransferDate" value="<?php echo htmlspecialchars($poPreviewTransferDateRaw); ?>">
+            <?php } ?>
+            <div class="table-responsive mb-3">
+                <table class="table table-sm table-bordered table-striped">
+                    <thead>
+                        <tr>
+                            <?php if (!$poPreviewBlocked && !empty($poPreviewLines)) { ?>
+                            <th class="text-center" style="width:50px;">Select</th>
+                            <?php } ?>
+                            <th>#</th>
+                            <th>Type</th>
+                            <th>Product</th>
+                            <th>Model no.</th>
+                            <th>Serial no.</th>
+                            <th class="text-right">Qty</th>
+                            <th>Status</th>
+                            <th>Assigned store</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <?php
+                        $pr = 1;
+                        foreach ($poPreviewLines as $pline) {
+                            $stk = $pline['stk'];
+                            $stockId = isset($pline['stock_id']) ? intval($pline['stock_id']) : intval($stk['id']);
+                            $asn = isset($pline['assigned_store_name']) ? trim((string) $pline['assigned_store_name']) : '';
+                            if ($pline['assigned']) {
+                                $st = '<span class="text-danger">Already in store</span>';
+                                $storeCol = $asn !== '' ? htmlspecialchars($asn) : '<span class="text-muted">—</span>';
+                            } else {
+                                $st = '<span class="text-success">OK</span>';
+                                $storeCol = '<span class="text-muted">—</span>';
+                            }
+                        ?>
+                        <tr>
+                            <?php if (!$poPreviewBlocked && !empty($poPreviewLines)) { ?>
+                            <td class="text-center">
+                                <?php if (!$pline['assigned']) { ?>
+                                <input type="checkbox" name="PoStoreStockIds[]" value="<?php echo $stockId; ?>" checked>
+                                <?php } else { ?>
+                                <input type="checkbox" disabled title="Already assigned to a store">
+                                <?php } ?>
+                            </td>
+                            <?php } ?>
+                            <td><?php echo $pr++; ?></td>
+                            <td><?php echo htmlspecialchars($pline['type_label']); ?></td>
+                            <td><?php echo htmlspecialchars(isset($stk['ProductName']) ? $stk['ProductName'] : ''); ?></td>
+                            <td><?php echo htmlspecialchars(isset($stk['ModelNo']) ? $stk['ModelNo'] : ''); ?></td>
+                            <td><?php echo htmlspecialchars($pline['serial_disp']); ?></td>
+                            <td class="text-right"><?php echo htmlspecialchars((string) $pline['qty']); ?></td>
+                            <td><?php echo $st; ?></td>
+                            <td><?php echo $storeCol; ?></td>
+                        </tr>
+                        <?php } ?>
+                    </tbody>
+                </table>
+            </div>
+
+            <?php if ($poPreviewShow && !$poPreviewBlocked && !empty($poPreviewLines)) { ?>
+                <button type="submit" name="submit_po_store_transfer_confirm" class="btn btn-success">Submit</button>
+                <a class="btn btn-outline-secondary ml-2" href="take-po-action.php?id=<?php echo intval($id); ?>">Cancel</a>
+            </form>
+            <script>
+            function poStoreTransferConfirm() {
+                var form = document.getElementById('poStoreTransferForm');
+                if (!form) return false;
+                var checked = form.querySelectorAll('input[name="PoStoreStockIds[]"]:checked');
+                if (checked.length < 1) {
+                    alert('Please select at least one line with status OK.');
+                    return false;
+                }
+                return confirm('Assign ' + checked.length + ' selected line(s) to the store?');
+            }
+            </script>
+            <?php } ?>
+
+            <?php if ($poPreviewBlocked || empty($poPreviewLines)) { ?>
+            <form method="post" autocomplete="off" class="mt-3">
+                <div class="form-row align-items-end">
+                    <div class="form-group col-md-4">
+                        <label class="form-label">Store <span class="text-danger">*</span></label>
+                        <select class="form-control" name="PoStoreBranchId" required>
+                            <option value="">Select store</option>
+                            <?php
+                            if ($Roll == 1 || $Roll == 7) {
+                                $sqlBr = "SELECT * FROM tbl_rooftop_branch WHERE Status='1'";
+                            } else {
+                                $sqlBr = "SELECT * FROM tbl_rooftop_branch WHERE Status='1' AND id='".intval($rooftopUserStoreBranchId)."'";
+                            }
+                            $rowBr = getList($sqlBr);
+                            if (!empty($rowBr) && is_array($rowBr)) {
+                                foreach ($rowBr as $br) {
+                                    $sel = ($poPreviewPostBranch === intval($br['id'])) ? ' selected' : '';
+                            ?>
+                            <option value="<?php echo intval($br['id']); ?>"<?php echo $sel; ?>><?php echo htmlspecialchars($br['Name']); ?></option>
+                            <?php
+                                }
+                            }
+                            ?>
+                        </select>
+                    </div>
+                    <div class="form-group col-md-3">
+                        <label class="form-label">Transfer date <span class="text-danger">*</span></label>
+                        <input type="date" name="PoStoreTransferDate" class="form-control" required value="<?php echo htmlspecialchars($poPreviewPostDate !== '' ? $poPreviewPostDate : $defaultTransferDate); ?>">
+                    </div>
+                    <div class="form-group col-md-3" style="padding-top:24px;">
+                        <button type="submit" name="submit_po_store_preview" class="btn btn-primary">Review items</button>
+                    </div>
+                </div>
+            </form>
+            <?php } ?>
+
+        <?php } else { ?>
+        <form method="post" autocomplete="off">
+            <div class="form-row align-items-end">
+                <div class="form-group col-md-4">
+                    <label class="form-label">Store <span class="text-danger">*</span></label>
+                    <select class="form-control" name="PoStoreBranchId" id="PoStoreBranchId" required>
+                        <option value="">Select store</option>
+                        <?php
+                        if ($Roll == 1 || $Roll == 7) {
+                            $sqlBr = "SELECT * FROM tbl_rooftop_branch WHERE Status='1'";
+                        } else {
+                            $sqlBr = "SELECT * FROM tbl_rooftop_branch WHERE Status='1' AND id='".intval($rooftopUserStoreBranchId)."'";
+                        }
+                        $rowBr = getList($sqlBr);
+                        if (!empty($rowBr) && is_array($rowBr)) {
+                            foreach ($rowBr as $br) {
+                        ?>
+                        <option value="<?php echo intval($br['id']); ?>"><?php echo htmlspecialchars($br['Name']); ?></option>
+                        <?php
+                            }
+                        }
+                        ?>
+                    </select>
+                </div>
+                <div class="form-group col-md-3">
+                    <label class="form-label">Transfer date <span class="text-danger">*</span></label>
+                    <input type="date" name="PoStoreTransferDate" class="form-control" required value="<?php echo htmlspecialchars($defaultTransferDate); ?>">
+                </div>
+                <div class="form-group col-md-3" style="padding-top:24px;">
+                    <button type="submit" name="submit_po_store_preview" class="btn btn-primary">Review items</button>
+                </div>
+            </div>
+            <p class="text-muted small mb-0">Choose store and date, then review all lines before confirming. Assignment goes to the store only; dispatch officer is assigned separately later. Already-assigned serials or regular lines cannot be transferred again.</p>
+        </form>
+        <?php } ?>
+
+        <?php } ?>
+    <?php } ?>
+</fieldset>
+<?php } ?>
 
                             </div>
                         </div>

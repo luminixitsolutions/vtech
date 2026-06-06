@@ -260,7 +260,8 @@ $_SESSION['User'] = $row;
     </main>
 
     <!-- footer-->
-  <?php include_once 'footer.php'; ?>
+  <?php $GLOBALS['adminapp_scripts_included'] = true; ?>
+<?php include_once 'footer.php'; ?>
 
 
 <script src="dist/aos.js"></script>

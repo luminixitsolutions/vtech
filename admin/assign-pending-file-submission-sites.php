@@ -239,6 +239,8 @@ SELECT
     ts.*,
     ti.InstallStatus,
     ti.Type,ti.id As InstId,
+    ti.AssignPendingFileSubmissionTo,
+    ti.AssignDate,
     u.id AS UserId,
     u.Fname,
     u.Phone,
@@ -249,6 +251,7 @@ SELECT
     u.Village,
     u.District,
     tb.Name AS InchargeName,
+    coord.Fname AS CoordinatorName,
     st.Name AS StateName,
     cm.Name AS Pump_Capacity
 FROM tbl_sell ts
@@ -260,6 +263,8 @@ LEFT JOIN tbl_users u
     ON u.id = ts.CustId
 LEFT JOIN tbl_branch tb 
     ON tb.id = u.StoreInchId
+LEFT JOIN tbl_users coord 
+    ON coord.id = ti.AssignPendingFileSubmissionTo
 LEFT JOIN tbl_state st 
     ON st.id = u.StateId
 LEFT JOIN tbl_common_master cm 
@@ -305,6 +310,8 @@ $res = $conn->query($sql);
             <th>State</th>
             <th>Village</th>
             <th>District</th>
+            <th>Assign To</th>
+            <th>Assign Date</th>
         </tr>
     </thead>
     <tbody>
@@ -344,6 +351,8 @@ while ($row = $res->fetch_assoc()) {
     <td><?php echo $row['StateName']; ?></td>
     <td><?php echo $row['Village']; ?></td>
     <td><?php echo $row['District']; ?></td>
+    <td><?php echo $row['CoordinatorName']; ?></td>
+    <td><?php if ($row['AssignDate'] == '') { echo ''; } else { echo date('d/m/Y', strtotime(str_replace('-', '/', $row['AssignDate']))); } ?></td>
 
 </tr>
 <?php $i++; } ?>

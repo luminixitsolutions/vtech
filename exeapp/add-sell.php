@@ -673,6 +673,7 @@ function scanQrCode(){
           }
           
           function getBarcodeValue(value,id){
+              id = id || 1;
               $('#BarcodeNo'+id).val(value);
              getSerialProdDetails(id,value);
           }

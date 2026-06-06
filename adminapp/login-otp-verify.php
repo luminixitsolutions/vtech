@@ -38,6 +38,7 @@ $UserId = $_SESSION['User']['id'];
 
 </head>   
 <body class="gradiant-bg">
+<?php include_once __DIR__ . '/inc-app-loader.php'; ?>
 <div class="page-wraper">
     
 

@@ -52,7 +52,7 @@ $Page = "Installation";
                     $District = implode(",",$_POST['District']);
                     $projid = $_POST['projid'];
                     $SubHeadProjectId = $_POST['SubHeadProjectId'];
-                    echo "<script>window.open('print-project-abstract.php?District=$District&projid=$projid&SubHeadProjectId=$SubHeadProjectId');</script>";
+                    echo "<script>window.open('print-project-abstract.php?District=$District&projid=$projid&SubHeadProjectId=$SubHeadProjectId&title=" . urlencode((string) $_GET['title']) . "');</script>";
                     
                 }
 

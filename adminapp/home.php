@@ -79,6 +79,22 @@ body{
 .card-task{
     background:linear-gradient(135deg,#43a047,#81c784);
 }
+.card-stock{
+    background:linear-gradient(135deg,#f57c00,#ffb74d);
+}
+.card-insurance{
+    background:linear-gradient(135deg,#00897b,#4db6ac);
+}
+.card-service{
+    background:linear-gradient(135deg,#5e35b1,#9575cd);
+}
+.section-label{
+    font-size:14px;
+    font-weight:600;
+    color:#6b7280;
+    margin:20px 0 8px;
+    text-align:center;
+}
 .project-icon{
     font-size:44px;
     opacity:0.9;
@@ -164,14 +180,41 @@ body{
         </div>
 
     </div>
+
+    <p class="section-label">Operations</p>
+
+    <div class="row g-3">
+
+        <div class="col-6 col-md-4">
+            <a href="stock-management.php" class="project-card card-stock">
+                <span class="material-icons project-icon">inventory_2</span>
+                <div class="project-title">Stock Management</div>
+                <div class="project-sub">PO, challan &amp; quotations</div>
+            </a>
+        </div>
+
+        <div class="col-6 col-md-4">
+            <a href="insurance-management.php" class="project-card card-insurance">
+                <span class="material-icons project-icon">health_and_safety</span>
+                <div class="project-title">Insurance Management</div>
+                <div class="project-sub">Site insurance status</div>
+            </a>
+        </div>
+
+        <div class="col-6 col-md-4">
+            <a href="service-management.php" class="project-card card-service">
+                <span class="material-icons project-icon">build</span>
+                <div class="project-title">Service / Maintenance</div>
+                <div class="project-sub">Complaints &amp; claims</div>
+            </a>
+        </div>
+
+    </div>
 </div>
 
 </main>
 
 <?php include_once 'footer.php'; ?>
-
-<script src="js/jquery-3.3.1.min.js"></script>
-<script src="vendor/bootstrap/js/bootstrap.min.js"></script>
 
 <script>
 function logout(){

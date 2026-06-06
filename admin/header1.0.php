@@ -4,7 +4,8 @@ $sql77 = "SELECT * FROM tbl_users WHERE id='$user_id'";
 $row77 = getRecord($sql77);
 $Roll = $row77['Roll'];
 $UserCat = $row77['CatId'];
-$Options = explode(',',$row77['Options']);
+include_once __DIR__ . '/inc-menu-option-groups.php';
+$Options = adminResolveMenuOptionsFromUserRow($row77);
 $BranchId = $row77['BranchId'];
 $ImmediateBoss = $row77['ImmediateBoss'];
 ?>
@@ -38,7 +39,7 @@ $ImmediateBoss = $row77['ImmediateBoss'];
                 
             </a>
         </li>
- <?php }  if(in_array("1", $Options) || in_array("2", $Options) || in_array("3", $Options) || in_array("4", $Options) || in_array("5", $Options) || in_array("6", $Options) || in_array("7", $Options) || in_array("8", $Options) || in_array("9", $Options) || in_array("12", $Options) || in_array("13", $Options) || in_array("15", $Options) || in_array("16", $Options) || in_array("53", $Options) || in_array("54", $Options)) { ?>
+ <?php }  if(userHasAnyMenuOption($Options, getMenuOptionGroups()['Master Management'])) { ?>
         <li class="sidenav-item">
             <a href="master_management/masters-dashboard.php" class="sidenav-link">
                 <i class="sidenav-icon feather icon-package"></i>
@@ -60,7 +61,7 @@ $ImmediateBoss = $row77['ImmediateBoss'];
         <li class="sidenav-item">
             <a href="user_management/account-managment-dashboard.php" class="sidenav-link">
                 <i class="sidenav-icon feather icon-users"></i>
-                <div>User Account Management</div>
+                <div>Employee Management</div>
                 
             </a>
         </li>
@@ -278,6 +279,18 @@ $ImmediateBoss = $row77['ImmediateBoss'];
                 <i class="sidenav-icon feather icon-share-2"></i>
                 <div>Assign Beneficiary To Store</div>
                 <?php if($Page=='Assign-Store-Incharge') {?>
+                <div class="pl-1 ml-auto">
+                    <span class="badge badge-dot badge-primary"></span>
+                </div>
+                <?php } ?>
+            </a>
+        </li>
+        <?php } if(in_array("59", $Options)) {?>
+         <li class="sidenav-item">
+            <a href="approve-store-incharge.php" class="sidenav-link">
+                <i class="sidenav-icon feather icon-check-circle"></i>
+                <div>Approve By Store Incharge</div>
+                <?php if($Page=='Approve-Store-Incharge') {?>
                 <div class="pl-1 ml-auto">
                     <span class="badge badge-dot badge-primary"></span>
                 </div>
@@ -570,12 +583,14 @@ $ImmediateBoss = $row77['ImmediateBoss'];
 </li>
 <?php } ?>
 
+<?php if(in_array("168", $Options) || in_array("169", $Options) || in_array("170", $Options) || in_array("171", $Options) || in_array("172", $Options) || in_array("173", $Options) || in_array("121", $Options)) {?>
 <li class="sidenav-item <?php if($MainPage=='Insurance') {?> open active <?php } ?>">
 <a href="javascript:" class="sidenav-link sidenav-toggle">
 <i class="sidenav-icon feather icon-shield"></i>
 <div>Insurance Site</div>
 </a>
 <ul class="sidenav-menu">
+<?php if(in_array("168", $Options) || in_array("121", $Options)) {?>
 <li class="sidenav-item <?php if($Page=='Insurance-Dashboard') {?> active <?php } ?>">
 <a href="insurance-dashboard.php" class="sidenav-link">
 <div>Dashboard</div>
@@ -586,6 +601,7 @@ $ImmediateBoss = $row77['ImmediateBoss'];
 <?php } ?>
 </a>
 </li>
+<?php } if(in_array("169", $Options)) {?>
 <li class="sidenav-item <?php if($Page=='Pending-Insurance') {?> active <?php } ?>">
 <a href="pending-insurance.php" class="sidenav-link">
 <div>Pending Insurance</div>
@@ -596,6 +612,7 @@ $ImmediateBoss = $row77['ImmediateBoss'];
 <?php } ?>
 </a>
 </li>
+<?php } if(in_array("170", $Options)) {?>
 <li class="sidenav-item <?php if($Page=='Completed-Insurance') {?> active <?php } ?>">
 <a href="completed-insurance.php" class="sidenav-link">
 <div>Completed Insurance</div>
@@ -606,9 +623,10 @@ $ImmediateBoss = $row77['ImmediateBoss'];
 <?php } ?>
 </a>
 </li>
+<?php } if(in_array("171", $Options)) {?>
 <li class="sidenav-item <?php if($Page=='Renewal-Insurance') {?> active <?php } ?>">
 <a href="renewal-insurance.php" class="sidenav-link">
-<div>Renewal Insurance</div>
+<div>Upcoming Renewal Insurance</div>
 <?php if($Page=='Renewal-Insurance') {?>
 <div class="pl-1 ml-auto">
 <span class="badge badge-dot badge-primary"></span>
@@ -616,8 +634,32 @@ $ImmediateBoss = $row77['ImmediateBoss'];
 <?php } ?>
 </a>
 </li>
+<?php } if(in_array("172", $Options)) {?>
+<li class="sidenav-item <?php if($Page=='Expired-Insurance') {?> active <?php } ?>">
+<a href="expired-insurance.php" class="sidenav-link">
+<div>Expired Insurance</div>
+<?php if($Page=='Expired-Insurance') {?>
+<div class="pl-1 ml-auto">
+<span class="badge badge-dot badge-primary"></span>
+</div>
+<?php } ?>
+</a>
+</li>
+<?php } if(in_array("173", $Options)) {?>
+<li class="sidenav-item <?php if($Page=='Renewed-Insurance') {?> active <?php } ?>">
+<a href="renewed-insurance.php" class="sidenav-link">
+<div>Renewed Insurance</div>
+<?php if($Page=='Renewed-Insurance') {?>
+<div class="pl-1 ml-auto">
+<span class="badge badge-dot badge-primary"></span>
+</div>
+<?php } ?>
+</a>
+</li>
+<?php } ?>
 </ul>
 </li>
+<?php } ?>
 
 <?php if(in_array("93", $Options)) {?>
 <li class="sidenav-item">
@@ -742,6 +784,53 @@ $ImmediateBoss = $row77['ImmediateBoss'];
 
 </ul>
 </li> -->
+<?php if(userHasAnyMenuOption($Options, getMenuOptionGroups()['Installation Workflow'])) {?>
+      <li class="sidenav-item <?php if($MainPage=='Installation'){?> open active <?php } ?>">
+<a href="javascript:" class="sidenav-link sidenav-toggle">
+    <i class="sidenav-icon feather icon-activity"></i>
+    <div>Installation Workflow</div>
+</a>
+<ul class="sidenav-menu">
+<?php if(in_array("174", $Options)) {?>
+    <li class="sidenav-item <?php if($Page=='Installation-Dashboard'){?> active <?php } ?>">
+        <a href="admin-installation-dashboard.php" class="sidenav-link"><div>Installation Dashboard</div></a>
+    </li>
+<?php } if(in_array("175", $Options)) {?>
+    <li class="sidenav-item <?php if($Page=='Assign-Coordinator'){?> active <?php } ?>">
+        <a href="pending-installations.php" class="sidenav-link"><div>Assign Coordinator</div></a>
+    </li>
+<?php } if(in_array("176", $Options)) {?>
+    <li class="sidenav-item <?php if($Page=='Coordinator-Sites'){?> active <?php } ?>">
+        <a href="coordinator-assigned-sites.php" class="sidenav-link"><div>Coordinator Action</div></a>
+    </li>
+<?php } if(in_array("177", $Options)) {?>
+    <li class="sidenav-item <?php if($Page=='Manager-Pending'){?> active <?php } ?>">
+        <a href="manager-pending-installations.php" class="sidenav-link"><div>Manager Action</div></a>
+    </li>
+<?php } if(in_array("178", $Options)) {?>
+    <li class="sidenav-item <?php if($Page=='GM-Pending'){?> active <?php } ?>">
+        <a href="gm-pending-installations.php" class="sidenav-link"><div>General Manager Action</div></a>
+    </li>
+<?php } if(in_array("179", $Options)) {?>
+    <li class="sidenav-item <?php if($Page=='GM-Extensions'){?> active <?php } ?>">
+        <a href="gm-extension-requests.php" class="sidenav-link"><div>GM Extension Requests</div></a>
+    </li>
+<?php } if(in_array("180", $Options)) {?>
+    <li class="sidenav-item <?php if($Page=='BH-Pending'){?> active <?php } ?>">
+        <a href="business-head-pending.php" class="sidenav-link"><div>Business Head Action</div></a>
+    </li>
+<?php } if(in_array("181", $Options)) {?>
+    <li class="sidenav-item <?php if($Page=='BH-Extensions'){?> active <?php } ?>">
+        <a href="bh-extension-requests.php" class="sidenav-link"><div>BH Extension Requests</div></a>
+    </li>
+<?php } if(in_array("182", $Options)) {?>
+    <li class="sidenav-item <?php if($Page=='Dispute-Sites'){?> active <?php } ?>">
+        <a href="dispute-sites.php" class="sidenav-link"><div>Dispute Sites</div></a>
+    </li>
+<?php } ?>
+</ul>
+</li>
+<?php } ?>
 <?php if(in_array("138", $Options) || in_array("139", $Options)) {?>
 <li class="sidenav-item <?php if($MainPage=='Trip-Details') {?> open active <?php } ?>">
 <a href="javascript:" class="sidenav-link sidenav-toggle">
@@ -817,7 +906,7 @@ $ImmediateBoss = $row77['ImmediateBoss'];
         </li> -->
  
 
-<?php } if(in_array("29", $Options) || in_array("30", $Options) || in_array("31", $Options) || in_array("38", $Options) || in_array("40", $Options) || in_array("65", $Options) || in_array("99", $Options) || in_array("100", $Options) || in_array("101", $Options) || in_array("102", $Options) || in_array("103", $Options) || in_array("104", $Options) || in_array("105", $Options) || in_array("106", $Options) || in_array("107", $Options) || in_array("108", $Options) || in_array("109", $Options) || in_array("110", $Options) || in_array("111", $Options) || in_array("112", $Options)) {?>
+<?php } if(userHasAnyMenuOption($Options, getMenuOptionGroups()['Reports'])) {?>
 
    <li class="sidenav-item">
             <a href="report_management/report-dashboard.php" class="sidenav-link">
@@ -828,7 +917,7 @@ $ImmediateBoss = $row77['ImmediateBoss'];
         </li>
         
      <?php } ?>
-     
+
       <li class="sidenav-item">
             <a href="logout.php" class="sidenav-link">
                 <i class="sidenav-icon feather icon-activity"></i>

@@ -134,6 +134,7 @@ th, td {
    
     
     <body class="body-for-sticky">
+<?php include_once __DIR__ . '/inc-app-loader.php'; ?>
         
 <?php  
 $id = $_GET['id'];

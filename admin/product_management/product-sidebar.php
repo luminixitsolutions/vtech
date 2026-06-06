@@ -4,7 +4,8 @@ $sql77 = "SELECT * FROM tbl_users WHERE id='$user_id'";
 $row77 = getRecord($sql77);
 $Roll = $row77['Roll'];
 $UserCat = $row77['CatId'];
-$Options = explode(',',$row77['Options']);
+require_once __DIR__ . '/../inc-menu-option-groups.php';
+$Options = adminResolveMenuOptionsFromUserRow($row77);
 ?>
 
             <!-- [ Layout navbar ( Header ) ] End -->
@@ -14,7 +15,6 @@ $Options = explode(',',$row77['Options']);
                     <span class="app-brand-logo demo">
                         <a href="../dashboard.php"><img src="../logo.jpg" alt="Brand Logo" class="img-fluid" style="width: 185px;"></a>
                     </span>
-                   <!-- <a href="dashboard.php" class="app-brand-text demo sidenav-text font-weight-normal ml-2"><?php echo $Proj_Title; ?></a>-->
                     <a href="javascript:" class="layout-sidenav-toggle sidenav-link text-large ml-auto">
                         <i class="ion ion-md-menu align-middle"></i>
                     </a>
@@ -25,77 +25,49 @@ $Options = explode(',',$row77['Options']);
             <a href="../dashboard.php" class="sidenav-link">
                 <i class="sidenav-icon feather icon-user"></i>
                 <div><?php echo $row77['Fname']." ".$row77['Lname']; ?></div>
-                
             </a>
         </li> 
         <li class="sidenav-item">
             <a href="<?php echo $SiteUrl;?>/dashboard.php" class="sidenav-link">
                 <i class="sidenav-icon feather icon-home"></i>
                 <div>Home</div>
-                
             </a>
         </li>
+        <?php if (userHasAnyMenuOption($Options, menuAccessProductManagementOptionIds())) { ?>
         <li class="sidenav-item">
             <a href="product-managment-dashboard.php" class="sidenav-link">
                 <i class="sidenav-icon feather icon-activity"></i>
                 <div>Product Dashboard</div>
-                
             </a>
         </li> 
-        
-      <?php if(in_array("14", $Options)) {?>
+        <?php if(in_array("24", $Options)) {?>
         <li class="sidenav-item">
             <a href="add-product.php" class="sidenav-link">
                  <i class="sidenav-icon feather icon-activity"></i>
                 <div>Add Product</div>
-                
             </a>
         </li>
-        <?php } ?>
         <li class="sidenav-item">
             <a href="view-products.php" class="sidenav-link">
                  <i class="sidenav-icon feather icon-activity"></i>
                 <div>View Product</div>
-                
             </a>
         </li>
-        <?php if(in_array("17", $Options)) {?>
-    <li class="sidenav-item">
+        <?php } if(in_array("17", $Options)) {?>
+        <li class="sidenav-item">
             <a href="product-specification.php" class="sidenav-link">
                  <i class="sidenav-icon feather icon-activity"></i>
                 <div>BOS Product Specification</div>
-                <?php if($Page=='Product-Specification') {?>
-                <div class="pl-1 ml-auto">
-                    <span class="badge badge-dot badge-primary"></span>
-                </div>
-                <?php } ?>
             </a>
         </li>
-<?php } if(in_array("78", $Options)) {?>
-    <li class="sidenav-item">
+        <?php } if(in_array("78", $Options)) {?>
+        <li class="sidenav-item">
             <a href="structure-product-specification.php" class="sidenav-link">
                  <i class="sidenav-icon feather icon-activity"></i>
                 <div>Structure Product Specification</div>
-                <?php if($Page=='Structure-Product-Specification') {?>
-                <div class="pl-1 ml-auto">
-                    <span class="badge badge-dot badge-primary"></span>
-                </div>
-                <?php } ?>
             </a>
         </li>
-<?php } ?>
-<!--<li class="sidenav-item">
-            <a href="view-bags.php" class="sidenav-link">
-                 <i class="sidenav-icon feather icon-activity"></i>
-                <div>Bag Masters</div>
-                <?php if($Page=='Structure-Product-Specification') {?>
-                <div class="pl-1 ml-auto">
-                    <span class="badge badge-dot badge-primary"></span>
-                </div>
-                <?php } ?>
-            </a>
-        </li>-->
-        
-        
+        <?php } ?>
+        <?php } ?>
     </ul>
 </div>

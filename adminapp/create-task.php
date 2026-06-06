@@ -223,6 +223,7 @@ $Page = "Add-Expenses";
 </div>
 </div>
 
+<?php $GLOBALS['adminapp_scripts_included'] = true; ?>
 <?php include_once 'footer.php'; ?>
 </div>
  </main>

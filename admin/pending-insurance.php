@@ -2,6 +2,8 @@
 session_start();
 include_once 'config.php';
 include_once 'auth.php';
+include_once 'inc-insurance-site.php';
+
 $user_id = $_SESSION['Admin']['id'];
 $MainPage = 'Insurance';
 $Page = 'Pending-Insurance';
@@ -13,6 +15,9 @@ $filterDistrict = isset($_REQUEST['District']) ? trim((string) $_REQUEST['Distri
 $filterTaluka = isset($_REQUEST['Taluka']) ? trim((string) $_REQUEST['Taluka']) : '';
 $filterVillage = isset($_REQUEST['Village']) ? trim((string) $_REQUEST['Village']) : '';
 $isSearch = isset($_REQUEST['Search']);
+$listFilters = insuranceSiteListFiltersFromRequest();
+
+$pendingInsuranceCustomerSql = insuranceSiteCustomerDropdownSql(insuranceSitePendingSqlCondition());
 ?>
 <!DOCTYPE html>
 <html lang="en" class="default-style layout-fixed layout-navbar-fixed">
@@ -54,8 +59,7 @@ $isSearch = isset($_REQUEST['Search']);
                                 <select class="select2-demo form-control" name="CustId" id="CustId">
                                     <option selected="" value="all">All</option>
                                     <?php
-                                    $sqlCustomers = "SELECT id, Fname, BeneficiaryId FROM tbl_users WHERE Roll = '5' AND Status='1' ORDER BY Fname ASC";
-                                    $customers = getList($sqlCustomers);
+                                    $customers = getList($pendingInsuranceCustomerSql);
                                     foreach ($customers as $customer) {
                                         ?>
                                         <option <?php if ($filterCustId == $customer['id']) { ?> selected <?php } ?> value="<?php echo $customer['id']; ?>">
@@ -65,6 +69,8 @@ $isSearch = isset($_REQUEST['Search']);
                                 </select>
                                 <div class="clearfix"></div>
                             </div>
+
+                            <?php insuranceSiteRenderProjectFilterFields($listFilters['project_id'], $listFilters['project_sub_head_id']); ?>
 
                             <div class="form-group col-md-2">
                                 <label class="form-label">District</label>
@@ -137,6 +143,13 @@ $isSearch = isset($_REQUEST['Search']);
         </div>
     </div>
 
+    <div class="d-flex flex-wrap align-items-center mb-3">
+        <input type="file" id="insuranceImportFile" accept=".xlsx,.xls,.csv" style="display:none;">
+        <button type="button" id="btnImportInsuranceExcel" class="btn btn-success mr-2">Import Excel</button>
+        <span class="text-muted">Export Excel, fill Insurance Company Name, Policy No, Date Of Issue, Date Of Expiry (dd-mm-yyyy e.g. 26-08-2026), and No of Year, then import.</span>
+    </div>
+    <div id="insuranceImportAlert"></div>
+
     <div class="card-datatable table-responsive">
         <table id="example" class="table table-striped table-bordered" style="width:100%">
             <thead>
@@ -150,9 +163,11 @@ $isSearch = isset($_REQUEST['Search']);
                     <th>Village</th>
                     <th>District</th>
                     <th>Address</th>
-                    <th>Insurance Number</th>
-                    <th>Insurance Agency</th>
-                    <th>Insurance Validity</th>
+                    <th>Insurance Company Name</th>
+                    <th>Policy No</th>
+                    <th>Date Of Issue</th>
+                    <th>Date Of Expiry</th>
+                    <th>No of Year</th>
                     <th>Insurance Status</th>
                     <th>Site Dispatch Date</th>
                     <th>Action</th>
@@ -161,56 +176,13 @@ $isSearch = isset($_REQUEST['Search']);
             <tbody>
                 <?php
                 $i = 1;
-                $sql = "SELECT tdo.*, tu.BeneficiaryId, tu.Taluka, tu.Village, tu.District, tu.ProjectType,
-                               tu.InsuranceNumber, tu.InsuranceAgency, tu.InsuranceValidity,
-                               ti.InsuranceApproval, ti.InsuranceApprovalDate
-                        FROM tbl_sell tdo
-                        INNER JOIN tbl_users tu ON tdo.CustId = tu.id
-                        LEFT JOIN tbl_installations ti ON ti.id = (
-                            SELECT MAX(ti2.id) FROM tbl_installations ti2
-                            WHERE ti2.CustId = tu.id AND ti2.Type = 2
-                        )
-                        WHERE tdo.Inst_Dispatcher_Otp_Verify = 1
-                          AND tu.Roll = 5
-                          AND (ti.InsuranceApproval IS NULL OR ti.InsuranceApproval = '' OR ti.InsuranceApproval = 'No')";
-
-                if ($filterCustId !== '' && $filterCustId !== 'all') {
-                    $custId = (int) $filterCustId;
-                    $sql .= " AND tdo.CustId = '$custId'";
-                }
-                if ($filterDistrict !== '') {
-                    $district = mysqli_real_escape_string($conn, $filterDistrict);
-                    $sql .= " AND tu.District = '$district'";
-                }
-                if ($filterTaluka !== '') {
-                    $taluka = mysqli_real_escape_string($conn, $filterTaluka);
-                    $sql .= " AND tu.Taluka = '$taluka'";
-                }
-                if ($filterVillage !== '') {
-                    $village = mysqli_real_escape_string($conn, $filterVillage);
-                    $sql .= " AND tu.Village = '$village'";
-                }
-                if ($filterFromDate !== '') {
-                    $fromDate = mysqli_real_escape_string($conn, $filterFromDate);
-                    $sql .= " AND tdo.Inst_Dispatcher_Date >= '$fromDate'";
-                }
-                if ($filterToDate !== '') {
-                    $toDate = mysqli_real_escape_string($conn, $filterToDate);
-                    $sql .= " AND tdo.Inst_Dispatcher_Date <= '$toDate'";
-                }
-
-                $sql .= " ORDER BY tdo.Inst_Dispatcher_Date DESC, tdo.id DESC";
+                $sql = insuranceSiteListSelectSql(insuranceSitePendingSqlCondition(), $listFilters);
                 $res = $conn->query($sql);
                 if ($res) {
                     while ($row = $res->fetch_assoc()) {
                         $dispatchDate = '';
                         if (!empty($row['Inst_Dispatcher_Date']) && $row['Inst_Dispatcher_Date'] !== '0000-00-00') {
                             $dispatchDate = date('d/m/Y', strtotime(str_replace('-', '/', $row['Inst_Dispatcher_Date'])));
-                        }
-
-                        $insuranceStatus = 'Pending';
-                        if (!empty($row['InsuranceApproval']) && $row['InsuranceApproval'] === 'Yes') {
-                            $insuranceStatus = 'Completed';
                         }
 
                         $profileUrl = ($row['ProjectType'] == '2')
@@ -227,10 +199,12 @@ $isSearch = isset($_REQUEST['Search']);
                             <td><?php echo htmlspecialchars($row['Village']); ?></td>
                             <td><?php echo htmlspecialchars($row['District']); ?></td>
                             <td><?php echo htmlspecialchars($row['Address']); ?></td>
-                            <td><?php echo htmlspecialchars($row['InsuranceNumber']); ?></td>
                             <td><?php echo htmlspecialchars($row['InsuranceAgency']); ?></td>
-                            <td><?php echo htmlspecialchars($row['InsuranceValidity']); ?></td>
-                            <td><?php echo $insuranceStatus; ?></td>
+                            <td><?php echo htmlspecialchars($row['InsuranceNumber']); ?></td>
+                            <td><?php echo htmlspecialchars(formatInsuranceDate($row['InsuranceIssueDate'])); ?></td>
+                            <td><?php echo htmlspecialchars(formatInsuranceDate($row['InsuranceValidity'])); ?></td>
+                            <td><?php echo htmlspecialchars(getInsuranceYears($row['InsuranceIssueDate'], $row['InsuranceValidity'], $row['InsuranceYears'])); ?></td>
+                            <td>Pending</td>
                             <td><?php echo $dispatchDate; ?></td>
                             <td>
                                 <a href="<?php echo $profileUrl; ?>" class="btn btn-sm btn-primary" target="_blank">View</a>
@@ -259,13 +233,76 @@ $isSearch = isset($_REQUEST['Search']);
 </div>
 
 <?php include_once 'footer_script.php'; ?>
+<?php insuranceSiteRenderProjectFilterScript(); ?>
 
 <script type="text/javascript">
+function showInsuranceImportAlert(type, message) {
+    var alertClass = type === 'success' ? 'alert-success' : 'alert-danger';
+    $('#insuranceImportAlert').html(
+        '<div class="alert ' + alertClass + ' alert-dismissible fade show" role="alert">' +
+        message +
+        '<button type="button" class="close" data-dismiss="alert" aria-label="Close">' +
+        '<span aria-hidden="true">&times;</span></button></div>'
+    );
+}
+
 $(document).ready(function() {
     $('#example').DataTable({
         scrollX: true,
         dom: 'Bfrtip',
-        buttons: ['excelHtml5']
+        buttons: [{
+            extend: 'excelHtml5',
+            title: 'Pending Insurance',
+            exportOptions: {
+                columns: ':not(:last-child)'
+            }
+        }]
+    });
+
+    $('#btnImportInsuranceExcel').on('click', function() {
+        $('#insuranceImportFile').val('').trigger('click');
+    });
+
+    $('#insuranceImportFile').on('change', function() {
+        var file = this.files[0];
+        if (!file) {
+            return;
+        }
+
+        var formData = new FormData();
+        formData.append('file', file);
+        $('#btnImportInsuranceExcel').prop('disabled', true).text('Importing...');
+
+        $.ajax({
+            url: 'ajax-import-pending-insurance-excel.php',
+            type: 'POST',
+            data: formData,
+            processData: false,
+            contentType: false,
+            dataType: 'json',
+            success: function(res) {
+                if (res.success) {
+                    window.location.href = res.redirect || 'completed-insurance.php?imported=' + (res.imported || 0);
+                    return;
+                }
+                showInsuranceImportAlert('danger', res.message || 'Import failed.');
+            },
+            error: function(xhr) {
+                var msg = 'Could not upload file. Please try again.';
+                if (xhr.responseText) {
+                    try {
+                        var err = JSON.parse(xhr.responseText);
+                        if (err.message) {
+                            msg = err.message;
+                        }
+                    } catch (e2) {}
+                }
+                showInsuranceImportAlert('danger', msg);
+            },
+            complete: function() {
+                $('#btnImportInsuranceExcel').prop('disabled', false).text('Import Excel');
+            }
+        });
     });
 });
 </script>

@@ -4,8 +4,9 @@
 	$row77 = getRecord($sql77);
 	$Roll = $row77['Roll'];
 	$UserCat = $row77['CatId'];
-	$Options = explode(',',$row77['Options']);
+	$Options = adminResolveMenuOptionsFromUserRow($row77);
 	$BranchId = $row77['BranchId'];
+	require_once __DIR__ . '/inc-menu-option-groups.php';
  ?>
 <div class="page-loader">
     <div class="bg-primary"></div>
@@ -30,6 +31,7 @@
                 
             </a>
         </li>
+        <?php if (userHasAnyMenuOption($Options, menuAccessServiceComplaintOptionIds())) { ?>
         <li class="sidenav-item">
             <a href="service-dashboard.php" class="sidenav-link">
                 <i class="sidenav-icon feather icon-home"></i>
@@ -65,6 +67,7 @@
 <?php } ?>
 </ul>
         </li>
+        <?php } ?>
         <?php } ?>
 
       

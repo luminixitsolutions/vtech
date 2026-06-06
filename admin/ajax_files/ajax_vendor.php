@@ -102,16 +102,19 @@ if($_POST['action'] == 'deletePhoto'){
 
 if($_POST['action'] == 'getUserDetails'){
 $id = $_POST['id'];
-$sql = "SELECT tu.*,tu2.Fname AS AgentName,tcm.Name As Source FROM tbl_users tu 
+$sql = "SELECT tu.*,tu2.Fname AS AgentName,tcm.Name As Source,tcm_pc.Name AS PumpCapacityName FROM tbl_users tu 
         LEFT JOIN tbl_users tu2 ON tu.UnderUser=tu2.id 
-        LEFT JOIN tbl_common_master tcm ON tu.WaterSource=tcm.id WHERE tu.id='$id'";
+        LEFT JOIN tbl_common_master tcm ON tu.WaterSource=tcm.id
+        LEFT JOIN tbl_common_master tcm_pc ON tu.PumpCapacity=tcm_pc.id WHERE tu.id='$id'";
 $row = getRecord($sql);
 echo json_encode($row);
 }
 
 if($_POST['action'] == 'getUserDetails2'){
 $CellNo = $_POST['CellNo'];
-$sql = "SELECT tu.*,tu2.Fname AS AgentName FROM tbl_users tu LEFT JOIN tbl_users tu2 ON tu.UnderUser=tu2.id WHERE tu.Phone='$CellNo'";
+$sql = "SELECT tu.*,tu2.Fname AS AgentName,tcm_pc.Name AS PumpCapacityName FROM tbl_users tu
+        LEFT JOIN tbl_users tu2 ON tu.UnderUser=tu2.id
+        LEFT JOIN tbl_common_master tcm_pc ON tu.PumpCapacity=tcm_pc.id WHERE tu.Phone='$CellNo'";
 $row = getRecord($sql);
 echo json_encode($row);
 }

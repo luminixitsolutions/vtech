@@ -4,8 +4,9 @@
 	$row77 = getRecord($sql77);
 	$Roll = $row77['Roll'];
 	$UserCat = $row77['CatId'];
-	$Options = explode(',',$row77['Options']);
+	$Options = adminResolveMenuOptionsFromUserRow($row77);
 	$BranchId = $row77['BranchId'];
+	require_once __DIR__ . '/inc-menu-option-groups.php';
  ?>
 <div class="page-loader">
     <div class="bg-primary"></div>
@@ -30,8 +31,9 @@
                 
             </a>
         </li>
+        <?php if (userHasAnyMenuOption($Options, menuAccessTaskOptionIds())) { ?>
         <li class="sidenav-item">
-            <a href="task-dashboard.php" class="sidenav-link">
+            <a href="task_management/task-dashboard.php" class="sidenav-link">
                  <i class="sidenav-icon feather icon-activity"></i>
                 <div>Task Dashboard</div>
                 
@@ -39,7 +41,7 @@
         </li>
        
         <li class="sidenav-item">
-            <a href="create-task.php" class="sidenav-link">
+            <a href="task_management/create-task.php" class="sidenav-link">
                 <i class="sidenav-icon feather icon-activity"></i>
                 <div>Create Task</div>
                 
@@ -47,7 +49,7 @@
         </li>
 
         <li class="sidenav-item">
-            <a href="view-tasks.php" class="sidenav-link">
+            <a href="task_management/view-tasks.php" class="sidenav-link">
                  <i class="sidenav-icon feather icon-activity"></i>
                 <div>View Tasks</div>
                 
@@ -56,36 +58,13 @@
 
 
         <li class="sidenav-item">
-            <a href="allocate-task.php" class="sidenav-link">
+            <a href="task_management/to-do-tasks.php" class="sidenav-link">
                  <i class="sidenav-icon feather icon-activity"></i>
                 <div>Allocate Tasks</div>
                 
             </a>
         </li>
-
-        <li class="sidenav-item">
-            <a href="view-allocate-tasks.php" class="sidenav-link">
-                 <i class="sidenav-icon feather icon-activity"></i>
-                <div>View Allocate Tasks</div>
-                
-            </a>
-        </li>
-
-        <li class="sidenav-item">
-            <a href="#" class="sidenav-link">
-                <i class="sidenav-icon feather icon-activity"></i>
-                <div>Task Status</div>
-                
-            </a>
-        </li>
-
-        <li class="sidenav-item">
-            <a href="#" class="sidenav-link">
-                 <i class="sidenav-icon feather icon-activity"></i>
-                <div>Task Report</div>
-                
-            </a>
-        </li>
+        <?php } ?>
         
         
     </ul>

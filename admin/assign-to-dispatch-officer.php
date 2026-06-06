@@ -18,6 +18,14 @@ $Page = "Assign-Dispatch-Officer";
 <meta name="keywords" content="">
 <meta name="author" content="" />
 <?php include_once 'header_script.php'; ?>
+<style>
+    #example tbody tr.import-matched td {
+        background-color: #fff8e1 !important;
+    }
+    #example tbody tr.import-matched[style*="b9efb9"] td {
+        background-color: #d4edda !important;
+    }
+</style>
 </head>
 <body>
 
@@ -106,10 +114,17 @@ if (!empty($_POST['selected_ids_combined'])) {
 <div class="layout-content">
 
 <div class="container-fluid flex-grow-1 container-p-y">
-<h4 class="font-weight-bold py-3 mb-0">Assign To Dispatch Officer
-<!-- <span style="float: right;">
-<a href="add-sell.php" class="btn btn-secondary btn-round"><i class="ion ion-md-add mr-2"></i> Add New Sell</a></span> -->
-</h4>
+<div class="d-flex flex-wrap justify-content-between align-items-center py-3 mb-0">
+    <h4 class="font-weight-bold mb-0">Assign To Dispatch Officer</h4>
+    <div class="btn-group" id="dispatchImportDropdown">
+        <button type="button" class="btn btn-primary btn-finish dropdown-toggle" id="btnDispatchImportDropdownToggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">Import</button>
+        <div class="dropdown-menu dropdown-menu-right">
+            <a class="dropdown-item" href="#" id="btnDispatchImportExcel">Import Excel</a>
+            <a class="dropdown-item" href="download-coordinator-assign-sample-excel.php">Sample Excel</a>
+        </div>
+    </div>
+</div>
+<input type="file" id="dispatchImportFile" accept=".xlsx,.xls,.csv" style="display:none">
 
 <div class="card" style="padding: 10px;">
 <form >
@@ -343,22 +358,16 @@ if($_REQUEST['StateId']!=''){
             while($row = $res->fetch_assoc())
             {
                
-               $sql22 = "SELECT * FROM tbl_users WHERE DispatchOfficerStatus=1 AND id='".$row['id']."'";
-                $rncnt22 = getRow($sql22);
-                if($rncnt22 > 0){
-                     $bcolor = "background-color: #b9efb9;";
-                }
-                else{
+                $isAssigned = ((int) $row['DispatchOfficerStatus'] === 1);
+                if ($isAssigned) {
+                    $bcolor = "background-color: #b9efb9;";
+                } else {
                     $bcolor = "";
                 }
 
              ?>
-            <tr style="<?php echo $bcolor;?>">
-               <td><?php if($rncnt22 > 0){} else{?>
-                   <!-- <label class="custom-control custom-checkbox">
-                    <input type="checkbox" id="Check_Id2<?php echo $row['id']; ?>" value="0" class="custom-control-input is-valid" onclick="featured2(<?php echo $row['id']; ?>)">
-                    <span class="custom-control-label">&nbsp;</span>
-                 </label>-->
+            <tr style="<?php echo $bcolor;?>" data-beneficiary-id="<?php echo htmlspecialchars($row['BeneficiaryId'], ENT_QUOTES, 'UTF-8'); ?>" data-cust-id="<?php echo (int) $row['id']; ?>" data-has-checkbox="<?php echo $isAssigned ? '0' : '1'; ?>">
+               <td><?php if (!$isAssigned) { ?>
                  <input type="checkbox" class="rowCheckbox" data-id="<?php echo $row['id']; ?>" />
                  <?php } ?> </td>
                  <input type="hidden" value="0" name="CheckId2[]" id="CheckId2<?php echo $row['id']; ?>">
@@ -432,11 +441,13 @@ if($_REQUEST['StateId']!=''){
 <div class="layout-overlay layout-sidenav-toggle"></div>
 </div>
 
-
+<?php include_once 'inc-beneficiary-import-modal.php'; ?>
 <?php include_once 'footer_script.php'; ?>
+<script src="js/beneficiary-import-result.js"></script>
 
 <script type="text/javascript">
  var selectedIds = {};
+ var dispatchTable = null;
 
     function updateHiddenField() {
         const hiddenInput = document.getElementById("selected_ids_combined");
@@ -447,27 +458,188 @@ if($_REQUEST['StateId']!=''){
         const id = checkbox.getAttribute("data-id");
         if (checkbox.checked) {
             selectedIds[id] = true;
+            $('#CheckId2' + id).val(1);
         } else {
             delete selectedIds[id];
+            $('#CheckId2' + id).val(0);
         }
         updateHiddenField();
     }
 
-    $(document).ready(function () {
-        var table = $('#example').DataTable();
-
-        // On checkbox click
-        $(document).on('change', '.rowCheckbox', function () {
-            toggleCheckbox(this);
+    function initDispatchTable() {
+        if ($.fn.DataTable && $.fn.DataTable.isDataTable('#example')) {
+            $('#example').DataTable().destroy();
+        }
+        dispatchTable = $('#example').DataTable({
+            scrollX: true,
+            pageLength: 10,
+            order: [],
+            stateSave: false
         });
-
-        // On redraw (pagination/search)
-        table.on('draw', function () {
+        dispatchTable.on('draw', function () {
             $('.rowCheckbox').each(function () {
                 const id = this.getAttribute("data-id");
                 this.checked = !!selectedIds[id];
             });
             updateHiddenField();
+        });
+    }
+
+    function setRowCheckboxSelected($tr, checked) {
+        var custId = $tr.attr('data-cust-id');
+        var $cb = $tr.find('.rowCheckbox');
+        if (!$cb.length) {
+            return false;
+        }
+        $cb.prop('checked', checked);
+        if ($cb[0]) {
+            $cb[0].checked = checked;
+        }
+        if (checked) {
+            selectedIds[custId] = true;
+            $('#CheckId2' + custId).val(1);
+        } else {
+            delete selectedIds[custId];
+            $('#CheckId2' + custId).val(0);
+        }
+        return true;
+    }
+
+    function applyImportedBeneficiaryIds(ids) {
+        var lookup = {};
+        var i;
+        for (i = 0; i < ids.length; i++) {
+            var key = String(ids[i]).trim().toUpperCase();
+            if (key !== '') {
+                lookup[key] = true;
+            }
+        }
+
+        if (dispatchTable) {
+            dispatchTable.destroy();
+            dispatchTable = null;
+        }
+
+        var matched = 0;
+        var skippedAssigned = 0;
+        var foundInTable = {};
+        var rowsChecked = [];
+        var rowsBelow = [];
+
+        $('#example tbody tr').each(function() {
+            var $tr = $(this);
+            var bid = String($tr.attr('data-beneficiary-id') || '').trim().toUpperCase();
+
+            if (bid && lookup[bid]) {
+                foundInTable[bid] = true;
+                $tr.addClass('import-matched');
+                if (setRowCheckboxSelected($tr, true)) {
+                    matched++;
+                    rowsChecked.push(this);
+                } else {
+                    skippedAssigned++;
+                    rowsBelow.push(this);
+                }
+            } else {
+                $tr.removeClass('import-matched');
+                setRowCheckboxSelected($tr, false);
+                rowsBelow.push(this);
+            }
+        });
+
+        var missingIds = [];
+        var missingSeen = {};
+        for (i = 0; i < ids.length; i++) {
+            var rawId = String(ids[i]).trim();
+            var normId = rawId.toUpperCase();
+            if (normId === '' || foundInTable[normId] || missingSeen[normId]) {
+                continue;
+            }
+            missingSeen[normId] = true;
+            missingIds.push(rawId);
+        }
+
+        var $tbody = $('#example tbody');
+        $tbody.empty();
+        rowsChecked.forEach(function(row) {
+            $tbody.append(row);
+        });
+        rowsBelow.forEach(function(row) {
+            $tbody.append(row);
+        });
+
+        initDispatchTable();
+        updateHiddenField();
+        dispatchTable.page(0).draw(false);
+
+        showBeneficiaryImportResult({
+            matched: matched,
+            skippedAssigned: skippedAssigned,
+            missingIds: missingIds
+        });
+    }
+
+    $('#btnDispatchImportDropdownToggle').on('click', function(e) {
+        e.preventDefault();
+        e.stopPropagation();
+        var $menu = $('#dispatchImportDropdown .dropdown-menu');
+        var open = $menu.hasClass('show');
+        $('.dropdown-menu.show').removeClass('show');
+        if (!open) {
+            $menu.addClass('show');
+        }
+    });
+    $(document).on('click', function() {
+        $('#dispatchImportDropdown .dropdown-menu').removeClass('show');
+    });
+    $('#dispatchImportDropdown .dropdown-menu').on('click', function(e) {
+        e.stopPropagation();
+    });
+    $('#btnDispatchImportExcel').on('click', function(e) {
+        e.preventDefault();
+        $('#dispatchImportDropdown .dropdown-menu').removeClass('show');
+        $('#dispatchImportFile').val('').trigger('click');
+    });
+    $('#dispatchImportFile').on('change', function() {
+        var file = this.files[0];
+        if (!file) {
+            return;
+        }
+        var formData = new FormData();
+        formData.append('file', file);
+        $.ajax({
+            url: 'ajax-coordinator-assign-import-excel.php',
+            type: 'POST',
+            data: formData,
+            processData: false,
+            contentType: false,
+            dataType: 'json',
+            success: function(res) {
+                if (res.success && res.beneficiary_ids) {
+                    applyImportedBeneficiaryIds(res.beneficiary_ids);
+                } else {
+                    showBeneficiaryImportResult({ errorMessage: res.message || 'Import failed.' });
+                }
+            },
+            error: function(xhr) {
+                var msg = 'Could not upload file. Please try again.';
+                if (xhr.responseText) {
+                    try {
+                        var err = JSON.parse(xhr.responseText);
+                        if (err.message) {
+                            msg = err.message;
+                        }
+                    } catch (e2) {}
+                }
+                showBeneficiaryImportResult({ errorMessage: msg });
+            }
+        });
+    });
+
+    $(document).ready(function () {
+        initDispatchTable();
+        $(document).on('change', '.rowCheckbox', function () {
+            toggleCheckbox(this);
         });
     });
     

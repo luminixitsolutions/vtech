@@ -6,7 +6,6 @@ $user_id = $_SESSION['Admin']['id'];
 $MainPage = "Service";
 $Page = "View-Service-Complaint";
 
-$abstractScope = isset($_REQUEST['scope']) ? $_REQUEST['scope'] : '';
 $abstractProjid = isset($_REQUEST['projid']) ? (int) $_REQUEST['projid'] : 0;
 $abstractSubheadid = isset($_REQUEST['subheadid']) ? (int) $_REQUEST['subheadid'] : 0;
 $abstractDistrict = isset($_REQUEST['District']) ? trim($_REQUEST['District']) : '';
@@ -81,10 +80,6 @@ $abstractDistrict = isset($_REQUEST['District']) ? trim($_REQUEST['District']) :
                 $sql .= " AND tu.ProjectId = '$abstractProjid'";
             } elseif ($_REQUEST['subheadid'] != '') {
                 $sql .= " AND tu.ProjectSubHeadId = '".$conn->real_escape_string($_REQUEST['subheadid'])."'";
-            } elseif ($abstractScope === 'mtskpy') {
-                $sql .= " AND tu.ProjectSubHeadId IN (SELECT id FROM tbl_project_sub_head WHERE UnderBy = 103 AND Name LIKE '%MTSKPY%')";
-            } elseif ($abstractScope === 'msedcl') {
-                $sql .= ' AND tu.ProjectId = 103';
             }
             if ($abstractDistrict !== '' && $abstractDistrict !== 'TOTAL') {
                 if ($abstractDistrict === 'NASHIK (MALEGAON)') {

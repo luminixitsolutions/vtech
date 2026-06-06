@@ -47,12 +47,22 @@ $Page = "Add-Employee";
                 <?php include_once '../top_header.php'; ?>
 
                 <?php 
-$id = isset($_GET['id']) ? $_GET['id'] : '';
-$sql7 = "SELECT * FROM tbl_users WHERE id='$id'";
-$row7 = getRecord($sql7);
-$row7['Options'] = explode(',', $row7['Options']);
-$row7['MulRooftopBranchId'] = explode(',', $row7['MulRooftopBranchId']);
-$row7['MulBranchId'] = explode(',', $row7['MulBranchId']);
+$id = isset($_GET['id']) ? (string) $_GET['id'] : '';
+$row7 = [];
+if ($id !== '') {
+    $sql7 = "SELECT * FROM tbl_users WHERE id='" . $conn->real_escape_string($id) . "'";
+    $row7 = getRecord($sql7);
+    if (!is_array($row7)) {
+        $row7 = [];
+    }
+}
+include_once __DIR__ . '/../inc-employee-menu-options.php';
+$row7['Options'] = employeeMenuOptionsForAccountForm(
+    explode(',', (string) ($row7['Options'] ?? '')),
+    (int) ($row7['Roll'] ?? 0)
+);
+$row7['MulRooftopBranchId'] = explode(',', (string) ($row7['MulRooftopBranchId'] ?? ''));
+$row7['MulBranchId'] = explode(',', (string) ($row7['MulBranchId'] ?? ''));
 if ($id !== '') {
     $u2row = getRecord("SELECT OfficeEmployee FROM tbl_user2 WHERE id='" . $conn->real_escape_string($id) . "'");
     if (!empty($u2row) && array_key_exists('OfficeEmployee', $u2row)) {
@@ -70,8 +80,16 @@ if ($id !== '') {
                         <div class="card mb-4">
                             <div class="card-body">
                                 <div id="alert_message"></div>
+                                <?php if (!empty($_GET['saved'])) { ?>
+                                <div class="alert alert-success alert-dismissible fade show" role="alert">
+                                    Record saved / updated successfully.
+                                    <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+                                        <span aria-hidden="true">&times;</span>
+                                    </button>
+                                </div>
+                                <?php } ?>
                                 <form id="validation-form" method="post" autocomplete="off" action="../ajax_files/ajax_employee.php" enctype="multipart/form-data">
-                                    <input type="hidden" name="id" value="<?php echo $_GET['id']; ?>" id="userid">
+                                    <input type="hidden" name="id" value="<?php echo htmlspecialchars($id, ENT_QUOTES, 'UTF-8'); ?>" id="userid">
                                     <input type="hidden" name="action" value="Save" id="action">
                                     <div class="form-row">
                                        
@@ -314,189 +332,11 @@ if ($id !== '') {
 </div>
 <br>
 
-<div class="row">
-<div class="form-group col-md-12">
-<label class="form-label"> Assign Lead Management</label>
-</div>
- <?php  
-                                        $sql33 = "SELECT * FROM tbl_options WHERE id IN(64,44,45,46,47,63,51)";
-                                        $row33 = getList($sql33);
-                                        foreach($row33 as $result){
-                                        ?>
-                                        <div class="form-group col-md-4">
-                                            <label class="custom-control custom-checkbox">
-                                    <input type="checkbox" class="custom-control-input" name="Options[]" value="<?php echo $result['id'];?>" <?php if(in_array($result["id"],$row7['Options'])) { ?>
-
-                        checked="checked" <?php } ?>>
-                                    <span class="custom-control-label"><?php echo $result['Name'];?></span>
-                                </label>
-                                        </div>
-                                    <?php } ?>
-</div>
-
-<div class="row">
-<div class="form-group col-md-12">
-<label class="form-label"> Assign Dealer Lead Management</label>
-</div>
- <?php  
-                                        $sql33 = "SELECT * FROM tbl_options WHERE id IN(154,155,156,157,158,159)";
-                                        $row33 = getList($sql33);
-                                        foreach($row33 as $result){
-                                        ?>
-                                        <div class="form-group col-md-4">
-                                            <label class="custom-control custom-checkbox">
-                                    <input type="checkbox" class="custom-control-input" name="Options[]" value="<?php echo $result['id'];?>" <?php if(in_array($result["id"],$row7['Options'])) { ?>
-
-                        checked="checked" <?php } ?>>
-                                    <span class="custom-control-label"><?php echo $result['Name'];?></span>
-                                </label>
-                                        </div>
-                                    <?php } ?>
-</div>
-
-<div class="row">
-<div class="form-group col-md-12">
-<label class="form-label"> Assign Pump Application Management</label>
-</div>
- <?php  
-                                        $sql33 = "SELECT * FROM tbl_options WHERE id IN(149,150,151,152,153)";
-                                        $row33 = getList($sql33);
-                                        foreach($row33 as $result){
-                                        ?>
-                                        <div class="form-group col-md-4">
-                                            <label class="custom-control custom-checkbox">
-                                    <input type="checkbox" class="custom-control-input" name="Options[]" value="<?php echo $result['id'];?>" <?php if(in_array($result["id"],$row7['Options'])) { ?>
-
-                        checked="checked" <?php } ?>>
-                                    <span class="custom-control-label"><?php echo $result['Name'];?></span>
-                                </label>
-                                        </div>
-                                    <?php } ?>
-</div>
-
-<div class="row">
-<div class="form-group col-md-12">
-<label class="form-label"> Assign Master Management</label>
-</div>
- <?php  
-                                        $sql33 = "SELECT * FROM tbl_options WHERE id IN(1,56,2,3,4,5,6,7,72,73,74,75,76,77,97,98,8,9,12,13,34,15,16,53,54,89,90,91,92,117,140,141)";
-                                        $row33 = getList($sql33);
-                                        foreach($row33 as $result){
-                                        ?>
-                                        <div class="form-group col-md-4">
-                                            <label class="custom-control custom-checkbox">
-                                    <input type="checkbox" class="custom-control-input" name="Options[]" value="<?php echo $result['id'];?>" <?php if(in_array($result["id"],$row7['Options'])) { ?>
-
-                        checked="checked" <?php } ?>>
-                                    <span class="custom-control-label"><?php echo $result['Name'];?></span>
-                                </label>
-                                        </div>
-                                    <?php } ?>
-</div>
-
-<div class="row">
-<div class="form-group col-md-12">
-<label class="form-label"> Assign User Accounts</label>
-</div>
- <?php  
-                                        $sql33 = "SELECT * FROM tbl_options WHERE id IN(18,122,19,20,21,125,126,127,128,116,22,23,129)";
-                                        $row33 = getList($sql33);
-                                        foreach($row33 as $result){
-                                        ?>
-                                        <div class="form-group col-md-4">
-                                            <label class="custom-control custom-checkbox">
-                                    <input type="checkbox" class="custom-control-input" name="Options[]" value="<?php echo $result['id'];?>" <?php if(in_array($result["id"],$row7['Options'])) { ?>
-
-                        checked="checked" <?php } ?>>
-                                    <span class="custom-control-label"><?php echo $result['Name'];?></span>
-                                </label>
-                                        </div>
-                                    <?php } ?>
-</div>
-
-<div class="row">
-<div class="form-group col-md-12">
-<label class="form-label"> Assign Other Access</label>
-</div>
- <?php  
-                                        $sql33 = "SELECT * FROM tbl_options WHERE id IN(24,55,79,18,130,131,80,81,132,133,134,25,58,70,60,71,26,82,83,68,84,84,93,94,95,96,118,138,139,144,17,78)";
-                                        $row33 = getList($sql33);
-                                        foreach($row33 as $result){
-                                        ?>
-                                        <div class="form-group col-md-4">
-                                            <label class="custom-control custom-checkbox">
-                                    <input type="checkbox" class="custom-control-input" name="Options[]" value="<?php echo $result['id'];?>" <?php if(in_array($result["id"],$row7['Options'])) { ?>
-
-                        checked="checked" <?php } ?>>
-                                    <span class="custom-control-label"><?php echo $result['Name'];?></span>
-                                </label>
-                                        </div>
-                                    <?php } ?>
-</div>
-
-<div class="row">
-<div class="form-group col-md-12">
-<label class="form-label"> Assign Service Complaint Access</label>
-</div>
- <?php  
-                                        $sql33 = "SELECT * FROM tbl_options WHERE id IN(28,135,137,136,164)";
-                                        $row33 = getList($sql33);
-                                        foreach($row33 as $result){
-                                        ?>
-                                        <div class="form-group col-md-4">
-                                            <label class="custom-control custom-checkbox">
-                                    <input type="checkbox" class="custom-control-input" name="Options[]" value="<?php echo $result['id'];?>" <?php if(in_array($result["id"],$row7['Options'])) { ?>
-
-                        checked="checked" <?php } ?>>
-                                    <span class="custom-control-label"><?php echo $result['Name'];?></span>
-                                </label>
-                                        </div>
-                                    <?php } ?>
-</div>
-
-                                  
-                                       
-
-<div class="row">
-<div class="form-group col-md-12">
-<label class="form-label"> Assign Reports</label>
-</div>
- <?php  
-                                        $sql33 = "SELECT * FROM tbl_options WHERE id IN(29,30,31,38,39,65,99,100,101,102,103,104,105,106,107,108,109,110,111,112,142,160)";
-                                        $row33 = getList($sql33);
-                                        foreach($row33 as $result){
-                                        ?>
-                                        <div class="form-group col-md-4">
-                                            <label class="custom-control custom-checkbox">
-                                    <input type="checkbox" class="custom-control-input" name="Options[]" value="<?php echo $result['id'];?>" <?php if(in_array($result["id"],$row7['Options'])) { ?>
-
-                        checked="checked" <?php } ?>>
-                                    <span class="custom-control-label"><?php echo $result['Name'];?></span>
-                                </label>
-                                        </div>
-                                    <?php } ?>
-</div>
-
-  <div class="row">
-                                        <div class="form-group col-md-12">
-<label class="form-label"> Assign Rights</label>
-</div>
-
-                                    <?php  
-                                        $sql33 = "SELECT * FROM tbl_options WHERE id IN(10,11,14)";
-                                        $row33 = getList($sql33);
-                                        foreach($row33 as $result){
-                                        ?>
-                                        <div class="form-group col-md-4">
-                                            <label class="custom-control custom-checkbox">
-                                    <input type="checkbox" class="custom-control-input" name="Options[]" value="<?php echo $result['id'];?>" <?php if(in_array($result["id"],$row7['Options'])) { ?>
-
-                        checked="checked" <?php } ?>>
-                                    <span class="custom-control-label"><?php echo $result['Name'];?></span>
-                                </label>
-                                        </div>
-                                    <?php } ?>
-                                    </div>
+<?php
+include_once __DIR__ . '/../inc-menu-option-groups.php';
+renderMenuAccessAccordion($row7['Options']);
+?>
+<input type="hidden" name="menu_access_posted" value="1">
 <div class="row">
 
 <div class="form-group col-md-3">
@@ -653,6 +493,7 @@ if ($id !== '') {
 
 
     <?php include_once '../footer_script.php'; ?>
+    <?php include_once __DIR__ . '/../inc-menu-access-account-script.php'; renderMenuAccessAccountScript(0); ?>
 
     <script type="text/javascript">
         function getRoll(val){
@@ -677,86 +518,133 @@ if ($id !== '') {
         }
     }
 
-    function error_toast() {
+    function resetSaveButton() {
+        $('#submit').prop('disabled', false).text('Save');
+    }
+
+    function employeeToast(type, title, message) {
         var isRtl = $('body').attr('dir') === 'rtl' || $('html').attr('dir') === 'rtl';
-        $.growl.error({
-            title: 'Error',
-            message: 'Email Id / Phone No Already Exists',
-            location: isRtl ? 'tl' : 'tr'
-        });
+        var opts = { title: title, message: message, location: isRtl ? 'tl' : 'tr' };
+        try {
+            if (type === 'error' && $.growl && $.growl.error) {
+                $.growl.error(opts);
+                return;
+            }
+            if ($.growl && $.growl.success) {
+                $.growl.success(opts);
+                return;
+            }
+            if ($.growl && $.growl.notice) {
+                $.growl.notice(opts);
+                return;
+            }
+            if ($.growl) {
+                opts.style = type === 'error' ? 'error' : 'notice';
+                $.growl(opts);
+                return;
+            }
+        } catch (e) {}
+        if (typeof toastr !== 'undefined') {
+            toastr[type === 'error' ? 'error' : 'success'](message, title);
+        } else {
+            alert((title ? title + ': ' : '') + message);
+        }
+    }
+
+    function error_toast() {
+        employeeToast('error', 'Error', 'Email Id / Phone No Already Exists');
     }
 
     function success_toast() {
-        var isRtl = $('body').attr('dir') === 'rtl' || $('html').attr('dir') === 'rtl';
-        $.growl.success({
-            title: 'Success',
-            message: 'Saved Successfully...',
-            location: isRtl ? 'tl' : 'tr'
+        employeeToast('success', 'Success', 'Record saved / updated successfully.');
+    }
+
+    function redirectAfterEmployeeSave() {
+        setTimeout(function() {
+            window.location.href = 'view-employee.php';
+        }, 1500);
+    }
+
+    function appendMenuAccessToFormData(formData) {
+        formData.delete('Options[]');
+        document.querySelectorAll('.menu-access-view[name="Options[]"]:checked').forEach(function(cb) {
+            formData.append('Options[]', cb.value);
         });
+        if (!formData.has('menu_access_posted')) {
+            formData.append('menu_access_posted', '1');
+        }
     }
     $(document).ready(function() {
         //$(document).on("click", ".btn-finish", function(event){
         $('#validation-form').on('submit', function(e) {
             e.preventDefault();
-            if ($('#validation-form').valid()) {
+            if (!$('#validation-form').valid()) {
+                employeeToast('error', 'Required fields', 'Please fill all required fields (Company, Status, Roll, Immediate Boss, etc.).');
+                return false;
+            }
+
+                var formData = new FormData(this);
+                if (!formData.has('action')) {
+                    formData.append('action', 'Save');
+                }
+                appendMenuAccessToFormData(formData);
 
                 $.ajax({
                     url: "../ajax_files/ajax_employee.php",
                     method: "POST",
-                    data: new FormData(this),
+                    data: formData,
+                    dataType: 'text',
                     contentType: false,
                     processData: false,
+                    headers: { 'X-Requested-With': 'XMLHttpRequest' },
                     beforeSend: function() {
                         $('#submit').attr('disabled', 'disabled');
                         $('#submit').text('Please Wait...');
                     },
                     success: function(data) {
-                        var raw = (data === null || data === undefined) ? '' : String(data);
-                        var s = raw.trim();
-                        // Loose == 0 treats '', false, [], NaN like 0 — caused false "duplicate" toasts on empty/error bodies.
-                        if (s === '0') {
-                            error_toast();
-                        } else if (s === '' || s === 'false') {
-                            var isRtl = $('body').attr('dir') === 'rtl' || $('html').attr('dir') === 'rtl';
-                            $.growl.error({
-                                title: 'Error',
-                                message: 'Save failed. Please refresh the page and try again.',
-                                location: isRtl ? 'tl' : 'tr'
-                            });
-                        } else if (s.indexOf('Phone No already Exist') !== -1 || s.indexOf('already Exist') !== -1) {
-                            var isRtl2 = $('body').attr('dir') === 'rtl' || $('html').attr('dir') === 'rtl';
-                            $.growl.error({
-                                title: 'Error',
-                                message: 'This phone number is already used for this role.',
-                                location: isRtl2 ? 'tl' : 'tr'
-                            });
-                        } else {
-                            success_toast();
-                            setTimeout(function() {
-                                window.location.href = 'view-manufacture.php';
-                            }, 2000);
+                        try {
+                            if (data && typeof data === 'object') {
+                                if (data.ok === false) {
+                                    employeeToast('error', 'Error', data.message || 'Access denied.');
+                                    return;
+                                }
+                            }
+                            var raw = (data === null || data === undefined) ? '' : String(data);
+                            var s = raw.trim();
+                            if (/^1(\D|$)/.test(s) || s === '1') {
+                                success_toast();
+                                redirectAfterEmployeeSave();
+                            } else if (s === '0') {
+                                error_toast();
+                            } else if (s.indexOf('-3') === 0) {
+                                employeeToast('error', 'Error', 'Session expired. Please login again.');
+                            } else if (s.indexOf('-1') === 0) {
+                                employeeToast('error', 'Error', s.split(':').slice(1).join(':') || 'Database error while saving.');
+                            } else if (s === '' || s === 'false') {
+                                employeeToast('error', 'Error', 'Save failed. Please refresh the page and try again.');
+                            } else if (s.indexOf('Phone No already Exist') !== -1 || s.indexOf('already Exist') !== -1) {
+                                employeeToast('error', 'Error', 'This phone number is already used for this role.');
+                            } else {
+                                employeeToast('error', 'Error', 'Unexpected server response. Please try again.');
+                            }
+                        } catch (err) {
+                            employeeToast('error', 'Error', 'Save failed. Please try again.');
                         }
-                        $('#submit').attr('disabled', false);
-                        $('#submit').text('Save');
                     },
-                    error: function() {
-                        var isRtl = $('body').attr('dir') === 'rtl' || $('html').attr('dir') === 'rtl';
-                        $.growl.error({
-                            title: 'Error',
-                            message: 'Save failed (network or server error). Please try again.',
-                            location: isRtl ? 'tl' : 'tr'
-                        });
-                        $('#submit').attr('disabled', false);
-                        $('#submit').text('Save');
+                    error: function(xhr) {
+                        var msg = 'Save failed (network or server error). Please try again.';
+                        if (xhr && xhr.responseText) {
+                            var t = String(xhr.responseText).trim();
+                            if (t.indexOf('-1:') === 0) {
+                                msg = t.split(':').slice(1).join(':') || msg;
+                            }
+                        }
+                        employeeToast('error', 'Error', msg);
+                    },
+                    complete: function() {
+                        resetSaveButton();
                     }
-                })
-
-
-
-            } else {
-                //$('#Fname').focus();
-                return false;
-            }
+                });
         });
 
         $(document).on("click", "#delete_photo", function(event) {
@@ -776,13 +664,7 @@ if ($id !== '') {
                     success: function(data) {
 
                         $('#show_photo').hide();
-                        var isRtl = $('body').attr('dir') === 'rtl' || $('html').attr(
-                            'dir') === 'rtl';
-                        $.growl.success({
-                            title: 'Success',
-                            message: data,
-                            location: isRtl ? 'tl' : 'tr'
-                        });
+                        employeeToast('success', 'Success', data);
 
                     }
                 });

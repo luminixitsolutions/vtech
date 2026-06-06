@@ -3,8 +3,8 @@ session_start();
 include_once 'config.php';
 include_once 'auth.php';
 
-$user_id = $_SESSION['Admin']['id']; // Coordinator login
-$MainPage = "Service";
+$user_id = $_SESSION['Admin']['id'];
+$MainPage = "Installation";
 $Page = "Coordinator-Sites";
 
 /* =========================
@@ -202,7 +202,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
 <tbody>
 <?php
 $i = 1;
-$user_id = 680;
+$rowRole = getRecord("SELECT Roll FROM tbl_users WHERE id='$user_id'");
+$coordinatorScopeSql = '';
+if (!adminUserHasFullMenuAccess((int) ($rowRole['Roll'] ?? 0))) {
+    $coordinatorScopeSql = " AND f.assigned_to = '$user_id'";
+}
+
 $sql = "
 SELECT 
     f.id AS FlowId,
@@ -217,9 +222,9 @@ SELECT
 FROM tbl_installation_flow f
 JOIN tbl_users u ON u.id = f.CustId
 LEFT JOIN tbl_common_master cm ON cm.id = u.PumpCapacity
-WHERE f.assigned_to = '$user_id'
-AND f.current_stage = 'COORDINATOR'
+WHERE f.current_stage = 'COORDINATOR'
 AND f.is_completed = 0
+$coordinatorScopeSql
 ORDER BY f.assigned_date DESC
 ";
 

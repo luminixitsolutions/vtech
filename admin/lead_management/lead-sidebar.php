@@ -4,7 +4,8 @@ $sql77 = "SELECT * FROM tbl_users WHERE id='$user_id'";
 $row77 = getRecord($sql77);
 $Roll = $row77['Roll'];
 $UserCat = $row77['CatId'];
-$Options = explode(',',$row77['Options']);
+require_once __DIR__ . '/../inc-menu-option-groups.php';
+$Options = adminResolveMenuOptionsFromUserRow($row77);
 ?>
 
             <!-- [ Layout navbar ( Header ) ] End -->
@@ -35,6 +36,7 @@ $Options = explode(',',$row77['Options']);
                 
             </a>
         </li>
+        <?php if (userHasAnyMenuOption($Options, menuAccessLeadDashboardOptionIds())) { ?>
         <li class="sidenav-item">
             <a href="lead-management-dashboard.php" class="sidenav-link">
                 <i class="sidenav-icon feather icon-activity"></i>
@@ -42,6 +44,7 @@ $Options = explode(',',$row77['Options']);
                 
             </a>
         </li>
+        <?php } ?>
         <?php if(in_array("64", $Options)) {?>
     <li class="sidenav-item">
             <a href="upload-excel.php" class="sidenav-link">
@@ -50,7 +53,7 @@ $Options = explode(',',$row77['Options']);
                
             </a>
         </li>
-        <?php } if(in_array("44", $Options)) {?>
+        <?php } if(menuAccessUserHasScreen($Options, 188) || menuAccessUserHasScreen($Options, 44)) {?>
         <li class="sidenav-item">
             <a href="add-irrigation-leads.php" class="sidenav-link">
                 <i class="sidenav-icon feather icon-activity"></i>
@@ -58,6 +61,7 @@ $Options = explode(',',$row77['Options']);
                 
             </a>
         </li>
+        <?php } if(menuAccessUserHasScreen($Options, 44)) {?>
         <li class="sidenav-item">
             <a href="add-lead.php" class="sidenav-link">
                 <i class="sidenav-icon feather icon-activity"></i>
@@ -143,14 +147,14 @@ $Options = explode(',',$row77['Options']);
         
 
          
-          <?php } if(in_array("149", $Options)) {?>
+          <?php } if(menuAccessUserHasFamily($Options, 149)) {?>
          <li class="sidenav-item <?php if($MainPage=='Assign-Pump-Customers') {?> open active <?php } ?>">
 <a href="javascript:" class="sidenav-link sidenav-toggle">
  <i class="sidenav-icon feather icon-activity"></i>
 <div>Pump Application Form</div>
 </a>
 <ul class="sidenav-menu">
-  
+  <?php if(menuAccessUserHasScreen($Options, 189)) {?>
   <li class="sidenav-item">
 <a href="upload-application-excel.php" class="sidenav-link">
 <div> Upload Excel</div>
@@ -161,7 +165,7 @@ $Options = explode(',',$row77['Options']);
 <?php } ?>
 </a>
 </li>
-
+<?php } if(menuAccessUserHasScreen($Options, 190)) {?>
   <li class="sidenav-item">
 <a href="view-application-form.php" class="sidenav-link">
 <div> All Application Form</div>
@@ -172,8 +176,7 @@ $Options = explode(',',$row77['Options']);
 <?php } ?>
 </a>
 </li>
-
-
+<?php } if(menuAccessUserHasScreen($Options, 191)) {?>
 <li class="sidenav-item">
 <a href="pending-application-form.php" class="sidenav-link">
 <div> Pending Application Form</div>
@@ -184,7 +187,7 @@ $Options = explode(',',$row77['Options']);
 <?php } ?>
 </a>
 </li>
-
+<?php } if(menuAccessUserHasScreen($Options, 192)) {?>
         <li class="sidenav-item">
 <a href="approve-application-form.php" class="sidenav-link">
 <div> Approve Application Form</div>
@@ -195,7 +198,7 @@ $Options = explode(',',$row77['Options']);
 <?php } ?>
 </a>
 </li>  
-
+<?php } if(menuAccessUserHasScreen($Options, 193)) {?>
 <li class="sidenav-item">
 <a href="reject-application-form.php" class="sidenav-link">
 <div> Reject Application Form</div>
@@ -206,17 +209,17 @@ $Options = explode(',',$row77['Options']);
 <?php } ?>
 </a>
 </li>  
-
+<?php } ?>
 </ul>
 </li>
- <?php } if(in_array("150", $Options)) {?>
+ <?php } if(menuAccessUserHasFamily($Options, 150)) {?>
 <li class="sidenav-item <?php if($MainPage=='Assign-Pump-Customers') {?> open active <?php } ?>">
 <a href="javascript:" class="sidenav-link sidenav-toggle">
  <i class="sidenav-icon feather icon-activity"></i>
 <div>Assign Application Form</div>
 </a>
 <ul class="sidenav-menu">
-  
+  <?php if(menuAccessUserHasScreen($Options, 194)) {?>
   <li class="sidenav-item">
 <a href="assign-applications.php" class="sidenav-link">
 <div> Assign Application Form</div>
@@ -227,8 +230,7 @@ $Options = explode(',',$row77['Options']);
 <?php } ?>
 </a>
 </li>
-
-
+<?php } if(menuAccessUserHasScreen($Options, 195)) {?>
 <li class="sidenav-item">
 <a href="assigned-applications.php" class="sidenav-link">
 <div> Assigned Application Form</div>
@@ -239,10 +241,10 @@ $Options = explode(',',$row77['Options']);
 <?php } ?>
 </a>
 </li>
-
+<?php } ?>
 </ul>
 </li>
- <?php } if(in_array("151", $Options) || in_array("152", $Options) || in_array("153", $Options)) {?>
+ <?php } if(menuAccessUserHasScreen($Options, 151) || menuAccessUserHasScreen($Options, 152) || menuAccessUserHasScreen($Options, 153)) {?>
 <li class="sidenav-item <?php if($MainPage=='Assign-Pump-Customers') {?> open active <?php } ?>">
 <a href="javascript:" class="sidenav-link sidenav-toggle">
  <i class="sidenav-icon feather icon-activity"></i>

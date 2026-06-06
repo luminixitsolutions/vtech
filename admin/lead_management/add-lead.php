@@ -35,6 +35,7 @@ $Page = "Add-Lead";
     <link rel="stylesheet" href="<?php echo $SiteUrl;?>/assets/libs/flot/flot.css">
     <link rel="stylesheet" href="<?php echo $SiteUrl;?>/assets/libs/bootstrap-select/bootstrap-select.css">
     <link rel="stylesheet" href="<?php echo $SiteUrl;?>/assets/libs/select2/select2.css">
+    <?php echo leadSourceIconsStylesheetTag(); ?>
 </head>
 
 <body>
@@ -141,7 +142,12 @@ else{
 
 
  <div class="form-group col-lg-3">
-<label class="form-label"> Lead Source<span class="text-danger">*</span></label>
+<label class="form-label d-flex align-items-center flex-wrap"> Lead Source<span class="text-danger">*</span>
+<span id="leadSourceIconPreview" class="ml-2"><?php
+if (!empty($row7['ClainReason'])) {
+    echo leadSourceIconHtml($row7['ClainReason'], 'sm', true);
+}
+?></span></label>
  <select class="form-control" name="ClainReason" id="ClainReason" required>
 <option selected="" value="">Select</option>
  <?php 
@@ -278,6 +284,29 @@ else{
     <script src="<?php echo $SiteUrl;?>/assets/js/demo.js"></script>
     <script src="<?php echo $SiteUrl;?>/assets/js/analytics.js"></script>
      <script src="<?php echo $SiteUrl;?>/assets/js/pages/forms_selects.js"></script>
+     <script>
+     (function () {
+         var iconMap = <?php
+         $sqlIcons = "SELECT Name FROM tbl_common_master WHERE Status='1' AND Roll=10";
+         $iconRows = getList($sqlIcons);
+         $iconMap = [];
+         foreach ($iconRows as $ir) {
+             $iconMap[$ir['Name']] = leadSourceIconHtml($ir['Name'], 'sm', true);
+         }
+         echo json_encode($iconMap);
+         ?>;
+         function updateLeadSourceIcon() {
+             var val = $('#ClainReason').val();
+             var $preview = $('#leadSourceIconPreview');
+             if (val && iconMap[val]) {
+                 $preview.html(iconMap[val]);
+             } else {
+                 $preview.empty();
+             }
+         }
+         $('#ClainReason').on('change', updateLeadSourceIcon);
+     })();
+     </script>
 </body>
 
 </html>

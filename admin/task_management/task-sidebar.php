@@ -4,7 +4,8 @@ $sql77 = "SELECT * FROM tbl_users WHERE id='$user_id'";
 $row77 = getRecord($sql77);
 $Roll = $row77['Roll'];
 $UserCat = $row77['CatId'];
-$Options = explode(',',$row77['Options']);
+require_once __DIR__ . '/../inc-menu-option-groups.php';
+$Options = adminResolveMenuOptionsFromUserRow($row77);
 ?>
 
             <!-- [ Layout navbar ( Header ) ] End -->
@@ -35,6 +36,7 @@ $Options = explode(',',$row77['Options']);
                 
             </a>
         </li>
+        <?php if (userHasAnyMenuOption($Options, menuAccessTaskOptionIds())) { ?>
         <li class="sidenav-item">
             <a href="task-dashboard.php" class="sidenav-link">
                 <i class="sidenav-icon feather icon-activity"></i>
@@ -49,7 +51,7 @@ $Options = explode(',',$row77['Options']);
                 
             </a>
         </li>
-      <?php if(in_array("14", $Options)) {?>
+      <?php if(in_array("47", $Options) || in_array("151", $Options)) {?>
         <li class="sidenav-item">
             <a href="create-task.php" class="sidenav-link">
                  <i class="sidenav-icon feather icon-activity"></i>
@@ -73,6 +75,7 @@ $Options = explode(',',$row77['Options']);
                 
             </a>
         </li>
+        <?php } ?>
 
         
     </ul>

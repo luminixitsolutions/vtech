@@ -2,6 +2,7 @@
 session_start();
 include_once 'config.php';
 include_once 'auth.php';
+require_once __DIR__ . '/inc-po-assignment-activity-log.php';
 require_once('vendor/php-excel-reader/excel_reader2.php');
 require_once('vendor/SpreadsheetReader.php');
 $user_id = $_SESSION['Admin']['id'];
@@ -12,6 +13,73 @@ $id = $_GET['id'];
 $sql7 = "SELECT tpo.*,tu.Fname FROM tbl_purchase_order tpo LEFT JOIN tbl_users tu ON tpo.EmpId=tu.id WHERE tpo.id='$id'";
 $row7 = getRecord($sql7);
 $InvoiceNo = $row7['InvoiceNo'];
+
+function po_apply_complete($row)
+{
+    return intval(isset($row['ApplyStatus']) ? $row['ApplyStatus'] : 0) === 1;
+}
+
+function po_send_complete($row)
+{
+    return intval(isset($row['SendStatus']) ? $row['SendStatus'] : 0) === 1;
+}
+
+function po_receive_complete($row)
+{
+    return intval(isset($row['ReceiveStatus']) ? $row['ReceiveStatus'] : 0) === 1;
+}
+
+function po_delivery_steps_complete($row)
+{
+    return po_apply_complete($row) && po_send_complete($row) && po_receive_complete($row);
+}
+
+function po_delivered_complete($row)
+{
+    return intval(isset($row['DeliveredStatus']) ? $row['DeliveredStatus'] : 0) === 1;
+}
+
+function po_mark_purchase_order_delivered($conn, $poId, $deliveredDate, $billNo, $customerId, $branchId, $vehicalDate, $vehicalNo)
+{
+    $poId = intval($poId);
+    $DeliveredTime = date('H:i:s');
+    $DeliveredDate = mysqli_real_escape_string($conn, (string) $deliveredDate);
+    $BillNo = mysqli_real_escape_string($conn, (string) $billNo);
+    $CustomerId = mysqli_real_escape_string($conn, (string) $customerId);
+    $BranchId = mysqli_real_escape_string($conn, (string) $branchId);
+    $VehicalDate = mysqli_real_escape_string($conn, (string) $vehicalDate);
+    $VehicalNo = mysqli_real_escape_string($conn, (string) $vehicalNo);
+    $sql = "UPDATE tbl_purchase_order SET VehicalDate='$VehicalDate',VehicalNo='$VehicalNo',CustomerId='$CustomerId',DeliveredDate='$DeliveredDate',DeliveredTime='$DeliveredTime',DeliveredStatus=1,BranchId='$BranchId',BillNo='$BillNo' WHERE id='$poId'";
+    return $conn->query($sql);
+}
+
+function po_is_allowed_excel_upload($file)
+{
+    if (empty($file['name'])) {
+        return false;
+    }
+    $ext = strtolower(pathinfo($file['name'], PATHINFO_EXTENSION));
+    if (in_array($ext, ['xls', 'xlsx', 'csv'], true)) {
+        return true;
+    }
+    $allowedTypes = [
+        'application/vnd.ms-excel',
+        'text/xls',
+        'text/xlsx',
+        'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+        'application/octet-stream',
+        'application/zip',
+        'text/csv',
+        'application/csv',
+    ];
+    return !empty($file['type']) && in_array($file['type'], $allowedTypes, true);
+}
+
+$poSendUnlocked = po_apply_complete($row7);
+$poReceiveUnlocked = po_send_complete($row7);
+$poDeliveryUnlocked = po_delivery_steps_complete($row7);
+$poStoreAssignUnlocked = po_delivered_complete($row7);
+$poSerialStockCount = getRow("SELECT id FROM tbl_stocks WHERE SellId='".intval($id)."' AND ProdType='1' AND SellType='Purchase'");
 
 /**
  * Whether this PO stock line already exists in tbl_distibute_item_details and which store (branch) it was assigned to.
@@ -62,12 +130,12 @@ function po_line_store_assignment_info($conn, $stk, $poVehicalDate, $poVehicalNo
 }
 
 /**
- * @return array{rows: array, blocked: bool}
+ * @return array{rows: array, blocked: bool, has_transferable: bool}
  */
 function po_collect_po_stock_preview($conn, $poId, $poRow)
 {
     $rows = [];
-    $blocked = false;
+    $hasTransferable = false;
     $poId = intval($poId);
     $vd = isset($poRow['VehicalDate']) ? $poRow['VehicalDate'] : '';
     $vn = isset($poRow['VehicalNo']) ? $poRow['VehicalNo'] : '';
@@ -75,7 +143,7 @@ function po_collect_po_stock_preview($conn, $poId, $poRow)
     $sqlStk = "SELECT ts.*, tp.Unit AS TPUnit FROM tbl_stocks ts LEFT JOIN tbl_products tp ON ts.ProductId = tp.id WHERE ts.SellId='$poId' AND ts.SellType='Purchase' ORDER BY ts.id ASC";
     $resStk = $conn->query($sqlStk);
     if (!$resStk) {
-        return ['rows' => [], 'blocked' => true];
+        return ['rows' => [], 'blocked' => true, 'has_transferable' => false];
     }
     while ($stk = $resStk->fetch_assoc()) {
         $qty = floatval($stk['Qty']);
@@ -85,13 +153,14 @@ function po_collect_po_stock_preview($conn, $poId, $poRow)
         $pt = isset($stk['ProdType']) ? intval($stk['ProdType']) : 0;
         $asgInfo = po_line_store_assignment_info($conn, $stk, $vd, $vn);
         $assigned = !empty($asgInfo['assigned']);
-        if ($assigned) {
-            $blocked = true;
+        if (!$assigned) {
+            $hasTransferable = true;
         }
         $typeLabel = ($pt === 1 || $pt === 2) ? 'Serial' : 'Regular';
         $serialDisp = isset($stk['SerialNo']) ? $stk['SerialNo'] : '';
         $rows[] = [
             'stk' => $stk,
+            'stock_id' => intval($stk['id']),
             'qty' => $qty,
             'type_label' => $typeLabel,
             'prod_type' => $pt,
@@ -100,7 +169,7 @@ function po_collect_po_stock_preview($conn, $poId, $poRow)
             'serial_disp' => $serialDisp,
         ];
     }
-    return ['rows' => $rows, 'blocked' => $blocked];
+    return ['rows' => $rows, 'blocked' => !$hasTransferable, 'has_transferable' => $hasTransferable];
 }
 ?>
 <!DOCTYPE html>
@@ -312,6 +381,10 @@ if(isset($_POST['submit'])){
 }
 
 if(isset($_POST['submit2'])){
+    if (!po_apply_complete($row7)) {
+        echo "<script>alert('Please complete Apply Order first.');window.location.href='take-po-action.php?id=$id';</script>";
+        exit;
+    }
     $SendDate = $_POST['SendDate'];
     $SendTime = date('H:i:s');
     $sql = "UPDATE tbl_purchase_order SET SendDate='$SendDate',SendTime='$SendTime',SendStatus=1 WHERE id='$id'";
@@ -321,6 +394,10 @@ if(isset($_POST['submit2'])){
 }
 
 if(isset($_POST['submit3'])){
+    if (!po_send_complete($row7)) {
+        echo "<script>alert('Please complete Send Order Details first.');window.location.href='take-po-action.php?id=$id';</script>";
+        exit;
+    }
     $ReceiveDate = $_POST['ReceiveDate'];
     $ReceiveTime = date('H:i:s');
     $sql = "UPDATE tbl_purchase_order SET ReceiveDate='$ReceiveDate',ReceiveTime='$ReceiveTime',ReceiveStatus=1 WHERE id='$id'";
@@ -330,11 +407,19 @@ if(isset($_POST['submit3'])){
 }
 
 if(isset($_POST['submit4'])){
+    if (!po_delivery_steps_complete($row7)) {
+        echo "<script>alert('Please complete Apply Order, Send Order Details and Received Order Details before delivering the order.');window.location.href='take-po-action.php?id=$id';</script>";
+        exit;
+    }
     $CustomerId = isset($_POST['CustomerId']) ? $_POST['CustomerId'] : (isset($row7['CustomerId']) ? $row7['CustomerId'] : '');
-    $DeliveredDate = $_POST['DeliveredDate'];
-    $VehicalDate = $_POST['VehicalDate'];
-    $VehicalNo = $_POST['VehicalNo'];
-    $BillNo = addslashes(trim($_POST['BillNo']));
+    $DeliveredDate = isset($_POST['DeliveredDate']) ? trim($_POST['DeliveredDate']) : '';
+    $VehicalDate = isset($_POST['VehicalDate']) ? trim($_POST['VehicalDate']) : '';
+    $VehicalNo = isset($_POST['VehicalNo']) ? trim($_POST['VehicalNo']) : '';
+    $BillNo = isset($_POST['BillNo']) ? addslashes(trim($_POST['BillNo'])) : '';
+    if ($DeliveredDate === '' || $VehicalDate === '' || $VehicalNo === '' || $BillNo === '') {
+        echo "<script>alert('Please fill all required fields: Delivered Date, Vehicle Date, Vehicle No and Bill No.');window.location.href='take-po-action.php?id=$id';</script>";
+        exit;
+    }
     $BranchId = isset($_POST['BranchId']) ? $_POST['BranchId'] : (isset($row7['BranchId']) ? $row7['BranchId'] : '');
     $DeliveredTime = date('H:i:s');
     $sql = "UPDATE tbl_purchase_order SET VehicalDate='$VehicalDate',VehicalNo='$VehicalNo',CustomerId='$CustomerId',DeliveredDate='$DeliveredDate',DeliveredTime='$DeliveredTime',DeliveredStatus=1,BranchId='$BranchId',BillNo='$BillNo' WHERE id='$id'";
@@ -378,110 +463,62 @@ if($number > 0)
 }
 
 if(isset($_POST['submit5'])){
-    $CustomerId = $_POST['CustomerId'];
-    $DeliveredDate = $_POST['DeliveredDate'];
-    $BranchId = $_POST['BranchId'];
-    $BillNo = addslashes(trim($_POST['BillNo']));
-    $DeliveredTime = date('H:i:s');
-    
-    $allowedFileType = ['application/vnd.ms-excel','text/xls','text/xlsx','application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'];
-  
-  if(in_array($_FILES["file"]["type"],$allowedFileType)){
+    if (!po_delivery_steps_complete($row7)) {
+        echo "<script>alert('Please complete Apply Order, Send Order Details and Received Order Details before delivering the order.');window.location.href='take-po-action.php?id=$id';</script>";
+        exit;
+    }
+    $CustomerId = isset($_POST['CustomerId']) ? $_POST['CustomerId'] : (isset($row7['CustomerId']) ? $row7['CustomerId'] : '');
+    $DeliveredDate = isset($_POST['DeliveredDate']) ? trim($_POST['DeliveredDate']) : '';
+    $BranchId = isset($_POST['BranchId']) ? $_POST['BranchId'] : (isset($row7['BranchId']) ? $row7['BranchId'] : '');
+    $BillNo = isset($_POST['BillNo']) ? trim($_POST['BillNo']) : '';
+    if ($DeliveredDate === '' || $BillNo === '') {
+        echo "<script>alert('Please fill all required fields: Delivered Date and Bill No.');window.location.href='take-po-action.php?id=$id';</script>";
+        exit;
+    }
 
-         $targetPath = '../uploads/'.$_FILES['file']['name'];
+    $BillNoEsc = addslashes($BillNo);
+    $hasExistingSerialStocks = getRow("SELECT id FROM tbl_stocks WHERE SellId='$id' AND ProdType='1' AND SellType='Purchase' LIMIT 1") > 0;
+    $hasUploadedFile = !empty($_FILES['file']['name']) && isset($_FILES['file']['error']) && $_FILES['file']['error'] === UPLOAD_ERR_OK;
+
+    if (!$hasUploadedFile && !$hasExistingSerialStocks) {
+        echo "<script>alert('Please upload Excel file for serial products.');window.location.href='take-po-action.php?id=$id';</script>";
+        exit;
+    }
+
+    $importedCount = 0;
+    $skippedSerials = [];
+
+    if ($hasUploadedFile) {
+        if (!po_is_allowed_excel_upload($_FILES['file'])) {
+            echo "<script>alert('Invalid File Type. Upload Excel File (.xls, .xlsx or .csv).');window.location.href='take-po-action.php?id=$id';</script>";
+            exit;
+        }
+
+        $targetPath = '../uploads/'.$_FILES['file']['name'];
         move_uploaded_file($_FILES['file']['tmp_name'], $targetPath);
-        
+
         $Reader = new SpreadsheetReader($targetPath);
         $sheetCount = count($Reader->sheets());
-         $sql = "DELETE FROM tbl_stocks WHERE SellId='$id' AND ProdType='1' AND SellType='Purchase'";
-$conn->query($sql);
-        $skippedSerials = [];
+        $sql = "DELETE FROM tbl_stocks WHERE SellId='$id' AND ProdType='1' AND SellType='Purchase'";
+        $conn->query($sql);
         $seenInFile = [];
-        $importedCount = 0;
-        /*$Qx = "TRUNCATE TABLE sheet1";
-        $conn->query($Qx);*/
-        for($i=0;$i<$sheetCount;$i++)
-        {
-            
+        for ($i = 0; $i < $sheetCount; $i++) {
             $Reader->ChangeSheet($i);
-            
-            foreach ($Reader as $Row)
-            {
-          
-                $SrNo = "";
-                if(isset($Row[0])) {
-                    $SrNo = mysqli_real_escape_string($conn,$Row[0]);
-                }
-                
-                $ProductId = "";
-                if(isset($Row[1])) {
-                    $ProductId = mysqli_real_escape_string($conn,$Row[1]);
-                }
+            foreach ($Reader as $Row) {
+                $SrNo = isset($Row[0]) ? mysqli_real_escape_string($conn, $Row[0]) : '';
+                $ProductId = isset($Row[1]) ? mysqli_real_escape_string($conn, $Row[1]) : '';
+                $ProductName = isset($Row[2]) ? mysqli_real_escape_string($conn, $Row[2]) : '';
+                $SerialNo = isset($Row[3]) ? mysqli_real_escape_string($conn, $Row[3]) : '';
+                $Unit = isset($Row[4]) ? mysqli_real_escape_string($conn, $Row[4]) : '';
+                $Qty = isset($Row[5]) ? mysqli_real_escape_string($conn, $Row[5]) : '';
+                $ModelNo = isset($Row[6]) ? mysqli_real_escape_string($conn, $Row[6]) : '';
+                $CompId = isset($Row[7]) ? mysqli_real_escape_string($conn, $Row[7]) : '';
+                $PostId = isset($Row[8]) ? mysqli_real_escape_string($conn, $Row[8]) : '';
+                $VehicalDate = isset($Row[9]) ? mysqli_real_escape_string($conn, $Row[9]) : '';
+                $VehicalNo = isset($Row[10]) ? mysqli_real_escape_string($conn, $Row[10]) : '';
+                $OemVedName = isset($Row[11]) ? mysqli_real_escape_string($conn, $Row[11]) : '';
 
-                 $ProductName = "";
-                if(isset($Row[2])) {
-                    $ProductName = mysqli_real_escape_string($conn,$Row[2]);
-                }
-
-                 $SerialNo = "";
-                if(isset($Row[3])) {
-                    $SerialNo = mysqli_real_escape_string($conn,$Row[3]);
-                }
-
-                $Unit = "";
-                if(isset($Row[4])) {
-                    $Unit = mysqli_real_escape_string($conn,$Row[4]);
-                }
-
-
-                 $Qty = "";
-                if(isset($Row[5])) {
-                    $Qty = mysqli_real_escape_string($conn,$Row[5]);
-                }
-
-                
-
-                 $ModelNo = "";
-                if(isset($Row[6])) {
-                    $ModelNo = mysqli_real_escape_string($conn,$Row[6]);
-                }
-
-                 $CompId = "";
-                if(isset($Row[7])) {
-                    $CompId = mysqli_real_escape_string($conn,$Row[7]);
-                }
-
-                 
-
-               $PostId = "";
-                if(isset($Row[8])) {
-                    $PostId = mysqli_real_escape_string($conn,$Row[8]);
-                }
-
-                $VehicalDate = "";
-                if(isset($Row[9])) {
-                    $VehicalDate = mysqli_real_escape_string($conn,$Row[9]);
-                }
-
-                $VehicalNo = "";
-                if(isset($Row[10])) {
-                    $VehicalNo = mysqli_real_escape_string($conn,$Row[10]);
-                }
-
-               /* $BillNo = "";
-                if(isset($Row[11])) {
-                    $BillNo = mysqli_real_escape_string($conn,$Row[11]);
-                }*/
-
-$OemVedName = "";
-                if(isset($Row[11])) {
-                    $OemVedName = mysqli_real_escape_string($conn,$Row[11]);
-                }
-
-               
-               
-                 if (!empty($SrNo) || !empty($ProductId) || !empty($ProductName) || !empty($SerialNo) || !empty($Qty) || !empty($ModelNo) || !empty($CompId) || !empty($PostId)) {
-
+                if (!empty($SrNo) || !empty($ProductId) || !empty($ProductName) || !empty($SerialNo) || !empty($Qty) || !empty($ModelNo) || !empty($CompId) || !empty($PostId)) {
                     $shouldInsert = true;
                     $serialPlain = isset($Row[3]) ? trim((string) $Row[3]) : '';
                     if ($serialPlain !== '' && strcasecmp($serialPlain, 'N/A') !== 0 && strcasecmp($serialPlain, 'Serial No') !== 0 && strcasecmp($serialPlain, 'SerialNo') !== 0) {
@@ -503,42 +540,66 @@ $OemVedName = "";
 
                     if ($shouldInsert) {
                         $UnitSql = ($Unit !== '') ? $Unit : mysqli_real_escape_string($conn, '-');
-                        $sql22 = "INSERT INTO tbl_stocks SET VehicalDate='$VehicalDate',VehicalNo='$VehicalNo',CustomerId='$CustomerId',CompId='$CompId',SellId='$id',ProductId='$ProductId',ProductName='$ProductName',Qty='$Qty',Status='1',CrDr='cr',CreatedBy='$user_id',CreatedDate='$DeliveredDate',Narration='Stock Added',PostId='$PostId',BranchId='$BranchId',FromBranchId='$BranchId',SellType='Purchase',SerialNo='$SerialNo',ModelNo='$ModelNo',SrNo='$SrNo',ProdType='1',Unit='$UnitSql',BillNo='$BillNo',OemVedName='$OemVedName',BagId='0',Structure='0',BuyStatus='0'";
+                        $sql22 = "INSERT INTO tbl_stocks SET VehicalDate='$VehicalDate',VehicalNo='$VehicalNo',CustomerId='$CustomerId',CompId='$CompId',SellId='$id',ProductId='$ProductId',ProductName='$ProductName',Qty='$Qty',Status='1',CrDr='cr',CreatedBy='$user_id',CreatedDate='$DeliveredDate',Narration='Stock Added',PostId='$PostId',BranchId='$BranchId',FromBranchId='$BranchId',SellType='Purchase',SerialNo='$SerialNo',ModelNo='$ModelNo',SrNo='$SrNo',ProdType='1',Unit='$UnitSql',BillNo='$BillNoEsc',OemVedName='$OemVedName',BagId='0',Structure='0',BuyStatus='0'";
                         $conn->query($sql22);
                         $importedCount++;
                     }
                 }
-             }
-        
-         }
-         
- $sql = "DELETE FROM tbl_stocks WHERE SrNo='SrNo' AND ProdType='1'";
-$conn->query($sql);
-$skippedUnique = array_values(array_unique($skippedSerials));
-if ($importedCount > 0) {
-    $alertMsg = 'Excel data imported successfully. ' . $importedCount . ' serial line(s) added.';
-} elseif (!empty($skippedUnique)) {
-    $alertMsg = 'No serial numbers were imported.';
-} else {
-    $alertMsg = 'Excel data imported successfully.';
-}
-if (!empty($skippedUnique)) {
-    $alertMsg .= "\n\nThe following serial number(s) were NOT imported because they already exist:\n" . implode("\n", $skippedUnique);
-}
-?>
-<script>
-alert(<?php echo json_encode($alertMsg); ?>);
-    window.location.href='take-po-action.php?id=<?php echo $id;?>';
-</script>
-<?php
+            }
+        }
+
+        $conn->query("DELETE FROM tbl_stocks WHERE SrNo='SrNo' AND ProdType='1'");
+        $hasExistingSerialStocks = getRow("SELECT id FROM tbl_stocks WHERE SellId='$id' AND ProdType='1' AND SellType='Purchase' LIMIT 1") > 0;
+        if (!$hasExistingSerialStocks) {
+            $skippedUnique = array_values(array_unique($skippedSerials));
+            $alertMsg = !empty($skippedUnique)
+                ? 'No serial numbers were imported. Existing serial(s) were skipped.'
+                : 'No serial numbers were imported from Excel.';
+            if (!empty($skippedUnique)) {
+                $alertMsg .= "\n\nThe following serial number(s) were NOT imported because they already exist:\n" . implode("\n", $skippedUnique);
+            }
+            echo "<script>alert(" . json_encode($alertMsg) . ");window.location.href='take-po-action.php?id=$id';</script>";
+            exit;
+        }
+    }
+
+    $VehicalDate = isset($row7['VehicalDate']) ? trim((string) $row7['VehicalDate']) : '';
+    $VehicalNo = isset($row7['VehicalNo']) ? trim((string) $row7['VehicalNo']) : '';
+    $stkRow = getRecord("SELECT VehicalDate, VehicalNo FROM tbl_stocks WHERE SellId='$id' AND SellType='Purchase' AND ProdType='1' ORDER BY id ASC LIMIT 1");
+    if (is_array($stkRow)) {
+        if ($VehicalDate === '' && !empty($stkRow['VehicalDate'])) {
+            $VehicalDate = trim((string) $stkRow['VehicalDate']);
+        }
+        if ($VehicalNo === '' && !empty($stkRow['VehicalNo'])) {
+            $VehicalNo = trim((string) $stkRow['VehicalNo']);
+        }
+    }
+
+    po_mark_purchase_order_delivered($conn, $id, $DeliveredDate, $BillNo, $CustomerId, $BranchId, $VehicalDate, $VehicalNo);
+    $conn->query("UPDATE tbl_stocks SET BillNo='$BillNoEsc',CreatedDate='$DeliveredDate' WHERE SellId='$id' AND ProdType='1' AND SellType='Purchase'");
+
+    if ($hasUploadedFile) {
+        $skippedUnique = array_values(array_unique($skippedSerials));
+        if ($importedCount > 0) {
+            $alertMsg = 'Serial products delivered successfully. ' . $importedCount . ' serial line(s) imported.';
+        } else {
+            $alertMsg = 'Serial products delivered successfully.';
+        }
+        if (!empty($skippedUnique)) {
+            $alertMsg .= "\n\nThe following serial number(s) were NOT imported because they already exist:\n" . implode("\n", $skippedUnique);
+        }
+    } else {
+        $alertMsg = 'Serial products delivered successfully.';
+    }
+    echo "<script>alert(" . json_encode($alertMsg) . ");window.location.href='take-po-action.php?id=$id';</script>";
     exit;
-  }
-  else
-  { 
-        $type = "error";
-        $message = "Invalid File Type. Upload Excel File.";
-  }
-  
+}
+
+if (isset($_POST['submit_po_store_preview']) || isset($_POST['submit_po_store_transfer_confirm'])) {
+    if (!po_delivered_complete($row7)) {
+        echo "<script>alert('Please complete Delivered Order before assigning items to a store.');window.location.href='take-po-action.php?id=$id';</script>";
+        exit;
+    }
 }
 
 if (isset($_POST['submit_po_store_transfer_confirm'])) {
@@ -571,8 +632,39 @@ if (isset($_POST['submit_po_store_transfer_confirm'])) {
         echo "<script>alert('No delivered stock lines found for this PO. Complete delivery first.');window.location.href='take-po-action.php?id=$poId';</script>";
         exit;
     }
-    if (!empty($previewData['blocked'])) {
-        echo "<script>alert('One or more items or serial numbers are already assigned to a store. Remove them from store assignment first or use Review items again.');window.location.href='take-po-action.php?id=$poId';</script>";
+    if (empty($previewData['has_transferable'])) {
+        echo "<script>alert('All items or serial numbers are already assigned to a store.');window.location.href='take-po-action.php?id=$poId';</script>";
+        exit;
+    }
+
+    $selectedStockIds = [];
+    if (isset($_POST['PoStoreStockIds']) && is_array($_POST['PoStoreStockIds'])) {
+        foreach ($_POST['PoStoreStockIds'] as $sid) {
+            $sid = intval($sid);
+            if ($sid > 0) {
+                $selectedStockIds[$sid] = true;
+            }
+        }
+    }
+    if (empty($selectedStockIds)) {
+        echo "<script>alert('Please select at least one line with status OK to transfer.');window.location.href='take-po-action.php?id=$poId';</script>";
+        exit;
+    }
+
+    $linesToTransfer = [];
+    foreach ($previewData['rows'] as $line) {
+        $stockId = isset($line['stock_id']) ? intval($line['stock_id']) : intval($line['stk']['id']);
+        if (empty($selectedStockIds[$stockId])) {
+            continue;
+        }
+        if (!empty($line['assigned'])) {
+            echo "<script>alert('One or more selected lines are already assigned to a store. Review items and try again.');window.location.href='take-po-action.php?id=$poId';</script>";
+            exit;
+        }
+        $linesToTransfer[] = $line;
+    }
+    if (empty($linesToTransfer)) {
+        echo "<script>alert('No valid lines selected for transfer.');window.location.href='take-po-action.php?id=$poId';</script>";
         exit;
     }
 
@@ -589,7 +681,7 @@ if (isset($_POST['submit_po_store_transfer_confirm'])) {
         $DistId = mysqli_insert_id($conn);
 
         $detailRows = 0;
-        foreach ($previewData['rows'] as $line) {
+        foreach ($linesToTransfer as $line) {
             $stk = $line['stk'];
             $qty = floatval($stk['Qty']);
             if ($qty <= 0) {
@@ -622,8 +714,19 @@ if (isset($_POST['submit_po_store_transfer_confirm'])) {
             throw new Exception('No quantities to transfer');
         }
 
+        $storeBr = getRecord("SELECT Name FROM tbl_branch WHERE id='$BranchIdStore' LIMIT 1");
+        $storeLabel = (is_array($storeBr) && !empty($storeBr['Name'])) ? trim((string) $storeBr['Name']) : '';
+        $logRemarks = 'PO ' . $poRow['InvoiceNo'] . ' assigned to store';
+        if ($storeLabel !== '') {
+            $logRemarks .= ': ' . $storeLabel;
+        }
+        $logRemarks .= ' (regular/serial lines: ' . (int) $detailRows . ')';
+        if (!logPoAssignmentActivity($conn, $poId, (int) $DistId, 'po_to_store', $BranchIdStore, (int) $user_id, (int) $detailRows, $logRemarks)) {
+            throw new Exception('Could not write activity log.');
+        }
+
         $conn->commit();
-        echo "<script>alert('All PO items transferred to the selected store.');window.location.href='view-distribute-item-store.php';</script>";
+        echo "<script>alert('Selected PO item(s) assigned to store only. Dispatch officer assignment is a separate step from Assign Item To Store list.');window.location.href='take-po-action.php?id=$poId';</script>";
         exit;
     } catch (Exception $e) {
         $conn->rollback();
@@ -685,6 +788,11 @@ if (isset($_POST['submit_po_store_transfer_confirm'])) {
 
  <fieldset>
                                  <legend>Send Order Details</legend>
+<?php if (!$poSendUnlocked) { ?>
+                                <div class="alert alert-warning mb-0">
+                                    <i class="fa fa-lock"></i> Complete <strong>Apply Order</strong> first. Send Order Details will unlock after step 1 is submitted.
+                                </div>
+<?php } else { ?>
                                  <form id="validation-form" method="post" autocomplete="off">
                                     <div class="form-row">
 
@@ -717,11 +825,17 @@ if (isset($_POST['submit_po_store_transfer_confirm'])) {
 
                                     </div>
 </form>
+<?php } ?>
 </fieldset>
 
 
 <fieldset>
                                  <legend>Received Order Details</legend>
+<?php if (!$poReceiveUnlocked) { ?>
+                                <div class="alert alert-warning mb-0">
+                                    <i class="fa fa-lock"></i> Complete <strong>Send Order Details</strong> first. Received Order Details will unlock after step 2 is submitted.
+                                </div>
+<?php } else { ?>
                                  <form id="validation-form" method="post" autocomplete="off">
                                     <div class="form-row">
 
@@ -754,6 +868,7 @@ if (isset($_POST['submit_po_store_transfer_confirm'])) {
 
                                     </div>
 </form>
+<?php } ?>
 </fieldset>
 
 
@@ -832,6 +947,11 @@ if (isset($_POST['submit_po_store_transfer_confirm'])) {
 
 <fieldset>
                                  <legend>Delivered Order</legend>
+<?php if (!$poDeliveryUnlocked) { ?>
+                                <div class="alert alert-warning mb-0">
+                                    <i class="fa fa-lock"></i> Complete <strong>Apply Order</strong>, <strong>Send Order Details</strong> and <strong>Received Order Details</strong> first. Delivered Order will unlock after step 3 is submitted.
+                                </div>
+<?php } else { ?>
                                
                                <form id="validation-form" method="post" autocomplete="off">
                                     <input type="hidden" name="CustomerId" value="<?php echo htmlspecialchars(isset($row7['CustomerId']) ? (string) $row7['CustomerId'] : '', ENT_QUOTES, 'UTF-8'); ?>">
@@ -886,7 +1006,7 @@ if (isset($_POST['submit_po_store_transfer_confirm'])) {
    
 
 <div class="form-group col-md-3">
-   <label class="form-label">Delivered Date </label>
+   <label class="form-label">Delivered Date <span class="text-danger">*</span></label>
      <input type="date" name="DeliveredDate" id="DeliveredDate" class="form-control"
                                                 placeholder="" value="<?php echo $row7["DeliveredDate"]; ?>"
                                                 autocomplete="off" required>
@@ -1013,8 +1133,8 @@ if (isset($_POST['submit_po_store_transfer_confirm'])) {
 
 
 <div class="form-group col-md-3">
-   <label class="form-label">Delivered Date </label>
-     <input type="date" name="DeliveredDate" id="DeliveredDate" class="form-control"
+   <label class="form-label">Delivered Date <span class="text-danger">*</span></label>
+     <input type="date" name="DeliveredDate" id="DeliveredDate2" class="form-control"
                                                 placeholder="" value="<?php echo $row7["DeliveredDate"]; ?>"
                                                 autocomplete="off" required>
     <div class="clearfix"></div>
@@ -1022,15 +1142,16 @@ if (isset($_POST['submit_po_store_transfer_confirm'])) {
 
  <div class="form-group col-lg-3">
 <label class="form-label">Bill No <span class="text-danger">*</span></label>
-<input type="text" name="BillNo" id="BillNo" class="form-control" value="<?php echo $row7["BillNo"]; ?>" required>
+<input type="text" name="BillNo" id="BillNo2" class="form-control" value="<?php echo $row7["BillNo"]; ?>" required>
 <div class="clearfix"></div>
 </div>
 
 <div class="form-group col-md-3">
-   <label class="form-label">Upload Excel File </label>
-     <input type="file" name="file" id="" class="form-control"
+   <label class="form-label">Upload Excel File <?php if ($poSerialStockCount < 1) { ?><span class="text-danger">*</span><?php } ?></label>
+     <input type="file" name="file" id="SerialImportFile" class="form-control"
                                                 placeholder=""
-                                                autocomplete="off" required>
+                                                autocomplete="off" <?php if ($poSerialStockCount < 1) { ?>required<?php } ?>>
+    
     <div class="clearfix"></div>
  </div>
  
@@ -1040,6 +1161,7 @@ if (isset($_POST['submit_po_store_transfer_confirm'])) {
                                     
     </div>
 </form> 
+<?php } ?>
 </fieldset>
 
 <?php
@@ -1057,34 +1179,43 @@ $poPreviewPostBranch = isset($_POST['PoStoreBranchId']) ? intval($_POST['PoStore
 $poPreviewPostDate = isset($_POST['PoStoreTransferDate']) ? trim($_POST['PoStoreTransferDate']) : '';
 $poPreviewTransferDateRaw = '';
 
-if (isset($_POST['submit_po_store_preview']) && intval($row7['DeliveredStatus']) === 1 && empty($poAlreadyTransfer['id'])) {
+if (isset($_POST['submit_po_store_preview']) && $poStoreAssignUnlocked && empty($poAlreadyTransfer['id'])) {
     $poPreviewBranchId = intval($_POST['PoStoreBranchId']);
     $poPreviewTransferDateRaw = isset($_POST['PoStoreTransferDate']) ? trim($_POST['PoStoreTransferDate']) : '';
     if ($poPreviewBranchId > 0 && $poPreviewTransferDateRaw !== '') {
         if ($Roll == 1 || $Roll == 7 || $poPreviewBranchId === intval($BranchId)) {
             $pv = po_collect_po_stock_preview($conn, intval($id), $row7);
             $poPreviewLines = $pv['rows'];
-            $poPreviewBlocked = !empty($pv['blocked']);
+            $poPreviewHasTransferable = !empty($pv['has_transferable']);
+            $poPreviewBlocked = empty($poPreviewHasTransferable);
             $poPreviewShow = true;
         }
     }
 }
 ?>
-<?php if (intval($row7['DeliveredStatus']) === 1) { ?>
 <fieldset>
     <legend>Assign Purchase Order items to Store</legend>
-    <?php if (!empty($poAlreadyTransfer['id'])) { ?>
+<?php if (!$poStoreAssignUnlocked) { ?>
+    <div class="alert alert-warning mb-0">
+        <i class="fa fa-lock"></i> Complete <strong>Delivered Order</strong> first. Store assignment will unlock after delivery is submitted.
+    </div>
+<?php } elseif (!empty($poAlreadyTransfer['id'])) { ?>
         <div class="alert alert-success mb-0">
-            Already transferred to store: <strong><?php echo htmlspecialchars($poAlreadyTransfer['StoreName']); ?></strong>
+            Already assigned to store: <strong><?php echo htmlspecialchars($poAlreadyTransfer['StoreName']); ?></strong>
             <?php if (!empty($poAlreadyTransfer['CreatedDate'])) { ?>
                 &nbsp;·&nbsp; Date: <strong><?php echo date('d M Y', strtotime(str_replace('-', '/', $poAlreadyTransfer['CreatedDate']))); ?></strong>
             <?php } ?>
+            <p class="small mt-2 text-muted">Items are at the store only until you use <strong>Assign Item To Store List</strong> → <em>Assign to dispatch</em> (not done automatically from this PO screen).</p>
             <div class="mt-2">
-                <a href="view-distribute-item-store.php" class="btn btn-sm btn-outline-primary">Open assign list</a>
+                <a href="view-distribute-item-store.php" class="btn btn-sm btn-outline-primary">Open assign list (dispatch step)</a>
                 <a href="view-assigning-items.php?id=<?php echo intval($poAlreadyTransfer['id']); ?>" class="btn btn-sm btn-outline-secondary">View line items</a>
             </div>
         </div>
-    <?php } else {
+        <div class="mt-3">
+            <h6 class="font-weight-bold">Assignment activity log</h6>
+            <?php echo renderPoAssignmentActivityLogHtml($conn, intval($id)); ?>
+        </div>
+<?php } else {
         $poStockLines = getRow("SELECT id FROM tbl_stocks WHERE SellId='".intval($id)."' AND SellType='Purchase' LIMIT 1");
         if ($poStockLines < 1) { ?>
             <div class="alert alert-warning mb-0">Deliver stock items first (regular and/or serial products above). Transfer becomes available once stock lines exist for this PO.</div>
@@ -1095,17 +1226,43 @@ if (isset($_POST['submit_po_store_preview']) && intval($row7['DeliveredStatus'])
         <?php if ($poPreviewShow) { ?>
             <?php if ($poPreviewBlocked) { ?>
                 <div class="alert alert-danger">
-                    <strong>Cannot assign to store:</strong> one or more lines are already assigned to a store (existing record in store assignment).
-                    Regular items are matched by product, vehicle date/no, qty and model; serial lines by product + serial number. Resolve duplicate assignments before continuing.
+                    <strong>Cannot assign to store:</strong> all lines are already assigned to a store (existing record in store assignment).
+                    Regular items are matched by product, vehicle date/no, qty and model; serial lines by product + serial number.
                 </div>
             <?php } else { ?>
-                <div class="alert alert-info mb-3">Review the lines below. Click <strong>Confirm transfer to store</strong> to complete, or <a href="take-po-action.php?id=<?php echo intval($id); ?>">change store / date</a>.</div>
+                <div class="alert alert-info mb-3">
+                    Review the lines below. Lines with status <strong>OK</strong> are selected by default.
+                    Click <strong>Submit</strong> to assign only the checked regular / serial lines to the <strong>store</strong> (not to a dispatch officer).
+                    Dispatch assignment is done later from <a href="view-distribute-item-store.php">Assign Item To Store List</a>.
+                    Or <a href="take-po-action.php?id=<?php echo intval($id); ?>">change store / date</a>.
+                </div>
+                <?php
+                $poPreviewSomeAssigned = false;
+                foreach ($poPreviewLines as $pline) {
+                    if (!empty($pline['assigned'])) {
+                        $poPreviewSomeAssigned = true;
+                        break;
+                    }
+                }
+                if ($poPreviewSomeAssigned) { ?>
+                <div class="alert alert-warning">
+                    Some lines are already in a store and cannot be selected. Only checked <strong>OK</strong> lines will be transferred.
+                </div>
+                <?php } ?>
             <?php } ?>
 
+            <?php if ($poPreviewShow && !$poPreviewBlocked && !empty($poPreviewLines)) { ?>
+            <form method="post" autocomplete="off" id="poStoreTransferForm" onsubmit="return poStoreTransferConfirm();">
+                <input type="hidden" name="PoStoreBranchId" value="<?php echo intval($poPreviewBranchId); ?>">
+                <input type="hidden" name="PoStoreTransferDate" value="<?php echo htmlspecialchars($poPreviewTransferDateRaw); ?>">
+            <?php } ?>
             <div class="table-responsive mb-3">
                 <table class="table table-sm table-bordered table-striped">
                     <thead>
                         <tr>
+                            <?php if (!$poPreviewBlocked && !empty($poPreviewLines)) { ?>
+                            <th class="text-center" style="width:50px;">Select</th>
+                            <?php } ?>
                             <th>#</th>
                             <th>Type</th>
                             <th>Product</th>
@@ -1121,6 +1278,7 @@ if (isset($_POST['submit_po_store_preview']) && intval($row7['DeliveredStatus'])
                         $pr = 1;
                         foreach ($poPreviewLines as $pline) {
                             $stk = $pline['stk'];
+                            $stockId = isset($pline['stock_id']) ? intval($pline['stock_id']) : intval($stk['id']);
                             $asn = isset($pline['assigned_store_name']) ? trim((string) $pline['assigned_store_name']) : '';
                             if ($pline['assigned']) {
                                 $st = '<span class="text-danger">Already in store</span>';
@@ -1131,6 +1289,15 @@ if (isset($_POST['submit_po_store_preview']) && intval($row7['DeliveredStatus'])
                             }
                         ?>
                         <tr>
+                            <?php if (!$poPreviewBlocked && !empty($poPreviewLines)) { ?>
+                            <td class="text-center">
+                                <?php if (!$pline['assigned']) { ?>
+                                <input type="checkbox" name="PoStoreStockIds[]" value="<?php echo $stockId; ?>" checked>
+                                <?php } else { ?>
+                                <input type="checkbox" disabled title="Already assigned to a store">
+                                <?php } ?>
+                            </td>
+                            <?php } ?>
                             <td><?php echo $pr++; ?></td>
                             <td><?php echo htmlspecialchars($pline['type_label']); ?></td>
                             <td><?php echo htmlspecialchars(isset($stk['ProductName']) ? $stk['ProductName'] : ''); ?></td>
@@ -1146,12 +1313,21 @@ if (isset($_POST['submit_po_store_preview']) && intval($row7['DeliveredStatus'])
             </div>
 
             <?php if ($poPreviewShow && !$poPreviewBlocked && !empty($poPreviewLines)) { ?>
-            <form method="post" autocomplete="off" onsubmit="return confirm('Transfer these lines to the selected store?');">
-                <input type="hidden" name="PoStoreBranchId" value="<?php echo intval($poPreviewBranchId); ?>">
-                <input type="hidden" name="PoStoreTransferDate" value="<?php echo htmlspecialchars($poPreviewTransferDateRaw); ?>">
-                <button type="submit" name="submit_po_store_transfer_confirm" class="btn btn-success">Confirm transfer to store</button>
+                <button type="submit" name="submit_po_store_transfer_confirm" class="btn btn-success">Submit</button>
                 <a class="btn btn-outline-secondary ml-2" href="take-po-action.php?id=<?php echo intval($id); ?>">Cancel</a>
             </form>
+            <script>
+            function poStoreTransferConfirm() {
+                var form = document.getElementById('poStoreTransferForm');
+                if (!form) return false;
+                var checked = form.querySelectorAll('input[name="PoStoreStockIds[]"]:checked');
+                if (checked.length < 1) {
+                    alert('Please select at least one line with status OK.');
+                    return false;
+                }
+                return confirm('Assign ' + checked.length + ' selected line(s) to the store?');
+            }
+            </script>
             <?php } ?>
 
             <?php if ($poPreviewBlocked || empty($poPreviewLines)) { ?>
@@ -1222,14 +1398,13 @@ if (isset($_POST['submit_po_store_preview']) && intval($row7['DeliveredStatus'])
                     <button type="submit" name="submit_po_store_preview" class="btn btn-primary">Review items</button>
                 </div>
             </div>
-            <p class="text-muted small mb-0">Choose store and date, then review all lines before confirming. Already-assigned serials or regular lines cannot be transferred again.</p>
+            <p class="text-muted small mb-0">Choose store and date, then review all lines before confirming. Assignment goes to the store only; dispatch officer is assigned separately later. Already-assigned serials or regular lines cannot be transferred again.</p>
         </form>
         <?php } ?>
 
         <?php } ?>
-    <?php } ?>
-</fieldset>
 <?php } ?>
+</fieldset>
 
                             </div>
                         </div>

@@ -4,7 +4,7 @@
 	$row77 = getRecord($sql77);
 	$Roll = $row77['Roll'];
 	$UserCat = $row77['CatId'];
-	$Options = explode(',',$row77['Options']);
+	$Options = adminResolveMenuOptionsFromUserRow($row77);
 	$BranchId = $row77['BranchId'];
 	$MulBranchId = $row77['MulBranchId'];
  ?>
@@ -39,6 +39,7 @@
             </a>
         </li>
 
+          <?php if (userHasAnyMenuOption($Options, menuAccessReportsOptionIds())) { ?>
           <li class="sidenav-item">
             <a href="report-dashboard.php" class="sidenav-link">
                 <i class="sidenav-icon feather icon-activity"></i>
@@ -46,6 +47,7 @@
                 
             </a>
         </li> 
+          <?php } ?>
           <?php  if(in_array("142", $Options)) {?>
         <li class="sidenav-item">
 <a href="contractor-commision-report.php" class="sidenav-link">
@@ -156,7 +158,7 @@
 <?php } ?>
 </a>
 </li> 
-<?php } if(in_array("99", $Options)) {?>
+ <?php } if(in_array("99", $Options)) {?>
  <li class="sidenav-item">
 <a href="attendance-report.php" class="sidenav-link">
       <i class="sidenav-icon feather icon-activity"></i>
@@ -167,7 +169,8 @@
 </div>
 <?php } ?>
 </a>
-</li> 
+</li>
+<?php } if(in_array("185", $Options) || in_array("99", $Options)) {?>
  <li class="sidenav-item">
 <a href="attendance-report-2.php" class="sidenav-link">
       <i class="sidenav-icon feather icon-activity"></i>
@@ -215,6 +218,7 @@
 <?php } ?>
 </a>
 </li>
+<?php } if(in_array("184", $Options) || in_array("101", $Options)) {?>
 <li class="sidenav-item">
 <a href="store-stock-report-2.php" class="sidenav-link">
       <i class="sidenav-icon feather icon-activity"></i>
@@ -226,6 +230,7 @@
 <?php } ?>
 </a>
 </li>
+<?php } if(in_array("183", $Options) || in_array("101", $Options) || in_array("103", $Options)) {?>
 <li class="sidenav-item">
 <a href="serial-location-report.php" class="sidenav-link">
       <i class="sidenav-icon feather icon-activity"></i>
@@ -404,12 +409,36 @@
 <?php } ?>
 </a>
 </li>
-
+<?php } if(in_array("186", $Options) || in_array("143", $Options)) {?>
 <li class="sidenav-item">
 <a href="delay-calculation-report-2.php" class="sidenav-link">
       <i class="sidenav-icon feather icon-activity"></i>
 <div> Delay Calculation Report 2</div>
 <?php if($Page=='Delay-Calculation-Report-2') {?>
+<div class="pl-1 ml-auto">
+<span class="badge badge-dot badge-primary"></span>
+</div>
+<?php } ?>
+</a>
+</li>
+<?php } ?>
+<?php if ((function_exists('adminUserHasFullMenuAccess') && adminUserHasFullMenuAccess($Roll)) || in_array('187', $Options)) { ?>
+<li class="sidenav-item">
+<a href="employee-tracking-dashboard.php" class="sidenav-link">
+      <i class="sidenav-icon feather icon-pie-chart"></i>
+<div> Employee Tracking Dashboard</div>
+<?php if ($Page == 'Employee-Tracking-Dashboard') { ?>
+<div class="pl-1 ml-auto">
+<span class="badge badge-dot badge-primary"></span>
+</div>
+<?php } ?>
+</a>
+</li>
+<li class="sidenav-item">
+<a href="employee-tracking-report.php" class="sidenav-link">
+      <i class="sidenav-icon feather icon-shield"></i>
+<div> Employee Tracking Report</div>
+<?php if ($Page == 'Employee-Tracking') { ?>
 <div class="pl-1 ml-auto">
 <span class="badge badge-dot badge-primary"></span>
 </div>

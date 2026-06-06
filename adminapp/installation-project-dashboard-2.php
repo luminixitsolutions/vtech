@@ -149,6 +149,7 @@ $_SESSION['User'] = $row;
 if($_GET['prjid'] == 103){ 
     include_once 'inc-msedl-project-dashboard.php'; 
     } 
+if($_GET['prjid'] == 106){ include_once 'inc-mpuvnl-project-dashboard.php'; }
 if($_GET['prjid'] == 107){ //include_once 'inc-creda-project-dashboard.php'; 
 } 
 ?>
@@ -162,7 +163,8 @@ if($_GET['prjid'] == 107){ //include_once 'inc-creda-project-dashboard.php';
     </main>
 
     <!-- footer-->
-  <?php include_once 'footer.php'; ?>
+  <?php $GLOBALS['adminapp_scripts_included'] = true; ?>
+<?php include_once 'footer.php'; ?>
 
 
 <script src="dist/aos.js"></script>

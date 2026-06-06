@@ -58,53 +58,60 @@ $Page = "Assign-Customers-Co-ordinator";
 
 if(isset($_POST['submit'])){
 
-   $number = count($_POST['CheckId']);
+    $CoordinatorId = isset($_POST['CoordinatorId']) ? trim($_POST['CoordinatorId']) : '';
+    if ($CoordinatorId === '') {
+        echo "<script>alert('Please select a Co-ordinator.');history.back();</script>";
+        exit;
+    }
 
-   $CoordinatorId = $_POST['CoordinatorId'];
-   $CreatedDate = date('Y-m-d H:i:s');
-    if($number > 0)  
-      {  
-        for($i=0; $i<$number; $i++)  
-          {  
-            if(trim($_POST["CheckId"][$i] != ''))  
-              {
-                $CheckId = addslashes(trim($_POST['CheckId'][$i]));
-                if($CheckId == 1){
-                $CustId = addslashes(trim($_POST['CustId'][$i]));
-                $sql = "UPDATE tbl_users SET CoordinatorStatus='1',CoordinatorId='$CoordinatorId',CoordinatorDate='$CreatedDate' WHERE id='$CustId'";
-                $conn->query($sql);
+    $CreatedDate = date('Y-m-d H:i:s');
+    $CreatedTime = date('H:i:s');
+    $assignedCount = 0;
+    $CoordinatorIdEsc = addslashes($CoordinatorId);
 
-                }
-              }
+    $checkIds = isset($_POST['CheckId']) && is_array($_POST['CheckId']) ? $_POST['CheckId'] : [];
+    $custIds = isset($_POST['CustId']) && is_array($_POST['CustId']) ? $_POST['CustId'] : [];
+    $number = count($checkIds);
+
+    if ($number > 0) {
+        for ($i = 0; $i < $number; $i++) {
+            if (!isset($checkIds[$i]) || (string) $checkIds[$i] !== '1') {
+                continue;
+            }
+            if (!isset($custIds[$i]) || trim((string) $custIds[$i]) === '') {
+                continue;
+            }
+            $CustId = addslashes(trim($custIds[$i]));
+            $sql = "UPDATE tbl_users SET CoordinatorStatus='1',CoordinatorId='$CoordinatorIdEsc',CoordinatorDate='$CreatedDate' WHERE id='$CustId'";
+            if ($conn->query($sql)) {
+                $assignedCount++;
             }
         }
-        
-    $Title = "Customer Assign";   
+    }
+
+    if ($assignedCount < 1) {
+        echo "<script>alert('No customers selected. Please select at least one customer.');history.back();</script>";
+        exit;
+    }
+
+    $Title = "Customer Assign";
     $Message = "Customer Assign To you for Further Process";
-    $sql73 = "SELECT Tokens,id FROM tbl_users WHERE Status='1' AND Tokens!=''";
-    $sql73.= " AND id='$CoordinatorId'";
-      
-      
-    //echo $sql73;exit();
-    $data=mysqli_query($con,$sql73);
-        
-        while($row=mysqli_fetch_array($data))
-        {
-            
-             $ReceiverId = $row['id'];
-             $sql = "INSERT INTO tbl_notifications SET SenderId='$user_id',ReceiverId='$ReceiverId',Title='$Title',Message='$Message',CreatedDate='$CreatedDate',CreatedTime='$CreatedTime'";
+    $sql73 = "SELECT Tokens,id FROM tbl_users WHERE Status='1' AND Tokens!='' AND id='$CoordinatorIdEsc'";
+    $data = mysqli_query($conn, $sql73);
+    if ($data) {
+        while ($row = mysqli_fetch_array($data)) {
+            $ReceiverId = $row['id'];
+            $sql = "INSERT INTO tbl_notifications SET SenderId='$user_id',ReceiverId='$ReceiverId',Title='$Title',Message='$Message',CreatedDate='$CreatedDate',CreatedTime='$CreatedTime'";
             $conn->query($sql);
-
-            $title = $Title;
-            $body =  $Message;
-            $reg_id = $row[0];
-            $registrationIds = array($reg_id);
-            //$url = "$SiteUrl/profile.php?id=$UserId";
-            //include '../incnotification.php';
-         
         }
+    }
 
-        echo "<script>alert('Customer Assign To Co-ordinator');window.location.href='assign-customers-to-co-ordinator.php?CoordinatorStatus=0';</script>";
+    $params = isset($_GET) && is_array($_GET) ? $_GET : [];
+    $params['CoordinatorStatus'] = '0';
+    $redirectUrl = 'assign-customers-to-co-ordinator.php?' . http_build_query($params);
+
+    echo "<script>alert('Customer Assign To Co-ordinator');window.location.href=" . json_encode($redirectUrl) . ";</script>";
+    exit;
 }
 ?>
 
@@ -385,10 +392,12 @@ if(isset($_POST['submit'])){
 <div class="layout-overlay layout-sidenav-toggle"></div>
 </div>
 
+<?php include_once 'inc-beneficiary-import-modal.php'; ?>
 
     <script src="<?php echo $SiteUrl;?>/assets/js/jquery.min.js"></script>
     <script src="<?php echo $SiteUrl;?>/assets/libs/popper/popper.js"></script>
     <script src="<?php echo $SiteUrl;?>/assets/js/bootstrap.js"></script>
+    <script src="js/beneficiary-import-result.js"></script>
     <script src="<?php echo $SiteUrl;?>/assets/js/datatables.min.js"></script>
     <script src="<?php echo $SiteUrl;?>/assets/js/pace.js"></script>
     <script src="<?php echo $SiteUrl;?>/assets/js/sidenav.js"></script>
@@ -493,11 +502,16 @@ function search(){
             }
         });
 
-        var notInList = 0;
-        for (var k in lookup) {
-            if (lookup.hasOwnProperty(k) && !foundInTable[k]) {
-                notInList++;
+        var missingIds = [];
+        var missingSeen = {};
+        for (i = 0; i < ids.length; i++) {
+            var rawId = String(ids[i]).trim();
+            var normId = rawId.toUpperCase();
+            if (normId === '' || foundInTable[normId] || missingSeen[normId]) {
+                continue;
             }
+            missingSeen[normId] = true;
+            missingIds.push(rawId);
         }
 
         var $tbody = $('#example tbody');
@@ -512,17 +526,11 @@ function search(){
         initCoordinatorTable();
         coordinatorTable.page(0).draw(false);
 
-        var msg = matched + ' record(s) selected and shown at the top.';
-        if (notInList > 0) {
-            msg += ' ' + notInList + ' ID(s) from Excel were not found in this list.';
-        }
-        if (skippedAssigned > 0) {
-            msg += ' ' + skippedAssigned + ' matched ID(s) are already assigned (no checkbox). Use filter "Not Assign" only.';
-        }
-        if (matched === 0 && skippedAssigned === 0) {
-            msg = 'No matching beneficiary IDs found in the current list. Check filters or IDs in the file.';
-        }
-        alert(msg);
+        showBeneficiaryImportResult({
+            matched: matched,
+            skippedAssigned: skippedAssigned,
+            missingIds: missingIds
+        });
     }
 
     $('#btnCoordinatorImportDropdownToggle').on('click', function(e) {
@@ -566,7 +574,7 @@ function search(){
                 if (res.success && res.beneficiary_ids) {
                     applyImportedBeneficiaryIds(res.beneficiary_ids);
                 } else {
-                    alert(res.message || 'Import failed.');
+                    showBeneficiaryImportResult({ errorMessage: res.message || 'Import failed.' });
                 }
             },
             error: function(xhr) {
@@ -585,7 +593,7 @@ function search(){
                         }
                     }
                 }
-                alert(msg);
+                showBeneficiaryImportResult({ errorMessage: msg });
             }
         });
     });

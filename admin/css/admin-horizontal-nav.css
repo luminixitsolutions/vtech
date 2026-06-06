@@ -1,0 +1,59 @@
+/* Horizontal module nav (inside top header navbar) */
+
+.admin-horizontal-nav-wrap {
+  background: #f3f4f6;
+  border-bottom: 1px solid #e5e7eb;
+  padding: 0 0.5rem;
+  position: static;
+  top: auto;
+  z-index: auto;
+}
+
+.admin-horizontal-nav {
+  display: flex;
+  flex-wrap: nowrap;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 0;
+  min-height: 40px;
+  width: auto;
+  max-width: 100%;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+.admin-horizontal-nav-link {
+  display: inline-block;
+  padding: 0.65rem 0.85rem;
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: #4b5563;
+  text-decoration: none !important;
+  border-bottom: 3px solid transparent;
+  margin-bottom: -1px;
+  transition: color 0.15s ease, border-color 0.15s ease, background 0.15s ease;
+  white-space: nowrap;
+  flex: 0 0 auto;
+}
+
+.admin-horizontal-nav-link:hover {
+  color: #111827;
+  background: rgba(255, 255, 255, 0.55);
+}
+
+.admin-horizontal-nav-link.is-active {
+  color: #1e293b;
+  border-bottom-color: #6366f1;
+  background: #fff;
+}
+
+@media (max-width: 767.98px) {
+  .admin-horizontal-nav-wrap {
+    padding: 0 0.35rem;
+  }
+
+  .admin-horizontal-nav-link {
+    padding: 0.6rem 0.75rem;
+    font-size: 0.82rem;
+  }
+}

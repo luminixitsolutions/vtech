@@ -62,6 +62,17 @@ if (!$row) {
 $_SESSION['Admin'] = $row;
 $_SESSION['Roll'] = $row['Roll'];
 
+if (function_exists('addEmployeeLog')) {
+    addEmployeeLog([
+        'action_type' => EMP_ACT_LOGIN,
+        'user_id' => (int) $row['id'],
+        'employee_name' => trim((string) ($row['Fname'] ?? '') . ' ' . (string) ($row['Lname'] ?? '')),
+        'role' => 'Roll ' . (int) ($row['Roll'] ?? 0),
+        'page_name' => 'Login',
+        'module_name' => 'Authentication',
+    ]);
+}
+
 unset(
     $_SESSION['admin_login_otp_hash'],
     $_SESSION['admin_login_otp_expires'],
@@ -71,5 +82,10 @@ unset(
     $_SESSION['admin_login_otp_prefill']
 );
 
-echo json_encode(['Status' => 1, 'Roll' => $row['Roll']]);
+$roll = (int) ($row['Roll'] ?? 0);
+$redirect = function_exists('adminPostLoginRedirectForUser')
+    ? adminPostLoginRedirectForUser($row)
+    : (($roll === 26) ? 'dispatch-dashboard.php' : 'dashboard.php');
+
+echo json_encode(['Status' => 1, 'Roll' => $roll, 'Redirect' => $redirect]);
 exit;

@@ -229,6 +229,18 @@
 <?php } ?>
 </a>
 </li>
+<?php } if($Roll == 1 || $Roll == 7 || $Roll == 26 || $Roll == 27 || in_array("183", $Options) || in_array("165", $Options) || in_array("166", $Options) || in_array("72", $Options)) {?>
+<li class="sidenav-item <?php if($Page=='Serial-Location-Report') {?> active <?php } ?>">
+<a href="serial-location-report.php" class="sidenav-link">
+      <i class="sidenav-icon feather icon-activity"></i>
+<div> Serial No — Location Report</div>
+<?php if($Page=='Serial-Location-Report') {?>
+<div class="pl-1 ml-auto">
+<span class="badge badge-dot badge-primary"></span>
+</div>
+<?php } ?>
+</a>
+</li>
 
 <!--<li class="sidenav-item">
 <a href="dispatch-stock-report.php" class="sidenav-link">

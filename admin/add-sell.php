@@ -101,9 +101,10 @@ foreach ($row as $result) {
                         <?php
                         $id = $_GET['id'];
                         $CustId = $_GET['CustId'];
-                        $sql7 = "SELECT * FROM tbl_users WHERE id='$CustId'";
+                        $sql7 = "SELECT tu.*, tcm.Name AS PumpCapacityName FROM tbl_users tu
+                            LEFT JOIN tbl_common_master tcm ON tu.PumpCapacity = tcm.id
+                            WHERE tu.id='$CustId'";
                         $row7 = getRecord($sql7);
-
 
                         $sql8 = "SELECT MAX(id) AS MaxId FROM tbl_sell";
                         $row8 = getRecord($sql8);
@@ -161,6 +162,11 @@ foreach ($row as $result) {
                             $ProjectCode = addslashes(trim($_POST['ProjectCode']));
                             $DriverId = addslashes(trim($_POST['DriverId']));
                             $ChallanType = addslashes(trim($_POST['ChallanType']));
+                            $PumpCapacity = addslashes(trim($_POST['PumpCapacity'] ?? ''));
+                            if ($PumpCapacity === '' && $CustId !== '') {
+                                $custPump = getRecord("SELECT PumpCapacity FROM tbl_users WHERE id='$CustId'");
+                                $PumpCapacity = $custPump['PumpCapacity'] ?? '0';
+                            }
                             $CreatedDate = date('Y-m-d');
                             $CreatedTime = date('h:i a');
 
@@ -169,7 +175,7 @@ foreach ($row as $result) {
                             $MaxId = $row8['MaxId'] + 1;
                             $InvoiceNo = "00" . $MaxId;
 
-                            $sql = "INSERT INTO tbl_sell SET ProjectCode='$ProjectCode',CompId='$CompId',AgencyId='$AgencyId',SrNo='$MaxId',CustId='$CustId',CustName='$CustName',CellNo='$CellNo',Address='$Address',InvoiceNo='$InvoiceNo',InvoiceDate='$InvoiceDate',PayType='$PayType',Narration='$Narration',ProdType='$ProdType',PayMode='$PayMode',DeliveryDate='$DeliveryDate',GrossAmt='$GrossAmt',CgstPer='$CgstPer',CgstAmt='$CgstAmt',SgstPer='$SgstPer',SgstAmt='$SgstAmt',IgstPer='$IgstPer',IgstAmt='$IgstAmt',SubTotal='$SubTotal',UcdAmt='$UcdAmt',Status=1,CreatedBy='$user_id',CreatedDate='$CreatedDate',Discount='$Discount',Total='$Total',ChequeNo='$ChequeNo',ChqDate='$ChqDate',BankName='$BankName',UpiNo='$UpiNo',CreatedTime='$CreatedTime',BranchId='$BranchId',SellType='Challan',WarrantyPeriod='$WarrantyPeriod',PayStatus='$PayStatus',LrNo='$LrNo',LrDate='$LrDate',Transport='$Transport',ConsigneeName='$ConsigneeName',ConsigneeAddress='$ConsigneeAddress',SiteEngineerName='$SiteEngineerName',SiteEngineerContactNo='$SiteEngineerContactNo',SiteManagerName='$SiteManagerName',SiteManagerContactNo='$SiteManagerContactNo',Weight='$Weight',DriverId='$DriverId',MaterialDispatchStatus='$MaterialDispatchStatus',ChallanType='$ChallanType'";
+                            $sql = "INSERT INTO tbl_sell SET ProjectCode='$ProjectCode',CompId='$CompId',AgencyId='$AgencyId',SrNo='$MaxId',CustId='$CustId',PumpCapacity='$PumpCapacity',CustName='$CustName',CellNo='$CellNo',Address='$Address',InvoiceNo='$InvoiceNo',InvoiceDate='$InvoiceDate',PayType='$PayType',Narration='$Narration',ProdType='$ProdType',PayMode='$PayMode',DeliveryDate='$DeliveryDate',GrossAmt='$GrossAmt',CgstPer='$CgstPer',CgstAmt='$CgstAmt',SgstPer='$SgstPer',SgstAmt='$SgstAmt',IgstPer='$IgstPer',IgstAmt='$IgstAmt',SubTotal='$SubTotal',UcdAmt='$UcdAmt',Status=1,CreatedBy='$user_id',CreatedDate='$CreatedDate',Discount='$Discount',Total='$Total',ChequeNo='$ChequeNo',ChqDate='$ChqDate',BankName='$BankName',UpiNo='$UpiNo',CreatedTime='$CreatedTime',BranchId='$BranchId',SellType='Challan',WarrantyPeriod='$WarrantyPeriod',PayStatus='$PayStatus',LrNo='$LrNo',LrDate='$LrDate',Transport='$Transport',ConsigneeName='$ConsigneeName',ConsigneeAddress='$ConsigneeAddress',SiteEngineerName='$SiteEngineerName',SiteEngineerContactNo='$SiteEngineerContactNo',SiteManagerName='$SiteManagerName',SiteManagerContactNo='$SiteManagerContactNo',Weight='$Weight',DriverId='$DriverId',MaterialDispatchStatus='$MaterialDispatchStatus',ChallanType='$ChallanType'";
                             $conn->query($sql);
                             $SellId = mysqli_insert_id($conn);
 
@@ -339,11 +345,20 @@ foreach ($row as $result) {
                                                         autocomplete="off" oninput="getUserDetails()">
                                                     <div class="clearfix"></div>
                                                 </div>
-                                                <div class="form-group col-md-8">
+                                                <div class="form-group col-md-4">
                                                     <label class="form-label">Customer Name </label>
                                                     <input type="text" name="CustName" id="CustName" class="form-control"
                                                         placeholder="" value="<?php echo $row7["Fname"]; ?>"
                                                         autocomplete="off">
+                                                    <div class="clearfix"></div>
+                                                </div>
+                                                <div class="form-group col-md-4">
+                                                    <label class="form-label">Pump Capacity</label>
+                                                    <input type="text" id="PumpCapacityName" class="form-control"
+                                                        placeholder="" value="<?php echo $row7['PumpCapacityName'] ?? ''; ?>"
+                                                        autocomplete="off" readonly>
+                                                    <input type="hidden" name="PumpCapacity" id="PumpCapacity"
+                                                        value="<?php echo $row7['PumpCapacity'] ?? ''; ?>">
                                                     <div class="clearfix"></div>
                                                 </div>
 
@@ -352,9 +367,6 @@ foreach ($row as $result) {
                                                     <textarea name="Address" id="Address" class="form-control"><?php echo $row7['Address']; ?></textarea>
                                                     <div class="clearfix"></div>
                                                 </div>
-
-
-
 
                                                 <div class="form-group col-lg-4">
                                                     <label class="form-label">DM NO <span class="text-danger">*</span></label>
@@ -777,6 +789,8 @@ foreach ($row as $result) {
                         $('#Address').val(data.Address);
                         $('#CustName').val(data.Fname);
                         $('#CellNo').val(data.Phone);
+                        $('#PumpCapacityName').val(data.PumpCapacityName || '');
+                        $('#PumpCapacity').val(data.PumpCapacity || '');
                         $('#Gname').val(data.Gname);
                         $('#Gphone').val(data.Gphone);
                         $('#Gname2').val(data.Gname2);
@@ -837,11 +851,18 @@ foreach ($row as $result) {
                     action: action,
                     quantity: quantity,
                     id: id
-                },
-                success: function(data) {
-                    //alert(data);
-                },
+                }
+            });
+        }
 
+        function delete_prod(id) {
+            $.ajax({
+                url: "assign-serial-no-challan-session.php",
+                type: "POST",
+                data: {
+                    action: "delete_shop_prod",
+                    id: id
+                }
             });
         }
 
@@ -871,6 +892,30 @@ if($('#Check_Id'+id).prop('checked') == true) {
             var AgencyId = $('#AgencyId').val();
             var CompId = $('#CompId').val();
             window.location.href = "add-sell.php?action=search&BranchId=" + BranchId + "&CustId=" + CustId + "&CompId=" + CompId + "&AgencyId=" + AgencyId;
+        }
+
+        function getUserDetails() {
+            var CellNo = $('#CellNo').val();
+            if (!CellNo) {
+                return;
+            }
+            $.ajax({
+                url: "ajax_files/ajax_vendor.php",
+                method: "POST",
+                data: {
+                    action: "getUserDetails2",
+                    CellNo: CellNo
+                },
+                dataType: "json",
+                success: function(data) {
+                    $('#Address').val(data.Address);
+                    $('#CustName').val(data.Fname);
+                    $('#PumpCapacityName').val(data.PumpCapacityName || '');
+                    $('#PumpCapacity').val(data.PumpCapacity || '');
+                    $('#ConsigneeName').val(data.Fname);
+                    $('#ConsigneeAddress').val(data.Address);
+                }
+            });
         }
         
         

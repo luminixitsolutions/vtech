@@ -35,7 +35,14 @@ $MulRooftopBranchId = $row77['MulRooftopBranchId'];
                 <div>Home</div>
                 
             </a>
-        </li> 
+        </li>
+
+        <li class="sidenav-item<?php if (!empty($MainPage) && $MainPage === 'Whatsapp-SMS') { ?> active<?php } ?>">
+            <a href="send-sms.php" class="sidenav-link">
+                <i class="sidenav-icon feather icon-message-circle"></i>
+                <div>Whatsapp SMS</div>
+            </a>
+        </li>
     
      <?php  if(in_array("44", $Options) || in_array("45", $Options) || in_array("46", $Options) || in_array("47", $Options) || in_array("48", $Options) || in_array("49", $Options) || in_array("50", $Options) || in_array("51", $Options) || in_array("52", $Options) || in_array("63", $Options)) { ?>
      
@@ -420,7 +427,89 @@ $MulRooftopBranchId = $row77['MulRooftopBranchId'];
 </ul>
 </li>
 
-
+<?php } if($Roll == 1 || $Roll == 7 || $Roll == 26 || in_array("165", $Options) || in_array("72", $Options)) { ?>
+<li class="sidenav-item <?php if($MainPage=='Item-Transfer-Workflow' && ($Page=='Dispatch-To-Store-Transfer' || $Page=='View-Dispatch-To-Store-Transfers' || $Page=='Stock-Location-Report' || $Page=='Serial-Location-Report')) {?> open active <?php } ?>">
+<a href="javascript:" class="sidenav-link sidenav-toggle">
+<i class="sidenav-icon feather icon-activity"></i>
+<div>Transfer Item Dispatch to Store</div>
+</a>
+<ul class="sidenav-menu">
+<li class="sidenav-item <?php if($Page=='Dispatch-To-Store-Transfer') {?> active <?php } ?>">
+<a href="item_transfer_workflow/dispatch-to-store-transfer.php" class="sidenav-link">
+<div>Transfer to Store</div>
+<?php if($Page=='Dispatch-To-Store-Transfer') {?>
+<div class="pl-1 ml-auto"><span class="badge badge-dot badge-primary"></span></div>
+<?php } ?>
+</a>
+</li>
+<li class="sidenav-item <?php if($Page=='View-Dispatch-To-Store-Transfers') {?> active <?php } ?>">
+<a href="item_transfer_workflow/view-dispatch-to-store-transfers.php" class="sidenav-link">
+<div>View Dispatch to Store Transfers</div>
+<?php if($Page=='View-Dispatch-To-Store-Transfers') {?>
+<div class="pl-1 ml-auto"><span class="badge badge-dot badge-primary"></span></div>
+<?php } ?>
+</a>
+</li>
+<li class="sidenav-item <?php if($Page=='Stock-Location-Report') {?> active <?php } ?>">
+<a href="item_transfer_workflow/stock-location-report.php" class="sidenav-link">
+<div>Stock Location Report</div>
+<?php if($Page=='Stock-Location-Report') {?>
+<div class="pl-1 ml-auto"><span class="badge badge-dot badge-primary"></span></div>
+<?php } ?>
+</a>
+</li>
+<li class="sidenav-item <?php if($Page=='Serial-Location-Report') {?> active <?php } ?>">
+<a href="report_management/serial-location-report.php" class="sidenav-link">
+<div>Serial No — Location Report</div>
+<?php if($Page=='Serial-Location-Report') {?>
+<div class="pl-1 ml-auto"><span class="badge badge-dot badge-primary"></span></div>
+<?php } ?>
+</a>
+</li>
+</ul>
+</li>
+<?php } if($Roll == 1 || $Roll == 7 || $Roll == 27 || in_array("166", $Options) || in_array("72", $Options)) { ?>
+<li class="sidenav-item <?php if($MainPage=='Item-Transfer-Workflow' && ($Page=='Store-To-Store-Transfer' || $Page=='View-Store-To-Store-Transfers' || $Page=='Stock-Location-Report' || $Page=='Serial-Location-Report')) {?> open active <?php } ?>">
+<a href="javascript:" class="sidenav-link sidenav-toggle">
+<i class="sidenav-icon feather icon-activity"></i>
+<div>Transfer Item Store to Store</div>
+</a>
+<ul class="sidenav-menu">
+<li class="sidenav-item <?php if($Page=='Store-To-Store-Transfer') {?> active <?php } ?>">
+<a href="item_transfer_workflow/store-to-store-transfer.php" class="sidenav-link">
+<div>Transfer to Another Store</div>
+<?php if($Page=='Store-To-Store-Transfer') {?>
+<div class="pl-1 ml-auto"><span class="badge badge-dot badge-primary"></span></div>
+<?php } ?>
+</a>
+</li>
+<li class="sidenav-item <?php if($Page=='View-Store-To-Store-Transfers') {?> active <?php } ?>">
+<a href="item_transfer_workflow/view-store-to-store-transfers.php" class="sidenav-link">
+<div>View Store to Store Transfers</div>
+<?php if($Page=='View-Store-To-Store-Transfers') {?>
+<div class="pl-1 ml-auto"><span class="badge badge-dot badge-primary"></span></div>
+<?php } ?>
+</a>
+</li>
+<li class="sidenav-item <?php if($Page=='Stock-Location-Report') {?> active <?php } ?>">
+<a href="item_transfer_workflow/stock-location-report.php" class="sidenav-link">
+<div>Stock Location Report</div>
+<?php if($Page=='Stock-Location-Report') {?>
+<div class="pl-1 ml-auto"><span class="badge badge-dot badge-primary"></span></div>
+<?php } ?>
+</a>
+</li>
+<li class="sidenav-item <?php if($Page=='Serial-Location-Report') {?> active <?php } ?>">
+<a href="report_management/serial-location-report.php" class="sidenav-link">
+<div>Serial No — Location Report</div>
+<?php if($Page=='Serial-Location-Report') {?>
+<div class="pl-1 ml-auto"><span class="badge badge-dot badge-primary"></span></div>
+<?php } ?>
+</a>
+</li>
+</ul>
+</li>
+<?php } ?>
 
  <!-- <li class="sidenav-item">
             <a href="assign-to-dispatch-officer.php" class="sidenav-link">
@@ -434,7 +523,7 @@ $MulRooftopBranchId = $row77['MulRooftopBranchId'];
             </a>
         </li>
  -->
-<?php } if(in_array("26", $Options)) {?>
+<?php if(in_array("26", $Options)) {?>
 
 <li class="sidenav-item <?php if($MainPage=='Sell') {?> open active <?php } ?>">
 <a href="javascript:" class="sidenav-link sidenav-toggle">
@@ -528,7 +617,94 @@ $MulRooftopBranchId = $row77['MulRooftopBranchId'];
             </a>
         </li>
 
-<?php } if(in_array("28", $Options) || in_array("135", $Options) || in_array("136", $Options) || in_array("137", $Options)) {?>
+<?php } if($Roll == 1 || $Roll == 7 || in_array("168", $Options) || in_array("169", $Options) || in_array("170", $Options) || in_array("171", $Options) || in_array("172", $Options) || in_array("173", $Options) || in_array("121", $Options)) {?>
+<li class="sidenav-item <?php if($MainPage=='Insurance') {?> open active <?php } ?>">
+<a href="javascript:" class="sidenav-link sidenav-toggle">
+<i class="sidenav-icon feather icon-shield"></i>
+<div>Insurance Site</div>
+</a>
+<ul class="sidenav-menu">
+<?php if($Roll == 1 || $Roll == 7 || in_array("168", $Options) || in_array("121", $Options)) {?>
+<li class="sidenav-item <?php if($Page=='Insurance-Dashboard') {?> active <?php } ?>">
+<a href="insurance-dashboard.php" class="sidenav-link">
+<div>Dashboard</div>
+<?php if($Page=='Insurance-Dashboard') {?>
+<div class="pl-1 ml-auto">
+<span class="badge badge-dot badge-primary"></span>
+</div>
+<?php } ?>
+</a>
+</li>
+<?php } if($Roll == 1 || $Roll == 7 || in_array("169", $Options)) {?>
+<li class="sidenav-item <?php if($Page=='Pending-Insurance') {?> active <?php } ?>">
+<a href="pending-insurance.php" class="sidenav-link">
+<div>Pending Insurance</div>
+<?php if($Page=='Pending-Insurance') {?>
+<div class="pl-1 ml-auto">
+<span class="badge badge-dot badge-primary"></span>
+</div>
+<?php } ?>
+</a>
+</li>
+<?php } if($Roll == 1 || $Roll == 7 || in_array("170", $Options)) {?>
+<li class="sidenav-item <?php if($Page=='Completed-Insurance') {?> active <?php } ?>">
+<a href="completed-insurance.php" class="sidenav-link">
+<div>Completed Insurance</div>
+<?php if($Page=='Completed-Insurance') {?>
+<div class="pl-1 ml-auto">
+<span class="badge badge-dot badge-primary"></span>
+</div>
+<?php } ?>
+</a>
+</li>
+<?php } if($Roll == 1 || $Roll == 7 || in_array("171", $Options)) {?>
+<li class="sidenav-item <?php if($Page=='Renewal-Insurance') {?> active <?php } ?>">
+<a href="renewal-insurance.php" class="sidenav-link">
+<div>Upcoming Renewal Insurance</div>
+<?php if($Page=='Renewal-Insurance') {?>
+<div class="pl-1 ml-auto">
+<span class="badge badge-dot badge-primary"></span>
+</div>
+<?php } ?>
+</a>
+</li>
+<?php } if($Roll == 1 || $Roll == 7 || in_array("172", $Options)) {?>
+<li class="sidenav-item <?php if($Page=='Expired-Insurance') {?> active <?php } ?>">
+<a href="expired-insurance.php" class="sidenav-link">
+<div>Expired Insurance</div>
+<?php if($Page=='Expired-Insurance') {?>
+<div class="pl-1 ml-auto">
+<span class="badge badge-dot badge-primary"></span>
+</div>
+<?php } ?>
+</a>
+</li>
+<?php } if($Roll == 1 || $Roll == 7 || in_array("173", $Options)) {?>
+<li class="sidenav-item <?php if($Page=='Renewed-Insurance') {?> active <?php } ?>">
+<a href="renewed-insurance.php" class="sidenav-link">
+<div>Renewed Insurance</div>
+<?php if($Page=='Renewed-Insurance') {?>
+<div class="pl-1 ml-auto">
+<span class="badge badge-dot badge-primary"></span>
+</div>
+<?php } ?>
+</a>
+</li>
+<?php } ?>
+</ul>
+</li>
+<?php } ?>
+
+<?php if($Roll == 1 || $Roll == 7 || in_array("188", $Options) || in_array("189", $Options) || in_array("190", $Options) || in_array("191", $Options) || in_array("192", $Options) || in_array("193", $Options)) {?>
+<li class="sidenav-item <?php if($MainPage=='MSEDCL-Smart') {?> active <?php } ?>">
+<a href="msedcl_smart/" class="sidenav-link">
+<i class="sidenav-icon feather icon-zap"></i>
+<div>MSEDCL SMART PROJECT</div>
+</a>
+</li>
+<?php } ?>
+
+<?php if(in_array("28", $Options) || in_array("135", $Options) || in_array("136", $Options) || in_array("137", $Options)) {?>
 
 <li class="sidenav-item <?php if($MainPage=='Service') {?> open active <?php } ?>">
 <a href="javascript:" class="sidenav-link sidenav-toggle">
