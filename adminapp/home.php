@@ -230,7 +230,7 @@ body{
             <a href="mobile-contractor-billing.php" class="project-card card-billing">
                 <span class="material-icons project-icon">receipt_long</span>
                 <div class="project-title">Contractor Billing</div>
-                <div class="project-sub">Project-wise commission</div>
+                <div class="project-sub">Project-wise Contractor Billing</div>
             </a>
         </div>
 

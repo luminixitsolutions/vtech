@@ -58,6 +58,7 @@ if($_REQUEST["action"]=="delete")
         <thead>
             <tr>
                <th>Photo</th>
+                <th>Transportor Name</th>
                 <th>Driver Name</th>
                 <th>Contact No</th>
                 <th>Vehicle No</th>
@@ -72,7 +73,7 @@ if($_REQUEST["action"]=="delete")
         </thead>
         <tbody>
             <?php 
-            $sql = "SELECT tu.*,tut.Name FROM tbl_users tu LEFT JOIN tbl_user_type tut ON tut.id=tu.Roll WHERE tu.Roll IN(39) ORDER BY tu.CreatedDate DESC";
+            $sql = "SELECT tu.*,tut.Name,tu2.Fname AS TransportorName FROM tbl_users tu LEFT JOIN tbl_user_type tut ON tut.id=tu.Roll LEFT JOIN tbl_users tu2 ON tu2.id=tu.UnderUser WHERE tu.Roll IN(39) ORDER BY tu.CreatedDate DESC";
             $res = $conn->query($sql);
             while($row = $res->fetch_assoc())
             {
@@ -86,6 +87,7 @@ if($_REQUEST["action"]=="delete")
                   <?php }  else{?>
                  <img src="../user_icon.jpg" class="d-block ui-w-40 rounded-circle" style="width: 40px;height: 40px;"> 
              <?php } ?></td>
+               <td><?php echo $row['TransportorName']; ?></td>
                <td><?php echo $row['Fname']." ".$row['Lname']; ?></td>
               
                 

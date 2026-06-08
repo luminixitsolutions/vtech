@@ -2,7 +2,7 @@
 session_start();
 include_once 'config.php';
 include_once 'auth.php';
-$user_id = $_SESSION['Admin']['id'];
+$user_id = $_SESSION['User']['id'];
 $MainPage = "Customers";
 $Page = "View-Customers";
 ?>
@@ -47,6 +47,10 @@ $Page = "View-Customers";
         
 
 <?php
+$challanPaidByCol = $conn->query("SHOW COLUMNS FROM tbl_trip_details LIKE 'ChallanPaidBy'");
+if (!$challanPaidByCol || $challanPaidByCol->num_rows === 0) {
+    $conn->query("ALTER TABLE tbl_trip_details ADD COLUMN ChallanPaidBy VARCHAR(50) NOT NULL DEFAULT '' AFTER Challan");
+}
 $id = $_GET['id'];
 $sql = "SELECT * FROM tbl_trip_details WHERE id='$id'";
 $row7 = getRecord($sql);
@@ -55,11 +59,14 @@ if(isset($_POST['submit'])){
 $ClosingReading = addslashes(trim($_POST['ClosingReading']));
 $Fastag = addslashes(trim($_POST['Fastag']));
 $Challan = addslashes(trim($_POST['Challan']));
+$ChallanPaidBy = addslashes(trim($_POST['ChallanPaidBy'] ?? ''));
 $EndLattitude = addslashes(trim($_POST['EndLattitude']));
 $EndLongitude = addslashes(trim($_POST['EndLongitude']));
 $CreatedDate = date('Y-m-d');
-$CreatedTime = date('h:i a');
+$CreatedTime = date('H:i:s');
 
+$Photo = isset($_POST['OldPhoto']) ? $_POST['OldPhoto'] : '';
+if(!empty($_FILES['Photo']['name'])){
 $randno = rand(1,100);
 $src = $_FILES['Photo']['tmp_name'];
 $fnm = substr($_FILES["Photo"]["name"], 0,strrpos($_FILES["Photo"]["name"],'.')); 
@@ -70,11 +77,11 @@ $imagepath =  $randno . "_".$fnm . $ext;
 if(move_uploaded_file($src, $dest))
 {
 $Photo = $imagepath ;
-} 
-else{
-    $Photo = $_POST['OldPhoto'];
+}
 }
 
+$EndPhoto = isset($_POST['OldEndPhoto']) ? $_POST['OldEndPhoto'] : '';
+if(!empty($_FILES['EndPhoto']['name'])){
 $randno = rand(1,100);
 $src = $_FILES['EndPhoto']['tmp_name'];
 $fnm = substr($_FILES["EndPhoto"]["name"], 0,strrpos($_FILES["EndPhoto"]["name"],'.')); 
@@ -85,14 +92,13 @@ $imagepath =  $randno . "_".$fnm . $ext;
 if(move_uploaded_file($src, $dest))
 {
 $EndPhoto = $imagepath ;
-} 
-else{
-    $EndPhoto = $_POST['OldEndPhoto'];
+}
 }
 
-$sql = "UPDATE tbl_trip_details SET OutDate='$OutDate',ClosingReading='$ClosingReading',Fastag='$Fastag',Challan='$Challan',ChallanPhoto='$Photo',EndLattitude='$EndLattitude',EndLongitude='$EndLongitude',Status=1,ModifiedBy='$user_id',ModifiedDate='$CreatedDate',ModifiedTime='$CreatedTime',EndPhoto='$EndPhoto',OutTime='$CreatedTime' WHERE id='$id'";
+$sql = "UPDATE tbl_trip_details SET OutDate='$OutDate',ClosingReading='$ClosingReading',Fastag='$Fastag',Challan='$Challan',ChallanPaidBy='$ChallanPaidBy',ChallanPhoto='$Photo',EndLattitude='$EndLattitude',EndLongitude='$EndLongitude',Status=1,ModifiedBy='$user_id',ModifiedDate='$CreatedDate',ModifiedTime='$CreatedTime',EndPhoto='$EndPhoto',OutTime='$CreatedTime' WHERE id='$id'";
 $conn->query($sql);
-echo "<script>window.location.href='view-trips.php';</script>";
+header('Location: view-trips.php');
+exit;
 }
 ?>
 
@@ -199,8 +205,18 @@ echo "<script>window.location.href='view-trips.php';</script>";
 </div>
 
 <div class="form-group col-md-3">
-<label class="form-label">Challan </label>
-<input type="text" name="Challan" id="Challan" class="form-control" placeholder="" value="<?php echo $row7['Challan']; ?>">
+<label class="form-label">Challan Paid By </label>
+<select name="ChallanPaidBy" id="ChallanPaidBy" class="form-control">
+<option value="">Select</option>
+<option value="vtech" <?php if(($row7['ChallanPaidBy'] ?? '') == 'vtech') echo 'selected'; ?>>Paid BY VTECH</option>
+<option value="transportor" <?php if(($row7['ChallanPaidBy'] ?? '') == 'transportor') echo 'selected'; ?>>Paid By transportor</option>
+</select>
+ <div class="clearfix"></div>
+</div>
+
+<div class="form-group col-md-3">
+<label class="form-label">Challan Amount </label>
+<input type="number" step="0.01" min="0" name="Challan" id="Challan" class="form-control" placeholder="" value="<?php echo $row7['Challan']; ?>">
  <div class="clearfix"></div>
 </div>
 

@@ -74,6 +74,8 @@ function menuAccessGranularDefinitions()
         251 => ['label' => 'Task — To Do Tasks', 'legacy' => [47]],
         252 => ['label' => 'Task — Project Head / Department', 'legacy' => [47]],
         253 => ['label' => 'Task — Dashboard', 'legacy' => [47, 151]],
+        256 => ['label' => 'Add Transportor Account', 'legacy' => [255]],
+        257 => ['label' => 'View Transportor Account', 'legacy' => [255]],
     ];
 }
 
@@ -116,6 +118,8 @@ function menuAccessGranularPagePrimaryIds()
         'view-installer-employee.php' => 217,
         'add-driver.php' => 218,
         'view-drivers.php' => 219,
+        'add-transportor.php' => 256,
+        'view-transportor.php' => 257,
         'add-dealer.php' => 220,
         'view-dealer.php' => 221,
         'add-agency.php' => 222,

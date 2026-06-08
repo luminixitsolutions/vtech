@@ -140,12 +140,20 @@ if(!isset($_SESSION['otp'])){
                     }, 2000); 
                      }
                      else{
-                         Android.loginUser(Username,uid);
-                         Android.startDriverTracking(Username,uid);
+                         if(roll == 39){
+                             if(typeof Android !== 'undefined'){
+                                 Android.loginUser(Username,uid);
+                                 Android.startDriverTracking(Username,uid);
+                             }
+                         }
                         $('#success_message').css('display','block').html("OTP Verified!");
                         setTimeout(function(){  
                         $('#success_message').fadeOut("Slow");
-                        window.location.href="home.php";
+                        if(roll == 46){
+                            window.location.href="../transportorapp/home.php";
+                        } else {
+                            window.location.href="home.php";
+                        }
                     
                     }, 2000); 
                      }

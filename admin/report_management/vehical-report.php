@@ -116,28 +116,25 @@ $Page = "Vehical-Report";
             <?php 
            
             $i=1;
-            $sql = "SELECT ta.*,tu.Fname FROM tbl_vehicle_details ta INNER JOIN tbl_users tu ON tu.id=ta.Userid WHERE tu.Roll NOT IN (1,5)
-                    ";
-             if($_POST['ExeId']){
+            $sql = "SELECT ta.UserId, ta.CreatedDate, tu.Fname FROM tbl_vehicle_details ta INNER JOIN tbl_users tu ON tu.id=ta.UserId WHERE tu.Roll NOT IN (1,5)";
+             if(!empty($_POST['ExeId'])){
                 $ExeId = $_POST['ExeId'];
-                if($ExeId == 'all'){
-                    $sql.= " ";
-                }
-                else{
-                $sql.= " AND ta.Userid='$ExeId'";
+                if($ExeId != 'all'){
+                $sql.= " AND ta.UserId='$ExeId'";
                 }
             }       
-            if($_POST['FromDate']){
+            if(!empty($_POST['FromDate'])){
                 $FromDate = $_POST['FromDate'];
                 $sql.= " AND ta.CreatedDate>='$FromDate'";
                 }
-                if($_POST['ToDate']){
+                if(!empty($_POST['ToDate'])){
                     $ToDate = $_POST['ToDate'];
                     $sql.= " AND ta.CreatedDate<='$ToDate'";
                 }
-            $sql.=" GROUP BY ta.CreatedDate ORDER BY tu.Fname";    
+            $sql.=" GROUP BY ta.UserId, ta.CreatedDate, tu.Fname ORDER BY tu.Fname";    
             //echo $sql;
             $res = $conn->query($sql);
+            if ($res) {
             while($row = $res->fetch_assoc())
             {
                 $sql2 = "SELECT * FROM tbl_vehicle_details WHERE Type=1 AND CreatedDate='".$row['CreatedDate']."' AND UserId='".$row['UserId']."'";
@@ -145,39 +142,41 @@ $Page = "Vehical-Report";
                 
                 $sql3 = "SELECT * FROM tbl_vehicle_details WHERE Type=2 AND CreatedDate='".$row['CreatedDate']."' AND UserId='".$row['UserId']."'";
                 $row3 = getRecord($sql3);
+                $row2 = is_array($row2) ? $row2 : [];
+                $row3 = is_array($row3) ? $row3 : [];
             ?>
             <tr>
                  <td><?php echo $row['Fname'];?></td>
                 <td><?php echo date("d/m/Y", strtotime(str_replace('-', '/',$row['CreatedDate']))); ?></td>
                
-               <td><?php if($row2["Photo"] == '') {?>
+               <td><?php if(($row2["Photo"] ?? '') == '') {?>
                   <img src="user_icon.jpg" class="d-block ui-w-40 rounded-circle"  style="width: 40px;height: 40px;"> 
                  <?php } else if(file_exists('../uploads/'.$row2["Photo"])){?>
                  <img src="../uploads/<?php echo $row2["Photo"];?>" class="d-block ui-w-40 rounded-circle" alt="" style="width: 40px;height: 40px;">
                   <?php }  else{?>
                  <img src="user_icon.jpg" class="d-block ui-w-40 rounded-circle" style="width: 40px;height: 40px;"> 
              <?php } ?></td>
-               <td><?php echo $row2['StartKm'];?></td>
+               <td><?php echo $row2['StartKm'] ?? '';?></td>
                
-                <td><?php if($row3["Photo"] == '') {?>
+                <td><?php if(($row3["Photo"] ?? '') == '') {?>
                   <img src="user_icon.jpg" class="d-block ui-w-40 rounded-circle"  style="width: 40px;height: 40px;"> 
                  <?php } else if(file_exists('../uploads/'.$row3["Photo"])){?>
                  <img src="../uploads/<?php echo $row3["Photo"];?>" class="d-block ui-w-40 rounded-circle" alt="" style="width: 40px;height: 40px;">
                   <?php }  else{?>
                  <img src="user_icon.jpg" class="d-block ui-w-40 rounded-circle" style="width: 40px;height: 40px;"> 
              <?php } ?></td>
-               <td><?php echo $row3['EndKm'];?></td>
+               <td><?php echo $row3['EndKm'] ?? '';?></td>
                
-                <td><?php echo $row2['Latitude'];?></td>
-                <td><?php echo $row2['Longitude'];?></td>
-                <td><?php echo $row3['Latitude'];?></td>
-                <td><?php echo $row3['Longitude'];?></td>
+                <td><?php echo $row2['Latitude'] ?? '';?></td>
+                <td><?php echo $row2['Longitude'] ?? '';?></td>
+                <td><?php echo $row3['Latitude'] ?? '';?></td>
+                <td><?php echo $row3['Longitude'] ?? '';?></td>
                 <!--<td><?php echo $row['Address'];?></td>-->
                  
                   
              <!--<td><?php echo $row['Status'];?></td>-->
             </tr>
-            <?php } ?>
+            <?php } } ?>
           
         </tbody>
     </table>

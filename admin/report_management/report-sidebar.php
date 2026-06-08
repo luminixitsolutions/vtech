@@ -64,6 +64,10 @@ $stockReportPages = array(
 	'Dispatch-Stock-Report-Tab',
 );
 $attendanceReportPages = array('Attendance-Report', 'Attendance-Report-2');
+$vehicleReportPages = array(
+	'Vehical-Report', 'Driver-Trip-Billing-List', 'Driver-Trip-Billing-Add',
+	'Driver-Trip-Billing-View', 'Driver-Trip-Billing-Report', 'Driver-Trip-Billing-Summary',
+);
 $siteReportPages = array(
 	'Field-Survey-Report', 'Installation-Report', 'Inspection-Report', 'Site-Engineer-Reports',
 );
@@ -298,12 +302,37 @@ $employeeTrackingPages = array('Employee-Tracking-Dashboard', 'Employee-Tracking
 </ul>
 </li>
 <?php } if (reportSidebarOptionAllowed($Options, 100)) { ?>
-<li class="sidenav-item">
-<a href="vehical-report.php" class="sidenav-link">
+        <li class="sidenav-item<?php echo reportSidebarOpenClass($Page, $vehicleReportPages); ?>">
+<a href="javascript:" class="sidenav-link sidenav-toggle">
       <i class="sidenav-icon feather icon-navigation"></i>
 <div>Vehicle Report</div>
+</a>
+<ul class="sidenav-menu">
+<li class="sidenav-item">
+<a href="vehical-report.php" class="sidenav-link">
+<div>Vehicle Entry Report</div>
 <?php echo reportSidebarActiveDot($Page, array('Vehical-Report')); ?>
 </a>
+</li>
+<li class="sidenav-item">
+<a href="driver-trip-billing-report.php" class="sidenav-link">
+<div>Driver Trip Billing Report</div>
+<?php echo reportSidebarActiveDot($Page, array('Driver-Trip-Billing-Report')); ?>
+</a>
+</li>
+<li class="sidenav-item">
+<a href="driver-trip-billing-summary.php" class="sidenav-link">
+<div>Driver Trip Billing Summary</div>
+<?php echo reportSidebarActiveDot($Page, array('Driver-Trip-Billing-Summary')); ?>
+</a>
+</li>
+<li class="sidenav-item">
+<a href="driver-trip-billings.php" class="sidenav-link">
+<div>Driver Trip Billing Manage</div>
+<?php echo reportSidebarActiveDot($Page, array('Driver-Trip-Billing-List', 'Driver-Trip-Billing-Add', 'Driver-Trip-Billing-View')); ?>
+</a>
+</li>
+</ul>
 </li>
 <?php } if (reportSidebarOptionAllowed($Options, 65)) { ?>
 <li class="sidenav-item">

@@ -76,7 +76,7 @@ if($_REQUEST["action"]=="delete")
         </thead>
         <tbody>
             <?php 
-            $sql = "SELECT tu.*,tut.Name FROM tbl_users tu LEFT JOIN tbl_user_type tut ON tut.id=tu.Roll WHERE tu.Roll NOT IN(1,3,4,5,9,10,8,11,34,35,36,37,39,40,26,27,42) ORDER BY tu.CreatedDate DESC";
+            $sql = "SELECT tu.*,tut.Name FROM tbl_users tu LEFT JOIN tbl_user_type tut ON tut.id=tu.Roll WHERE tu.Roll NOT IN(1,3,4,5,9,10,8,11,34,35,36,37,39,40,26,27,42,46) ORDER BY tu.CreatedDate DESC";
             $res = $conn->query($sql);
             while($row = $res->fetch_assoc())
             {

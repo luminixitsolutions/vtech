@@ -84,7 +84,7 @@ $colspan = 7 + count($scopeColumns) + 1;
     <div class="row g-2">
         <div class="col-6">
             <div class="mob-mgmt-card py-2 px-3 mb-0">
-                <div class="small text-muted"><?php echo $isScoped ? 'Sub Project Commission' : 'Total Commission'; ?></div>
+                <div class="small text-muted"><?php echo $isScoped ? 'Sub Project Billing' : 'Total Billing'; ?></div>
                 <div class="fw-bold text-primary">&#8377;<?php echo contractorPaymentFormatMoney($grandTotal); ?></div>
             </div>
         </div>

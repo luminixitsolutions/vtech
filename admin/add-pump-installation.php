@@ -1,10 +1,122 @@
 <?php
+if (isset($_GET['debug'])) {
+    ini_set('display_errors', '1');
+    error_reporting(E_ALL);
+}
+
 session_start();
 include_once 'config.php';
 include_once 'auth.php';
 $user_id = $_SESSION['Admin']['id'];
 $MainPage = "Installation";
 $Page = "Pump-Installation";
+
+function pumpInstallUsersHasColumn($conn, $column)
+{
+    static $cache = array();
+    $column = preg_replace('/[^a-zA-Z0-9_]/', '', $column);
+    if (!array_key_exists($column, $cache)) {
+        try {
+            $check = $conn->query("SHOW COLUMNS FROM tbl_users LIKE '$column'");
+            $cache[$column] = $check && $check->num_rows > 0;
+        } catch (Exception $e) {
+            $cache[$column] = false;
+        }
+    }
+
+    return $cache[$column];
+}
+
+function pumpInstallLoadCustWorkOrder($conn, $custId)
+{
+    $defaults = array('WorkOrderDone' => 'No', 'WorkOrderDoneDate' => '');
+    $custId = (int) $custId;
+    if ($custId <= 0) {
+        return $defaults;
+    }
+
+    if (pumpInstallUsersHasColumn($conn, 'WorkOrderDone')) {
+        if (pumpInstallUsersHasColumn($conn, 'WorkOrderDoneDate')) {
+            $row = getRecord("SELECT WorkOrderDone, WorkOrderDoneDate FROM tbl_users WHERE id='$custId'");
+        } else {
+            $row = getRecord("SELECT WorkOrderDone FROM tbl_users WHERE id='$custId'");
+            if (is_array($row)) {
+                $row['WorkOrderDoneDate'] = '';
+            }
+        }
+        if (is_array($row)) {
+            if ((string) (isset($row['WorkOrderDone']) ? $row['WorkOrderDone'] : 'No') !== 'Yes') {
+                $row['WorkOrderDone'] = 'No';
+                $row['WorkOrderDoneDate'] = '';
+            }
+            return $row;
+        }
+    } elseif (pumpInstallUsersHasColumn($conn, 'WoNo')) {
+        $row = getRecord("SELECT WoNo FROM tbl_users WHERE id='$custId'");
+        if (is_array($row) && trim((string) ($row['WoNo'] ?? '')) !== '') {
+            return array('WorkOrderDone' => 'Yes', 'WorkOrderDoneDate' => '');
+        }
+    }
+
+    return $defaults;
+}
+
+function pumpInstallSaveCustWorkOrder($conn, $custId, $workOrderDone, $workOrderDoneDate)
+{
+    $custId = (int) $custId;
+    if ($custId <= 0 || !pumpInstallUsersHasColumn($conn, 'WorkOrderDone')) {
+        return;
+    }
+
+    $workOrderDone = addslashes((string) $workOrderDone);
+    $workOrderDoneDate = addslashes(trim((string) $workOrderDoneDate));
+    if ($workOrderDone !== 'Yes') {
+        $workOrderDoneDate = '';
+    }
+
+    if (pumpInstallUsersHasColumn($conn, 'WorkOrderDoneDate')) {
+        $workOrderDateSql = $workOrderDoneDate !== '' ? "'$workOrderDoneDate'" : 'NULL';
+        @$conn->query("UPDATE tbl_users SET WorkOrderDone='$workOrderDone', WorkOrderDoneDate=$workOrderDateSql WHERE id='$custId'");
+    } else {
+        @$conn->query("UPDATE tbl_users SET WorkOrderDone='$workOrderDone' WHERE id='$custId'");
+    }
+}
+
+function pumpInstallYesFieldLocked($value, $isAdmin)
+{
+    return ((string) $value === 'Yes' && !$isAdmin);
+}
+
+function pumpInstallYesFieldAttrs($value, $isAdmin)
+{
+    $locked = pumpInstallYesFieldLocked($value, $isAdmin);
+
+    return array(
+        'locked' => $locked,
+        'disabled' => $locked ? ' disabled="disabled"' : '',
+        'required' => $locked ? '' : ' required=""',
+    );
+}
+
+function pumpInstallWorkOrderFieldLocked($workOrderDone, $workOrderDate, $isAdmin)
+{
+    if ($isAdmin) {
+        return false;
+    }
+
+    return ((string) $workOrderDone === 'Yes' && trim((string) $workOrderDate) !== '');
+}
+
+function pumpInstallWorkOrderFieldAttrs($workOrderDone, $workOrderDate, $isAdmin)
+{
+    $locked = pumpInstallWorkOrderFieldLocked($workOrderDone, $workOrderDate, $isAdmin);
+
+    return array(
+        'locked' => $locked,
+        'disabled' => $locked ? ' disabled="disabled"' : '',
+        'required' => $locked ? '' : ' required=""',
+    );
+}
 ?>
 <!DOCTYPE html>
 <html lang="en" class="default-style layout-fixed layout-navbar-fixed">
@@ -25,17 +137,24 @@ $Page = "Pump-Installation";
 
 <body>
     <style type="text/css">
-        .password-tog-info {
-            display: inline-block;
-            cursor: pointer;
-            font-size: 12px;
-            font-weight: 600;
-            position: absolute;
-            right: 50px;
-            top: 30px;
-            text-transform: uppercase;
-            z-index: 2;
-        }
+    .password-tog-info {
+        display: inline-block;
+        cursor: pointer;
+        font-size: 12px;
+        font-weight: 600;
+        position: absolute;
+        right: 50px;
+        top: 30px;
+        text-transform: uppercase;
+        z-index: 2;
+    }
+    select:disabled,
+    input:disabled,
+    .pump-install-locked {
+        background-color: #e9ecef !important;
+        cursor: not-allowed;
+        pointer-events: none;
+    }
     </style>
     <div class="layout-wrapper layout-2">
         <div class="layout-inner">
@@ -48,17 +167,31 @@ $Page = "Pump-Installation";
                 <?php include_once 'top_header.php'; ?>
 
                 <?php
-                $id = $_GET['id'];
+                $id = isset($_GET['id']) ? (int) $_GET['id'] : 0;
 
-                $ProjectId = $_GET['ProjectId'];
-                $ProjectSubHeadId = $_GET['ProjectSubHeadId'];
+                $ProjectId = isset($_GET['ProjectId']) ? (int) $_GET['ProjectId'] : 0;
+                $ProjectSubHeadId = isset($_GET['ProjectSubHeadId']) ? (int) $_GET['ProjectSubHeadId'] : 0;
                 $sql79 = "SELECT Name FROM tbl_common_master WHERE id='$ProjectId'";
                 $row79 = getRecord($sql79);
-                $projname = $row79['Name'];
+                $projname = is_array($row79) ? (string) ($row79['Name'] ?? '') : '';
                 $sql7 = "SELECT * FROM tbl_installations WHERE id='$id'";
                 $row7 = getRecord($sql7);
+                if (!is_array($row7)) {
+                    $row7 = array();
+                }
 
-                if ($_REQUEST['action'] == 'deletephoto') {
+                $custRow = pumpInstallLoadCustWorkOrder($conn, isset($row7['CustId']) ? $row7['CustId'] : 0);
+                $isPumpInstallAdmin = ((int) $user_id) === 1;
+                $installLock = pumpInstallYesFieldAttrs(isset($row7['InstallStatus']) ? $row7['InstallStatus'] : 'No', $isPumpInstallAdmin);
+                $dataUploadLock = pumpInstallYesFieldAttrs(isset($row7['DataUploadStatus']) ? $row7['DataUploadStatus'] : 'No', $isPumpInstallAdmin);
+                $poInspectionLock = pumpInstallYesFieldAttrs(isset($row7['PoInspection']) ? $row7['PoInspection'] : 'No', $isPumpInstallAdmin);
+                $workOrderLock = pumpInstallWorkOrderFieldAttrs(
+                    isset($custRow['WorkOrderDone']) ? $custRow['WorkOrderDone'] : 'No',
+                    isset($custRow['WorkOrderDoneDate']) ? $custRow['WorkOrderDoneDate'] : '',
+                    $isPumpInstallAdmin
+                );
+
+                if (isset($_REQUEST['action']) && $_REQUEST['action'] == 'deletephoto') {
                     $id = $_REQUEST['id'];
                     $value = $_REQUEST['value'];
                     $fieldname = "Photo" . $value;
@@ -67,6 +200,20 @@ $Page = "Pump-Installation";
                     echo "<script>alert('Photo Deleted Successfully');window.location.href='add-pump-installation.php?id=$id';</script>";
                 }
                 if (isset($_POST['submit'])) {
+                    if (isset($_POST['ProjectId']) && (int) $_POST['ProjectId'] > 0) {
+                        $ProjectId = (int) $_POST['ProjectId'];
+                    }
+                    if (isset($_POST['ProjectSubHeadId']) && (int) $_POST['ProjectSubHeadId'] > 0) {
+                        $ProjectSubHeadId = (int) $_POST['ProjectSubHeadId'];
+                    }
+                    if ($ProjectId > 0) {
+                        $row79 = getRecord("SELECT Name FROM tbl_common_master WHERE id='$ProjectId'");
+                        $projname = is_array($row79) ? (string) ($row79['Name'] ?? '') : '';
+                    }
+                    if (isset($_POST['id']) && (int) $_POST['id'] > 0) {
+                        $id = (int) $_POST['id'];
+                    }
+
                     $CustId = addslashes(trim($_POST['CustId']));
                     $CellNo = addslashes(trim($_POST['CellNo']));
                     $CustName = addslashes(trim($_POST['CustName']));
@@ -88,6 +235,42 @@ $Page = "Pump-Installation";
                     $DriveLink = addslashes(trim($_POST['DriveLink']));
                     $InstallStatus = addslashes(trim($_POST['InstallStatus']));
                     $InstallationDate = addslashes(trim($_POST['InstallationDate']));
+                    $DataUploadStatus = addslashes(trim($_POST['DataUploadStatus']));
+                    $DataUploadDate = addslashes(trim($_POST['DataUploadDate']));
+                    $WorkOrderDone = addslashes(trim($_POST['WorkOrderDone'] ?? 'No'));
+                    $WorkOrderDoneDate = addslashes(trim($_POST['WorkOrderDoneDate'] ?? ''));
+                    if ($WorkOrderDone !== 'Yes') {
+                        $WorkOrderDoneDate = '';
+                    }
+                    if ((int) $user_id !== 1) {
+                        $lockCustId = (int) ($_POST['CustId'] ?? 0);
+                        if ($lockCustId > 0) {
+                            $existingWoRow = pumpInstallLoadCustWorkOrder($conn, $lockCustId);
+                            if (($existingWoRow['WorkOrderDone'] ?? '') === 'Yes'
+                                && trim((string) ($existingWoRow['WorkOrderDoneDate'] ?? '')) !== '') {
+                                $WorkOrderDone = 'Yes';
+                                $WorkOrderDoneDate = addslashes(trim((string) ($existingWoRow['WorkOrderDoneDate'] ?? '')));
+                            }
+                        }
+                        $lockInstId = (int) ($_POST['id'] ?? 0);
+                        if ($lockInstId > 0) {
+                            $existingInstRow = getRecord("SELECT InstallStatus, InstallationDate, DataUploadStatus, DataUploadDate, PoInspection, PoInspectionDate FROM tbl_installations WHERE id='$lockInstId'");
+                            if (is_array($existingInstRow)) {
+                                if (($existingInstRow['InstallStatus'] ?? '') === 'Yes') {
+                                    $InstallStatus = 'Yes';
+                                    $InstallationDate = addslashes(trim((string) ($existingInstRow['InstallationDate'] ?? '')));
+                                }
+                                if (($existingInstRow['DataUploadStatus'] ?? '') === 'Yes') {
+                                    $DataUploadStatus = 'Yes';
+                                    $DataUploadDate = addslashes(trim((string) ($existingInstRow['DataUploadDate'] ?? '')));
+                                }
+                                if (($existingInstRow['PoInspection'] ?? '') === 'Yes') {
+                                    $PoInspection = 'Yes';
+                                    $PoInspectionDate = addslashes(trim((string) ($existingInstRow['PoInspectionDate'] ?? '')));
+                                }
+                            }
+                        }
+                    }
 
                     $DgmApproval = addslashes(trim($_POST['DgmApproval']));
                     $DgmApprovalDate = addslashes(trim($_POST['DgmApprovalDate']));
@@ -112,8 +295,8 @@ $Page = "Pump-Installation";
                     $RoAcctsToZoDate = addslashes(trim($_POST['RoAcctsToZoDate']));
                     $ZoToHo = addslashes(trim($_POST['ZoToHo']));
                     $ZoToHoDate = addslashes(trim($_POST['ZoToHoDate']));
-                    $RmsIntegratHoToHoAcctsionStatus = addslashes(trim($_POST['HoToHoAccts']));
-                    $HoToHoAcctsDate = addslashes(trim($_POST['HoToHoAcctsDate']));
+                    $HoToHoAccts = addslashes(trim($_POST['HoToHoAccts'] ?? ''));
+                    $HoToHoAcctsDate = addslashes(trim($_POST['HoToHoAcctsDate'] ?? ''));
                     $ForwardToPayment = addslashes(trim($_POST['ForwardToPayment']));
                     $ForwardToPaymentDate = addslashes(trim($_POST['ForwardToPaymentDate']));
 
@@ -133,8 +316,6 @@ $Page = "Pump-Installation";
                     $WarrantyReg = addslashes(trim($_POST['WarrantyReg']));
                     $WarrantyRegDate = addslashes(trim($_POST['WarrantyRegDate']));
 
-                    $DataUploadStatus = addslashes(trim($_POST['DataUploadStatus']));
-                    $DataUploadDate = addslashes(trim($_POST['DataUploadDate']));
                     $Documentation = addslashes(trim($_POST['Documentation']));
                     $DocumentationContractorId = addslashes(trim($_POST['DocumentationContractorId']));
                     $Foundation = addslashes(trim($_POST['Foundation']));
@@ -148,60 +329,58 @@ $Page = "Pump-Installation";
                     $DcrVerify = addslashes(trim($_POST['DcrVerify']));
                     $DcrVerifyDate = addslashes(trim($_POST['DcrVerifyDate']));
 
-                    if ($Foundation == 'Yes') {
-                        $sql = "SELECT PumpCapacity,ProjectId,ProjectSubHeadId FROM tbl_users WHERE id='$CustId'";
-                        $row = getRecord($sql);
-                        $PumpCapacity = $row['PumpCapacity'];
-                        $ProjectHeadId = $row['ProjectId'];
-                        $ProjectSubHeadId = $row['ProjectSubHeadId'];
+                    if ($Foundation == 'Yes' && $FoundationContractorId != '') {
+                        $row = getRecord("SELECT PumpCapacity,ProjectId,ProjectSubHeadId FROM tbl_users WHERE id='$CustId'");
+                        if (is_array($row)) {
+                            $PumpCapacity = $row['PumpCapacity'] ?? '';
+                            $ProjectHeadId = $row['ProjectId'] ?? 0;
+                            $CustomerSubHeadId = $row['ProjectSubHeadId'] ?? 0;
 
-                        $sql2 = "SELECT FoundationVal FROM tbl_contractor_commision WHERE UserId='$FoundationContractorId' AND Capacity='$PumpCapacity' AND ProjectHeadId='$ProjectHeadId' AND ProjectSubHeadId='$ProjectSubHeadId'";
-                        $row2 = getRecord($sql2);
-                        $Amount = $row2['FoundationVal'];
+                            $row2 = getRecord("SELECT FoundationVal FROM tbl_contractor_commision WHERE UserId='$FoundationContractorId' AND Capacity='$PumpCapacity' AND ProjectHeadId='$ProjectHeadId' AND ProjectSubHeadId='$CustomerSubHeadId' LIMIT 1");
+                            $Amount = is_array($row2) ? ($row2['FoundationVal'] ?? 0) : 0;
 
-                        $sql = "DELETE FROM tbl_made_contractor_commision WHERE CustId='$CustId' AND Roll=4";
-                        $conn->query($sql);
-
-                        $sql = "INSERT INTO tbl_made_contractor_commision SET ContractorId='$FoundationContractorId',CustId='$CustId',Capacity='$PumpCapacity',ScopeOfWork='Foundation',Amount='$Amount',CreatedDate='$FoundationDate',Roll=4";
-                        $conn->query($sql);
+                            $conn->query("DELETE FROM tbl_made_contractor_commision WHERE CustId='$CustId' AND Roll=4");
+                            $conn->query("INSERT INTO tbl_made_contractor_commision SET ContractorId='$FoundationContractorId',CustId='$CustId',Capacity='$PumpCapacity',ScopeOfWork='Foundation',Amount='$Amount',CreatedDate='$FoundationDate',Roll=4");
+                        }
                     }
 
-                    if ($Documentation == 'Yes') {
-                        $sql = "SELECT PumpCapacity,ProjectId,ProjectSubHeadId FROM tbl_users WHERE id='$CustId'";
-                        $row = getRecord($sql);
-                        $PumpCapacity = $row['PumpCapacity'];
-                        $ProjectHeadId = $row['ProjectId'];
-                        $ProjectSubHeadId = $row['ProjectSubHeadId'];
+                    if ($Documentation == 'Yes' && $DocumentationContractorId != '') {
+                        $row = getRecord("SELECT PumpCapacity,ProjectId,ProjectSubHeadId FROM tbl_users WHERE id='$CustId'");
+                        if (is_array($row)) {
+                            $PumpCapacity = $row['PumpCapacity'] ?? '';
+                            $ProjectHeadId = $row['ProjectId'] ?? 0;
+                            $CustomerSubHeadId = $row['ProjectSubHeadId'] ?? 0;
 
-                        $sql2 = "SELECT DocumentationVal FROM tbl_contractor_commision WHERE UserId='$DocumentationContractorId' AND Capacity='$PumpCapacity' AND ProjectHeadId='$ProjectHeadId' AND ProjectSubHeadId='$ProjectSubHeadId'";
-                        $row2 = getRecord($sql2);
-                        $Amount = $row2['DocumentationVal'];
+                            $row2 = getRecord("SELECT DocumentationVal FROM tbl_contractor_commision WHERE UserId='$DocumentationContractorId' AND Capacity='$PumpCapacity' AND ProjectHeadId='$ProjectHeadId' AND ProjectSubHeadId='$CustomerSubHeadId' LIMIT 1");
+                            $Amount = is_array($row2) ? ($row2['DocumentationVal'] ?? 0) : 0;
 
-                        $sql = "DELETE FROM tbl_made_contractor_commision WHERE CustId='$CustId' AND Roll=7";
-                        $conn->query($sql);
-
-                        $sql = "INSERT INTO tbl_made_contractor_commision SET ContractorId='$DocumentationContractorId',CustId='$CustId',Capacity='$PumpCapacity',ScopeOfWork='Documentation',Amount='$Amount',CreatedDate='$DocumentationDate',Roll=7";
-                        $conn->query($sql);
+                            $conn->query("DELETE FROM tbl_made_contractor_commision WHERE CustId='$CustId' AND Roll=7");
+                            $conn->query("INSERT INTO tbl_made_contractor_commision SET ContractorId='$DocumentationContractorId',CustId='$CustId',Capacity='$PumpCapacity',ScopeOfWork='Documentation',Amount='$Amount',CreatedDate='$DocumentationDate',Roll=7");
+                        }
                     }
 
-                    $sql = "DELETE FROM tbl_made_contractor_commision WHERE CustId='$CustId' AND Roll=8";
-                    $conn->query($sql);
+                    $conn->query("DELETE FROM tbl_made_contractor_commision WHERE CustId='$CustId' AND Roll=8");
 
                     if ($DgmApproval == 'Yes') {
-                        $sql = "SELECT PumpCapacity,ProjectId,ProjectSubHeadId,ContractorInspectionId FROM tbl_users WHERE id='$CustId'";
-                        $row = getRecord($sql);
-                        $PumpCapacity = $row['PumpCapacity'];
-                        $ProjectHeadId = $row['ProjectId'];
-                        $ProjectSubHeadId = $row['ProjectSubHeadId'];
-                        $InspectionContractorId = $row['ContractorInspectionId'];
+                        $row = getRecord("SELECT PumpCapacity,ProjectId,ProjectSubHeadId,ContractorInspectionId FROM tbl_users WHERE id='$CustId'");
+                        if (is_array($row)) {
+                            $PumpCapacity = $row['PumpCapacity'] ?? '';
+                            $ProjectHeadId = $row['ProjectId'] ?? 0;
+                            $CustomerSubHeadId = $row['ProjectSubHeadId'] ?? 0;
+                            $InspectionContractorId = trim((string) ($row['ContractorInspectionId'] ?? ''));
 
-                        if ($InspectionContractorId != '') {
-                            $sql2 = "SELECT InspectionApprovalVal FROM tbl_contractor_commision WHERE UserId='$InspectionContractorId' AND Capacity='$PumpCapacity' AND ProjectHeadId='$ProjectHeadId' AND ProjectSubHeadId='$ProjectSubHeadId' LIMIT 1";
-                            $row2 = getRecord($sql2);
-                            $Amount = $row2['InspectionApprovalVal'] ?? 0;
+                            if ($InspectionContractorId !== '') {
+                                $amountField = 'InspectionApprovalVal';
+                                $colCheck = $conn->query("SHOW COLUMNS FROM tbl_contractor_commision LIKE 'InspectionApprovalVal'");
+                                if (!$colCheck || $colCheck->num_rows < 1) {
+                                    $amountField = 'InspectionVal';
+                                }
 
-                            $sql = "INSERT INTO tbl_made_contractor_commision SET ContractorId='$InspectionContractorId',CustId='$CustId',Capacity='$PumpCapacity',ScopeOfWork='Inspection Approval',Amount='$Amount',CreatedDate='$DgmApprovalDate',Roll=8";
-                            $conn->query($sql);
+                                $row2 = getRecord("SELECT $amountField AS CommisionAmount FROM tbl_contractor_commision WHERE UserId='$InspectionContractorId' AND Capacity='$PumpCapacity' AND ProjectHeadId='$ProjectHeadId' AND ProjectSubHeadId='$CustomerSubHeadId' LIMIT 1");
+                                $Amount = is_array($row2) ? ($row2['CommisionAmount'] ?? 0) : 0;
+
+                                $conn->query("INSERT INTO tbl_made_contractor_commision SET ContractorId='$InspectionContractorId',CustId='$CustId',Capacity='$PumpCapacity',ScopeOfWork='Inspection Approval',Amount='$Amount',CreatedDate='$DgmApprovalDate',Roll=8");
+                            }
                         }
                     }
 
@@ -441,15 +620,25 @@ $Page = "Pump-Installation";
                     }
 
                     $CreatedDate = date('Y-m-d');
-                    $InstStatus = $_POST['InstStatus'];
-                    if ($_GET['id'] == '') {
+                    $InstStatus = addslashes(trim($_POST['InstStatus'] ?? ''));
+                    if ($id <= 0) {
                         $sql = "INSERT INTO tbl_installations SET ImeiNo='$ImeiNo',DcrVerify='$DcrVerify',DcrVerifyDate='$DcrVerifyDate',JvInvNo='$JvInvNo',JvInvDate='$JvInvDate',DriveLink='$DriveLink',PaymentDone='$PaymentDone',PaymentDate='$PaymentDate',CustId='$CustId',CellNo='$CellNo',CustName='$CustName',Address='$Address',Lattitude='$Lattitude',Longitude='$Longitude',Photo1='$Photo',Photo2='$Photo2',Photo3='$Photo3',Photo4='$Photo4',Photo5='$Photo5',Photo6='$Photo6',Photo7='$Photo7',Photo8='$Photo8',Photo9='$Photo9',Photo10='$Photo10',Status='1',CreatedBy='$user_id',CreatedDate='$CreatedDate',Type=2,Photo11='$Photo11',Photo12='$Photo12',WaterOutflow='$WaterOutflow',FarmerNoc='$FarmerNoc',FarmerNocDate='$FarmerNocDate',FarmerVideo='$FarmerVideo',FarmerVideoDate='$FarmerVideoDate',PoInspection='$PoInspection',PoInspectionDate='$PoInspectionDate',PoApproval='$PoApproval',PoApprovalDate='$PoApprovalDate',Photo13='$Photo13',Photo14='$Photo14',Photo15='$Photo15',Photo16='$Photo16',Photo17='$Photo17',Photo18='$Photo18',InstStatus='$InstStatus',InstallStatus='$InstallStatus',InstallationDate='$InstallationDate',DgmApproval='$DgmApproval',DgmApprovalDate='$DgmApprovalDate',InsuranceApproval='$InsuranceApproval',InsuranceApprovalDate='$InsuranceApprovalDate',CircleOfficeStatus='$CircleOfficeStatus',CircleOfficeDate='$CircleOfficeDate',RmsIntegrationStatus='$RmsIntegrationStatus',RmsIntegrationDate='$RmsIntegrationDate',RmsIntegration7Days='$RmsIntegration7Days',RmsIntegration90Days='$RmsIntegration90Days',IcrSignDoOffice='$IcrSignDoOffice',IcrSignDoOfficeDate='$IcrSignDoOfficeDate',BillForward='$BillForward',BillForwardDate='$BillForwardDate',RoToRoAccts='$RoToRoAccts',RoToRoAcctsDate='$RoToRoAcctsDate',RoAcctsToZo='$RoAcctsToZo',RoAcctsToZoDate='$RoAcctsToZoDate',ZoToHo='$ZoToHo',ZoToHoDate='$ZoToHoDate',HoToHoAccts='$HoToHoAccts',HoToHoAcctsDate='$HoToHoAcctsDate',ForwardToPayment='$ForwardToPayment',ForwardToPaymentDate='$ForwardToPaymentDate',SentToHo='$SentToHo',SentToHoDate='$SentToHoDate',FileInHand='$FileInHand',FileInHandDate='$FileInHandDate',Payment90='$Payment90',Payment90Amt='$Payment90Amt',Payment10='$Payment10',Payment10Amt='$Payment10Amt',InspectionDiscrepancy='$InspectionDiscrepancy',InspectionDiscrepancyDate='$InspectionDiscrepancyDate',InspectionDiscrepancyRemark='$InspectionDiscrepancyRemark',WarrantyReg='$WarrantyReg',WarrantyRegDate='$WarrantyRegDate',DataUploadStatus='$DataUploadStatus',DataUploadDate='$DataUploadDate',Foundation='$Foundation',FoundationContractorId='$FoundationContractorId',FoundationDate='$FoundationDate',Documentation='$Documentation',DocumentationContractorId='$DocumentationContractorId',DocumentationDate='$DocumentationDate'";
                         $conn->query($sql);
-                        echo "<script>alert('Record Saved Successfully');window.location.href='installation-project-sub-head-dashboard.php?id=$ProjectId&name=$projname';</script>";
+                        if ($CustId !== '') {
+                            pumpInstallSaveCustWorkOrder($conn, $CustId, $WorkOrderDone, $WorkOrderDoneDate);
+                        }
+                        $redirectUrl = 'installation-project-sub-head-dashboard.php?id=' . (int) $ProjectId . '&name=' . rawurlencode($projname);
+                        echo "<script>alert('Record Saved Successfully');window.location.href=" . json_encode($redirectUrl) . ";</script>";
+                        exit;
                     } else {
                         $sql = "UPDATE tbl_installations SET ImeiNo='$ImeiNo',DcrVerify='$DcrVerify',DcrVerifyDate='$DcrVerifyDate',JvInvNo='$JvInvNo',JvInvDate='$JvInvDate',DriveLink='$DriveLink',PaymentDone='$PaymentDone',PaymentDate='$PaymentDate',CustId='$CustId',CellNo='$CellNo',CustName='$CustName',Address='$Address',Lattitude='$Lattitude',Longitude='$Longitude',Photo1='$Photo',Photo2='$Photo2',Photo3='$Photo3',Photo4='$Photo4',Photo5='$Photo5',Photo6='$Photo6',Photo7='$Photo7',Photo8='$Photo8',Photo9='$Photo9',Photo10='$Photo10',Status='1',ModifiedBy='$user_id',ModifiedDate='$CreatedDate',Type=2,Photo11='$Photo11',Photo12='$Photo12',WaterOutflow='$WaterOutflow',FarmerNoc='$FarmerNoc',FarmerNocDate='$FarmerNocDate',FarmerVideo='$FarmerVideo',FarmerVideoDate='$FarmerVideoDate',PoInspection='$PoInspection',PoInspectionDate='$PoInspectionDate',PoApproval='$PoApproval',PoApprovalDate='$PoApprovalDate',Photo13='$Photo13',Photo14='$Photo14',Photo15='$Photo15',Photo16='$Photo16',Photo17='$Photo17',Photo18='$Photo18',InstStatus='$InstStatus',InstallStatus='$InstallStatus',InstallationDate='$InstallationDate',DgmApproval='$DgmApproval',DgmApprovalDate='$DgmApprovalDate',InsuranceApproval='$InsuranceApproval',InsuranceApprovalDate='$InsuranceApprovalDate',CircleOfficeStatus='$CircleOfficeStatus',CircleOfficeDate='$CircleOfficeDate',RmsIntegrationStatus='$RmsIntegrationStatus',RmsIntegrationDate='$RmsIntegrationDate',RmsIntegration7Days='$RmsIntegration7Days',RmsIntegration90Days='$RmsIntegration90Days',IcrSignDoOffice='$IcrSignDoOffice',IcrSignDoOfficeDate='$IcrSignDoOfficeDate',BillForward='$BillForward',BillForwardDate='$BillForwardDate',RoToRoAccts='$RoToRoAccts',RoToRoAcctsDate='$RoToRoAcctsDate',RoAcctsToZo='$RoAcctsToZo',RoAcctsToZoDate='$RoAcctsToZoDate',ZoToHo='$ZoToHo',ZoToHoDate='$ZoToHoDate',HoToHoAccts='$HoToHoAccts',HoToHoAcctsDate='$HoToHoAcctsDate',ForwardToPayment='$ForwardToPayment',ForwardToPaymentDate='$ForwardToPaymentDate',SentToHo='$SentToHo',SentToHoDate='$SentToHoDate',FileInHand='$FileInHand',FileInHandDate='$FileInHandDate',Payment90='$Payment90',Payment90Amt='$Payment90Amt',Payment10='$Payment10',Payment10Amt='$Payment10Amt',InspectionDiscrepancy='$InspectionDiscrepancy',InspectionDiscrepancyDate='$InspectionDiscrepancyDate',InspectionDiscrepancyRemark='$InspectionDiscrepancyRemark',WarrantyReg='$WarrantyReg',WarrantyRegDate='$WarrantyRegDate',DataUploadStatus='$DataUploadStatus',DataUploadDate='$DataUploadDate',Foundation='$Foundation',FoundationContractorId='$FoundationContractorId',FoundationDate='$FoundationDate',Documentation='$Documentation',DocumentationContractorId='$DocumentationContractorId',DocumentationDate='$DocumentationDate' WHERE id='$id'";
                         $conn->query($sql);
-                        echo "<script>alert('Record Updated Successfully');window.location.href='installation-project-sub-head-dashboard.php?id=$ProjectId&name=$projname';</script>";
+                        if ($CustId !== '') {
+                            pumpInstallSaveCustWorkOrder($conn, $CustId, $WorkOrderDone, $WorkOrderDoneDate);
+                        }
+                        $redirectUrl = 'installation-project-sub-head-dashboard.php?id=' . (int) $ProjectId . '&name=' . rawurlencode($projname);
+                        echo "<script>alert('Record Updated Successfully');window.location.href=" . json_encode($redirectUrl) . ";</script>";
+                        exit;
                     }
                 }
                 ?>
@@ -464,7 +653,9 @@ $Page = "Pump-Installation";
                             <div class="card-body">
                                 <div id="alert_message"></div>
                                 <form id="validation-form" method="post" autocomplete="off" action="" enctype="multipart/form-data">
-                                    <input type="hidden" name="id" value="<?php echo $_GET['id']; ?>" id="userid">
+                                    <input type="hidden" name="id" value="<?php echo (int) $id; ?>" id="userid">
+                                    <input type="hidden" name="ProjectId" value="<?php echo (int) $ProjectId; ?>">
+                                    <input type="hidden" name="ProjectSubHeadId" value="<?php echo (int) $ProjectSubHeadId; ?>">
                                     <input type="hidden" name="action" value="Save" id="action">
                                     <div class="form-row">
 
@@ -933,64 +1124,88 @@ $Page = "Pump-Installation";
 
                                         <div class="form-group col-md-3">
                                             <label class="form-label">Installation Done <span class="text-danger">*</span></label>
+                                            <?php if ($installLock['locked']) { ?>
+                                            <input type="text" class="form-control pump-install-locked" value="Yes" readonly tabindex="-1">
+                                            <input type="hidden" name="InstallStatus" value="Yes">
+                                            <input type="hidden" name="InstallationDate" value="<?php echo htmlspecialchars($row7['InstallationDate'] ?? '', ENT_QUOTES, 'UTF-8'); ?>">
+                                            <?php } else { ?>
                                             <select class="form-control" id="InstallStatus" name="InstallStatus" required="">
-                                                <!-- <option selected="" disabled="" value="">Select</option> -->
-
                                                 <option value="No" <?php if ($row7["InstallStatus"] == 'No') { ?> selected
                                                     <?php } ?>>No</option>
                                                 <option value="Yes" <?php if ($row7["InstallStatus"] == 'Yes') { ?> selected
                                                     <?php } ?>>Yes</option>
                                             </select>
+                                            <?php } ?>
                                             <div class="clearfix"></div>
                                         </div>
 
                                         <div class="form-group col-md-3">
                                             <label class="form-label">Installation Date </label>
-                                            <input type="date" name="InstallationDate" id="InstallationDate" class="form-control"
+                                            <?php if ($installLock['locked']) { ?>
+                                            <input type="text" class="form-control pump-install-locked" value="<?php echo htmlspecialchars($row7['InstallationDate'] ?? '', ENT_QUOTES, 'UTF-8'); ?>" readonly tabindex="-1">
+                                            <?php } else { ?>
+                                            <input type="date" id="InstallationDate" name="InstallationDate" class="form-control"
                                                 placeholder="" value="<?php echo $row7["InstallationDate"]; ?>"
                                                 autocomplete="off">
+                                            <?php } ?>
                                             <div class="clearfix"></div>
                                         </div>
 
                                         <div class="form-group col-md-3">
                                             <label class="form-label">Data Upload <span class="text-danger">*</span></label>
+                                            <?php if ($dataUploadLock['locked']) { ?>
+                                            <input type="text" class="form-control pump-install-locked" value="Yes" readonly tabindex="-1">
+                                            <input type="hidden" name="DataUploadStatus" value="Yes">
+                                            <input type="hidden" name="DataUploadDate" value="<?php echo htmlspecialchars($row7['DataUploadDate'] ?? '', ENT_QUOTES, 'UTF-8'); ?>">
+                                            <?php } else { ?>
                                             <select class="form-control" id="DataUploadStatus" name="DataUploadStatus" required="">
-                                                <!--  <option selected="" disabled="" value="">Select</option> -->
-
                                                 <option value="No" <?php if ($row7["DataUploadStatus"] == 'No') { ?> selected
                                                     <?php } ?>>No</option>
                                                 <option value="Yes" <?php if ($row7["DataUploadStatus"] == 'Yes') { ?> selected
                                                     <?php } ?>>Yes</option>
                                             </select>
+                                            <?php } ?>
                                             <div class="clearfix"></div>
                                         </div>
 
                                         <div class="form-group col-md-3">
                                             <label class="form-label">Data Upload Date </label>
-                                            <input type="date" name="DataUploadDate" id="DataUploadDate" class="form-control"
+                                            <?php if ($dataUploadLock['locked']) { ?>
+                                            <input type="text" class="form-control pump-install-locked" value="<?php echo htmlspecialchars($row7['DataUploadDate'] ?? '', ENT_QUOTES, 'UTF-8'); ?>" readonly tabindex="-1">
+                                            <?php } else { ?>
+                                            <input type="date" id="DataUploadDate" name="DataUploadDate" class="form-control"
                                                 placeholder="" value="<?php echo $row7["DataUploadDate"]; ?>"
                                                 autocomplete="off">
+                                            <?php } ?>
                                             <div class="clearfix"></div>
                                         </div>
 
                                         <div class="form-group col-md-3">
                                             <label class="form-label">PO Inspection <span class="text-danger">*</span></label>
+                                            <?php if ($poInspectionLock['locked']) { ?>
+                                            <input type="text" class="form-control pump-install-locked" value="Yes" readonly tabindex="-1">
+                                            <input type="hidden" name="PoInspection" value="Yes">
+                                            <input type="hidden" name="PoInspectionDate" value="<?php echo htmlspecialchars($row7['PoInspectionDate'] ?? '', ENT_QUOTES, 'UTF-8'); ?>">
+                                            <?php } else { ?>
                                             <select class="form-control" id="PoInspection" name="PoInspection" required="">
-                                                <!-- <option selected="" disabled="" value="">Select</option> -->
-
                                                 <option value="No" <?php if ($row7["PoInspection"] == 'No') { ?> selected
                                                     <?php } ?>>No</option>
                                                 <option value="Yes" <?php if ($row7["PoInspection"] == 'Yes') { ?> selected
                                                     <?php } ?>>Yes</option>
                                             </select>
+                                            <?php } ?>
                                             <div class="clearfix"></div>
                                         </div>
 
                                         <div class="form-group col-md-3">
                                             <label class="form-label">PO Inspection Date </label>
-                                            <input type="date" name="PoInspectionDate" id="PoInspectionDate" class="form-control"
+                                            <?php if ($poInspectionLock['locked']) { ?>
+                                            <input type="text" class="form-control pump-install-locked" value="<?php echo htmlspecialchars($row7['PoInspectionDate'] ?? '', ENT_QUOTES, 'UTF-8'); ?>" readonly tabindex="-1">
+                                            <?php } else { ?>
+                                            <input type="date" id="PoInspectionDate" name="PoInspectionDate" class="form-control"
                                                 placeholder="" value="<?php echo $row7["PoInspectionDate"]; ?>"
                                                 autocomplete="off">
+                                            <?php } ?>
                                             <div class="clearfix"></div>
                                         </div>
 
@@ -1345,6 +1560,60 @@ $Page = "Pump-Installation";
                                                 <input type="date" name="SentToHoDate" id="SentToHoDate" class="form-control"
                                                     placeholder="" value="<?php echo $row7["SentToHoDate"]; ?>"
                                                     autocomplete="off">
+                                                <div class="clearfix"></div>
+                                            </div>
+
+                                            <div class="form-group col-md-3">
+                                                <label class="form-label">Work Order Done <span class="text-danger">*</span></label>
+                                                <?php if ($workOrderLock['locked']) { ?>
+                                                <input type="text" class="form-control pump-install-locked" value="Yes" readonly tabindex="-1">
+                                                <input type="hidden" name="WorkOrderDone" value="Yes">
+                                                <input type="hidden" name="WorkOrderDoneDate" value="<?php echo htmlspecialchars($custRow['WorkOrderDoneDate'] ?? '', ENT_QUOTES, 'UTF-8'); ?>">
+                                                <?php } else { ?>
+                                                <select class="form-control" id="WorkOrderDone" name="WorkOrderDone" required="">
+                                                    <option value="No" <?php if (($custRow['WorkOrderDone'] ?? 'No') === 'No') { ?> selected <?php } ?>>No</option>
+                                                    <option value="Yes" <?php if (($custRow['WorkOrderDone'] ?? 'No') === 'Yes') { ?> selected <?php } ?>>Yes</option>
+                                                </select>
+                                                <?php } ?>
+                                                <div class="clearfix"></div>
+                                            </div>
+
+                                            <div class="form-group col-md-3">
+                                                <label class="form-label">Work Order Date </label>
+                                                <?php if ($workOrderLock['locked']) { ?>
+                                                <input type="text" class="form-control pump-install-locked" value="<?php echo htmlspecialchars($custRow['WorkOrderDoneDate'] ?? '', ENT_QUOTES, 'UTF-8'); ?>" readonly tabindex="-1">
+                                                <?php } else { ?>
+                                                <input type="date" id="WorkOrderDoneDate" name="WorkOrderDoneDate" class="form-control"
+                                                    placeholder="" value="<?php echo $custRow['WorkOrderDoneDate'] ?? ''; ?>"
+                                                    autocomplete="off">
+                                                <?php } ?>
+                                                <div class="clearfix"></div>
+                                            </div>
+                                        <?php } else { ?>
+                                            <div class="form-group col-md-3">
+                                                <label class="form-label">Work Order Done <span class="text-danger">*</span></label>
+                                                <?php if ($workOrderLock['locked']) { ?>
+                                                <input type="text" class="form-control pump-install-locked" value="Yes" readonly tabindex="-1">
+                                                <input type="hidden" name="WorkOrderDone" value="Yes">
+                                                <input type="hidden" name="WorkOrderDoneDate" value="<?php echo htmlspecialchars($custRow['WorkOrderDoneDate'] ?? '', ENT_QUOTES, 'UTF-8'); ?>">
+                                                <?php } else { ?>
+                                                <select class="form-control" id="WorkOrderDone" name="WorkOrderDone" required="">
+                                                    <option value="No" <?php if (($custRow['WorkOrderDone'] ?? 'No') === 'No') { ?> selected <?php } ?>>No</option>
+                                                    <option value="Yes" <?php if (($custRow['WorkOrderDone'] ?? 'No') === 'Yes') { ?> selected <?php } ?>>Yes</option>
+                                                </select>
+                                                <?php } ?>
+                                                <div class="clearfix"></div>
+                                            </div>
+
+                                            <div class="form-group col-md-3">
+                                                <label class="form-label">Work Order Date </label>
+                                                <?php if ($workOrderLock['locked']) { ?>
+                                                <input type="text" class="form-control pump-install-locked" value="<?php echo htmlspecialchars($custRow['WorkOrderDoneDate'] ?? '', ENT_QUOTES, 'UTF-8'); ?>" readonly tabindex="-1">
+                                                <?php } else { ?>
+                                                <input type="date" id="WorkOrderDoneDate" name="WorkOrderDoneDate" class="form-control"
+                                                    placeholder="" value="<?php echo $custRow['WorkOrderDoneDate'] ?? ''; ?>"
+                                                    autocomplete="off">
+                                                <?php } ?>
                                                 <div class="clearfix"></div>
                                             </div>
                                         <?php } ?>
@@ -1748,6 +2017,15 @@ $Page = "Pump-Installation";
             });
         }
         $(document).ready(function() {
+            var isPumpInstallAdmin = <?php echo $isPumpInstallAdmin ? 'true' : 'false'; ?>;
+            if (!isPumpInstallAdmin) {
+                $('#InstallStatus, #DataUploadStatus, #PoInspection').each(function() {
+                    if ($(this).val() === 'Yes') {
+                        $(this).prop('disabled', true).addClass('pump-install-locked');
+                    }
+                });
+            }
+
             $(document).on("change", "#CustId", function(event) {
                 var val = this.value;
                 var action = "getUserDetails";
@@ -1778,7 +2056,12 @@ $Page = "Pump-Installation";
 
                     }
                 });
+            });
 
+            $(document).on('change', '#WorkOrderDone', function() {
+                if ($(this).val() === 'No' && !$(this).prop('disabled')) {
+                    $('#WorkOrderDoneDate').val('');
+                }
             });
         });
     </script>

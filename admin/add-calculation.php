@@ -64,12 +64,27 @@ z-index: 2;
 <?php include_once 'top_header.php'; ?>
 <?php
 
+$foodCol = $conn->query("SHOW COLUMNS FROM tbl_trip_details LIKE 'Food'");
+if (!$foodCol || $foodCol->num_rows === 0) {
+    $conn->query("ALTER TABLE tbl_trip_details ADD COLUMN Food DECIMAL(12,2) NOT NULL DEFAULT 0.00");
+}
 $id = $_GET['id'];
 $sql = "SELECT tpd.*,tu.VehAverage,tpd.VehAverage AS TpdVehAverage FROM tbl_trip_details tpd INNER JOIN tbl_users tu ON tpd.DriverId=tu.id WHERE tpd.id='$id'";
 $row7 = getRecord($sql);
 $start = strtotime($row7['InDate']);
 $end = strtotime($row7['OutDate']);
 $days_between = ceil(abs($end - $start) / 86400);
+if ($days_between < 1) {
+    $days_between = 1;
+}
+function tripFoodChargeFromDays($days)
+{
+    $days = (int) $days;
+    if ($days > 1) {
+        return ($days - 1) * 200;
+    }
+    return 0;
+}
 if($row7['TpdVehAverage']>0){
     $VehAverage = $row7['TpdVehAverage'];
 }
@@ -84,6 +99,7 @@ if(isset($_POST['submit'])){
 $TotalRunningKm = addslashes(trim($_POST['TotalRunningKm']));
 $Fastag = addslashes(trim($_POST['Fastag']));
 $Challan = addslashes(trim($_POST['Challan']));
+$ChallanPaidBy = addslashes(trim($_POST['ChallanPaidBy'] ?? ''));
 $VehAverage = addslashes(trim($_POST['VehAverage']));
 $TotalAvgVehicle = addslashes(trim($_POST['TotalAvgVehicle']));
 $DieselRate = addslashes(trim($_POST['DieselRate']));
@@ -92,11 +108,12 @@ $Days = addslashes(trim($_POST['Days']));
 $VehicleRate = addslashes(trim($_POST['VehicleRate']));
 $TotalVehicleRate = addslashes(trim($_POST['TotalVehicleRate']));
 $TotalAmount = addslashes(trim($_POST['TotalAmount']));
+$Food = addslashes(trim($_POST['Food'] ?? '0'));
 $CreatedDate = date('Y-m-d');
 $CreatedTime = date('h:i a');
 
 
-$sql = "UPDATE tbl_trip_details SET DieselPayment='$DieselPayment',TotalRunningKm='$TotalRunningKm',Fastag='$Fastag',Challan='$Challan',VehAverage='$VehAverage',TotalAvgVehicle='$TotalAvgVehicle',DieselRate='$DieselRate',TotalDieselUsed='$TotalDieselUsed',Days='$Days',VehicleRate='$VehicleRate',TotalVehicleRate='$TotalVehicleRate',TotalAmount='$TotalAmount',CalModifiedBy='$user_id',CalModifiedDate='$CreatedDate',CalModifiedTime='$CreatedTime' WHERE id='$id'";
+$sql = "UPDATE tbl_trip_details SET DieselPayment='$DieselPayment',TotalRunningKm='$TotalRunningKm',Fastag='$Fastag',Challan='$Challan',ChallanPaidBy='$ChallanPaidBy',Food='$Food',VehAverage='$VehAverage',TotalAvgVehicle='$TotalAvgVehicle',DieselRate='$DieselRate',TotalDieselUsed='$TotalDieselUsed',Days='$Days',VehicleRate='$VehicleRate',TotalVehicleRate='$TotalVehicleRate',TotalAmount='$TotalAmount',CalModifiedBy='$user_id',CalModifiedDate='$CreatedDate',CalModifiedTime='$CreatedTime' WHERE id='$id'";
 $conn->query($sql);
 echo "<script>alert('Trip Amount Added Successfully');window.location.href='completed-trips.php';</script>";
 }
@@ -194,13 +211,23 @@ echo "<script>alert('Trip Amount Added Successfully');window.location.href='comp
 
 <div class="form-group col-md-3">
 <label class="form-label">Fastag <span class="text-danger">*</span></label>
-<input type="text" name="Fastag" id="Fastag" class="form-control" placeholder="" value="<?php echo $row7['Fastag']; ?>" required oninput="calTotalAmt(document.getElementById('Fastag').value,document.getElementById('Challan').value,document.getElementById('DieselPayment').value,document.getElementById('TotalRunningKm').value,document.getElementById('VehAverage').value,document.getElementById('DieselRate').value,document.getElementById('Days').value,document.getElementById('VehicleRate').value)">
+<input type="text" name="Fastag" id="Fastag" class="form-control" placeholder="" value="<?php echo $row7['Fastag']; ?>" required oninput="recalcTotalAmt()">
  <div class="clearfix"></div>
 </div>
 
 <div class="form-group col-md-3">
-<label class="form-label">Challan  <span class="text-danger">*</span></label>
-<input type="text" name="Challan" id="Challan" class="form-control" placeholder="" value="<?php echo $row7['Challan']; ?>" required oninput="calTotalAmt(document.getElementById('Fastag').value,document.getElementById('Challan').value,document.getElementById('DieselPayment').value,document.getElementById('TotalRunningKm').value,document.getElementById('VehAverage').value,document.getElementById('DieselRate').value,document.getElementById('Days').value,document.getElementById('VehicleRate').value)">
+<label class="form-label">Challan Paid By <span class="text-danger">*</span></label>
+<select name="ChallanPaidBy" id="ChallanPaidBy" class="form-control" required onchange="recalcTotalAmt()">
+<option value="">Select</option>
+<option value="vtech" <?php if(($row7['ChallanPaidBy'] ?? '') == 'vtech') echo 'selected'; ?>>Paid BY VTECH</option>
+<option value="transportor" <?php if(($row7['ChallanPaidBy'] ?? '') == 'transportor') echo 'selected'; ?>>Paid By transportor</option>
+</select>
+ <div class="clearfix"></div>
+</div>
+
+<div class="form-group col-md-3">
+<label class="form-label">Challan Amount <span class="text-danger">*</span></label>
+<input type="number" step="0.01" min="0" name="Challan" id="Challan" class="form-control" placeholder="" value="<?php echo $row7['Challan']; ?>" required oninput="recalcTotalAmt()">
  <div class="clearfix"></div>
 </div>
 
@@ -218,7 +245,7 @@ echo "<script>alert('Trip Amount Added Successfully');window.location.href='comp
 
 <div class="form-group col-md-3">
 <label class="form-label">Vehicle Average  <span class="text-danger">*</span></label>
-<input type="text" name="VehAverage" id="VehAverage" class="form-control" placeholder="" value="<?php echo $VehAverage; ?>" required oninput="calTotalAmt(document.getElementById('Fastag').value,document.getElementById('Challan').value,document.getElementById('DieselPayment').value,document.getElementById('TotalRunningKm').value,document.getElementById('VehAverage').value,document.getElementById('DieselRate').value,document.getElementById('Days').value,document.getElementById('VehicleRate').value)">
+<input type="text" name="VehAverage" id="VehAverage" class="form-control" placeholder="" value="<?php echo $VehAverage; ?>" required oninput="recalcTotalAmt()">
  <div class="clearfix"></div>
 </div>
 
@@ -230,7 +257,7 @@ echo "<script>alert('Trip Amount Added Successfully');window.location.href='comp
 
 <div class="form-group col-md-3">
 <label class="form-label">Diesel Rate <span class="text-danger">*</span></label>
-<input type="text" name="DieselRate" id="DieselRate" class="form-control" placeholder="" value="<?php echo $row7['DieselRate']; ?>" required oninput="calTotalAmt(document.getElementById('Fastag').value,document.getElementById('Challan').value,document.getElementById('DieselPayment').value,document.getElementById('TotalRunningKm').value,document.getElementById('VehAverage').value,document.getElementById('DieselRate').value,document.getElementById('Days').value,document.getElementById('VehicleRate').value)">
+<input type="text" name="DieselRate" id="DieselRate" class="form-control" placeholder="" value="<?php echo $row7['DieselRate']; ?>" required oninput="recalcTotalAmt()">
  <div class="clearfix"></div>
 </div>
 
@@ -242,19 +269,25 @@ echo "<script>alert('Trip Amount Added Successfully');window.location.href='comp
 
 <div class="form-group col-md-3">
 <label class="form-label">Days <span class="text-danger">*</span></label>
-<input type="text" name="Days" id="Days" class="form-control" placeholder="" value="<?php echo $days_between; ?>" required oninput="calTotalAmt(document.getElementById('Fastag').value,document.getElementById('Challan').value,document.getElementById('DieselPayment').value,document.getElementById('TotalRunningKm').value,document.getElementById('VehAverage').value,document.getElementById('DieselRate').value,document.getElementById('Days').value,document.getElementById('VehicleRate').value)">
+<input type="text" name="Days" id="Days" class="form-control" placeholder="" value="<?php echo $days_between; ?>" required oninput="recalcTotalAmt()">
  <div class="clearfix"></div>
 </div>
 
 <div class="form-group col-md-3">
 <label class="form-label">Per Day Vehicle Rate <span class="text-danger">*</span></label>
-<input type="text" name="VehicleRate" id="VehicleRate" class="form-control" placeholder="" value="<?php echo $row7['VehicleRate']; ?>" required oninput="calTotalAmt(document.getElementById('Fastag').value,document.getElementById('Challan').value,document.getElementById('DieselPayment').value,document.getElementById('TotalRunningKm').value,document.getElementById('VehAverage').value,document.getElementById('DieselRate').value,document.getElementById('Days').value,document.getElementById('VehicleRate').value)">
+<input type="text" name="VehicleRate" id="VehicleRate" class="form-control" placeholder="" value="<?php echo $row7['VehicleRate']; ?>" required oninput="recalcTotalAmt()">
  <div class="clearfix"></div>
 </div>
 
 <div class="form-group col-md-3">
 <label class="form-label">Total Vehicle Rate<span class="text-danger">*</span></label>
 <input type="text" name="TotalVehicleRate" id="TotalVehicleRate" class="form-control" placeholder="" value="<?php echo $row7['TotalVehicleRate']; ?>" readonly>
+ <div class="clearfix"></div>
+</div>
+
+<div class="form-group col-md-3">
+<label class="form-label">Food Charge <small class="text-muted">(₹200/day after 1st day)</small></label>
+<input type="text" name="Food" id="Food" class="form-control" placeholder="" value="<?php echo $row7['Food'] ?? tripFoodChargeFromDays($days_between); ?>" readonly>
  <div class="clearfix"></div>
 </div>
 
@@ -370,30 +403,43 @@ echo "<script>alert('Trip Amount Added Successfully');window.location.href='comp
     }
 </script>
 <script>
-     function calTotalAmt(Fastag,Challan,DieselPayment,TotalRunningKm,VehAverage,DieselRate,Days,VehicleRate){
-        var TotalAvgVehicle =  Number(TotalRunningKm) / Number(VehAverage);
+     function calTotalAmt(Fastag, Challan, ChallanPaidBy, DieselPayment, TotalRunningKm, VehAverage, DieselRate, Days, VehicleRate) {
+        var TotalAvgVehicle = Number(TotalRunningKm) / Number(VehAverage);
         $('#TotalAvgVehicle').val(parseFloat(TotalAvgVehicle).toFixed(2));
 
-        var TotalDieselUsed =  Number(TotalAvgVehicle) * Number(DieselRate);
+        var TotalDieselUsed = Number(TotalAvgVehicle) * Number(DieselRate);
         $('#TotalDieselUsed').val(parseFloat(TotalDieselUsed).toFixed(2));
 
-        var TotalVehicleRate =  Number(Days) * Number(VehicleRate);
+        var TotalVehicleRate = Number(Days) * Number(VehicleRate);
         $('#TotalVehicleRate').val(parseFloat(TotalVehicleRate).toFixed(2));
 
-        var TotalAmount =  Number(TotalVehicleRate) - (Number(DieselPayment) - Number(TotalDieselUsed)) + Number(Fastag) + Number(Challan);
+        var tripDays = Number(Days) || 0;
+        var FoodCharge = tripDays > 1 ? 200 * (tripDays - 1) : 0;
+        $('#Food').val(parseFloat(FoodCharge).toFixed(2));
+
+        var TotalAmount = Number(TotalVehicleRate) - (Number(DieselPayment) - Number(TotalDieselUsed)) + Number(Fastag) + FoodCharge;
+        if (ChallanPaidBy === 'transportor') {
+            TotalAmount += Number(Challan);
+        }
         $('#TotalAmount').val(parseFloat(TotalAmount).toFixed(2));
      }
 
+     function recalcTotalAmt() {
+        calTotalAmt(
+            $('#Fastag').val(),
+            $('#Challan').val(),
+            $('#ChallanPaidBy').val(),
+            $('#DieselPayment').val(),
+            $('#TotalRunningKm').val(),
+            $('#VehAverage').val(),
+            $('#DieselRate').val(),
+            $('#Days').val(),
+            $('#VehicleRate').val()
+        );
+     }
+
      $(document).ready(function() {
-        var Fastag = $('#Fastag').val();
-        var Challan = $('#Challan').val();
-        var DieselPayment = $('#DieselPayment').val();
-        var TotalRunningKm = $('#TotalRunningKm').val();
-        var VehAverage = $('#VehAverage').val();
-        var DieselRate = $('#DieselRate').val();
-        var Days = $('#Days').val();
-        var VehicleRate = $('#VehicleRate').val();
-       calTotalAmt(Fastag,Challan,DieselPayment,TotalRunningKm,VehAverage,DieselRate,Days,VehicleRate);
+        recalcTotalAmt();
 }); 
 </script>
 </body>

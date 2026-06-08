@@ -105,32 +105,37 @@ $districtOptions = serviceAbstractGetDistrictOptions($filters);
             <thead>
                 <tr>
                     <th><?php echo htmlspecialchars($columnLabel); ?></th>
-                    <th>Total Complaints</th>
-                    <th>Total complaints closed</th>
-                    <th>TODAY COMPLAINTS ADD</th>
-                    <th>Complaints Hold due to the material issue</th>
-                    <th>Total complaints pending</th>
+                   <th>Total Complaints Pending</th>
+<th>Complaints Hold Due to the Material Issue</th>
+<th>Total Complaints</th>
+<th>Total Complaints Closed</th>
+<th>Today Complaints Added</th> 
+                    
+                    
                 </tr>
             </thead>
             <tbody>
                 <?php foreach ($rows as $row) { ?>
                 <tr>
                     <th scope="row" class="mob-mgmt-table-label"><?php echo htmlspecialchars($row['label']); ?></th>
+                     <td><a href="<?php echo htmlspecialchars(serviceAbstractMobileListUrl($row, $filters, 'material'), ENT_QUOTES, 'UTF-8'); ?>"><?php echo (int) $row['material_hold']; ?></a></td>
+                    <td><a href="<?php echo htmlspecialchars(serviceAbstractMobileListUrl($row, $filters, 'pending'), ENT_QUOTES, 'UTF-8'); ?>"><?php echo (int) $row['total_pending']; ?></a></td>
                     <td><a href="<?php echo htmlspecialchars(serviceAbstractMobileListUrl($row, $filters, ''), ENT_QUOTES, 'UTF-8'); ?>"><?php echo (int) $row['total_complaints']; ?></a></td>
                     <td><a href="<?php echo htmlspecialchars(serviceAbstractMobileListUrl($row, $filters, 'closed'), ENT_QUOTES, 'UTF-8'); ?>"><?php echo (int) $row['total_closed']; ?></a></td>
                     <td><a href="<?php echo htmlspecialchars(serviceAbstractMobileListUrl($row, $filters, 'today'), ENT_QUOTES, 'UTF-8'); ?>"><?php echo (int) $row['today_added']; ?></a></td>
-                    <td><a href="<?php echo htmlspecialchars(serviceAbstractMobileListUrl($row, $filters, 'material'), ENT_QUOTES, 'UTF-8'); ?>"><?php echo (int) $row['material_hold']; ?></a></td>
-                    <td><a href="<?php echo htmlspecialchars(serviceAbstractMobileListUrl($row, $filters, 'pending'), ENT_QUOTES, 'UTF-8'); ?>"><?php echo (int) $row['total_pending']; ?></a></td>
+                   
                 </tr>
                 <?php } ?>
                 <?php if (count($rows) > 1) { ?>
                 <tr class="mob-mgmt-table-total">
                     <th scope="row" class="mob-mgmt-table-label"><?php echo htmlspecialchars($totals['label']); ?></th>
+                    <td><a href="<?php echo htmlspecialchars(serviceAbstractMobileListUrl($totals, $filters, 'material'), ENT_QUOTES, 'UTF-8'); ?>"><?php echo (int) $totals['material_hold']; ?></a></td>
+                     <td><a href="<?php echo htmlspecialchars(serviceAbstractMobileListUrl($totals, $filters, 'pending'), ENT_QUOTES, 'UTF-8'); ?>"><?php echo (int) $totals['total_pending']; ?></a></td>
                     <td><a href="<?php echo htmlspecialchars(serviceAbstractMobileListUrl($totals, $filters, ''), ENT_QUOTES, 'UTF-8'); ?>"><?php echo (int) $totals['total_complaints']; ?></a></td>
                     <td><a href="<?php echo htmlspecialchars(serviceAbstractMobileListUrl($totals, $filters, 'closed'), ENT_QUOTES, 'UTF-8'); ?>"><?php echo (int) $totals['total_closed']; ?></a></td>
                     <td><a href="<?php echo htmlspecialchars(serviceAbstractMobileListUrl($totals, $filters, 'today'), ENT_QUOTES, 'UTF-8'); ?>"><?php echo (int) $totals['today_added']; ?></a></td>
-                    <td><a href="<?php echo htmlspecialchars(serviceAbstractMobileListUrl($totals, $filters, 'material'), ENT_QUOTES, 'UTF-8'); ?>"><?php echo (int) $totals['material_hold']; ?></a></td>
-                    <td><a href="<?php echo htmlspecialchars(serviceAbstractMobileListUrl($totals, $filters, 'pending'), ENT_QUOTES, 'UTF-8'); ?>"><?php echo (int) $totals['total_pending']; ?></a></td>
+                    
+                   
                 </tr>
                 <?php } ?>
             </tbody>

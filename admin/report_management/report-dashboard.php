@@ -177,7 +177,34 @@ $Options = adminResolveMenuOptionsFromUserRow($row77);
                                <div class="card bg-warning text-white ui-hover-icon mb-4 bg-pattern-3">
                                         <div class="card-body text-center">
                                        
-                                        <h6 class="mb-0">Vehical <br>Report</h6>
+                                        <h6 class="mb-0">Vehicle Entry<br>Report</h6>
+                                        <i class="lnr lnr-users hov-icon"></i>
+                                     </div>
+                                </div></a>
+                            </div>
+                            <div class="col-sm-6 col-xl-2">
+                                <a href="driver-trip-billing-report.php">
+                               <div class="card bg-warning text-white ui-hover-icon mb-4 bg-pattern-3">
+                                        <div class="card-body text-center">
+                                        <h6 class="mb-0">Driver Trip<br>Billing Report</h6>
+                                        <i class="lnr lnr-users hov-icon"></i>
+                                     </div>
+                                </div></a>
+                            </div>
+                            <div class="col-sm-6 col-xl-2">
+                                <a href="driver-trip-billing-summary.php">
+                               <div class="card bg-warning text-white ui-hover-icon mb-4 bg-pattern-3">
+                                        <div class="card-body text-center">
+                                        <h6 class="mb-0">Driver Trip<br>Billing Summary</h6>
+                                        <i class="lnr lnr-users hov-icon"></i>
+                                     </div>
+                                </div></a>
+                            </div>
+                            <div class="col-sm-6 col-xl-2">
+                                <a href="driver-trip-billings.php">
+                               <div class="card bg-warning text-white ui-hover-icon mb-4 bg-pattern-3">
+                                        <div class="card-body text-center">
+                                        <h6 class="mb-0">Driver Trip<br>Billing Manage</h6>
                                         <i class="lnr lnr-users hov-icon"></i>
                                      </div>
                                 </div></a>

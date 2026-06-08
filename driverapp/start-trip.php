@@ -2,7 +2,7 @@
 session_start();
 include_once 'config.php';
 include_once 'auth.php';
-$user_id = $_SESSION['Admin']['id'];
+$user_id = $_SESSION['User']['id'];
 $MainPage = "Customers";
 $Page = "View-Customers";
 ?>
@@ -47,9 +47,12 @@ $Page = "View-Customers";
         
 
 <?php
-$id = $_GET['id'];
+$id = isset($_GET['id']) ? $_GET['id'] : '';
+$row7 = array();
+if($id != ''){
 $sql = "SELECT * FROM tbl_trip_details WHERE id='$id'";
 $row7 = getRecord($sql);
+}
 if(isset($_POST['submit'])){
 $DriverName = addslashes(trim($_POST['DriverName']));
 $VehicalNo = addslashes(trim($_POST['VehicalNo']));
@@ -59,23 +62,10 @@ $OpeningReading = addslashes(trim($_POST['OpeningReading']));
 $StartLattitude = addslashes(trim($_POST['StartLattitude']));
 $StartLongitude = addslashes(trim($_POST['StartLongitude']));
 $CreatedDate = date('Y-m-d');
-$CreatedTime = date('h:i a');
+$CreatedTime = date('H:i:s');
 
-$randno = rand(1,100);
-$src = $_FILES['Photo']['tmp_name'];
-$fnm = substr($_FILES["Photo"]["name"], 0,strrpos($_FILES["Photo"]["name"],'.')); 
-$fnm = str_replace(" ","_",$fnm);
-$ext = substr($_FILES["Photo"]["name"],strpos($_FILES["Photo"]["name"],"."));
-$dest = '../uploads/'. $randno . "_".$fnm . $ext;
-$imagepath =  $randno . "_".$fnm . $ext;
-if(move_uploaded_file($src, $dest))
-{
-$Photo = $imagepath ;
-} 
-else{
-    $Photo = $_POST['OldPhoto'];
-}
-
+$StartPhoto = isset($_POST['OldStartPhoto']) ? $_POST['OldStartPhoto'] : '';
+if(!empty($_FILES['StartPhoto']['name'])){
 $randno = rand(1,100);
 $src = $_FILES['StartPhoto']['tmp_name'];
 $fnm = substr($_FILES["StartPhoto"]["name"], 0,strrpos($_FILES["StartPhoto"]["name"],'.')); 
@@ -86,24 +76,24 @@ $imagepath =  $randno . "_".$fnm . $ext;
 if(move_uploaded_file($src, $dest))
 {
 $StartPhoto = $imagepath ;
-} 
-else{
-    $StartPhoto = $_POST['OldStartPhoto'];
+}
 }
 
-if($_GET['id']==''){
-$sql = "INSERT INTO tbl_trip_details SET DriverId='$user_id',DriverName='$DriverName',VehicalNo='$VehicalNo',InDate='$InDate',TripDetails='$TripDetails',OpeningReading='$OpeningReading',StartLattitude='$StartLattitude',StartLongitude='$StartLongitude',CreatedBy='$user_id',CreatedDate='$CreatedDate',CreatedTime='$CreatedTime',StartPhoto='$StartPhoto',InTime='$CreatedTime'";
+if($id == ''){
+$sql = "INSERT INTO tbl_trip_details SET DriverId='$user_id',DriverName='$DriverName',VehicalNo='$VehicalNo',InDate='$InDate',TripDetails='$TripDetails',OpeningReading='$OpeningReading',StartLattitude='$StartLattitude',StartLongitude='$StartLongitude',Status=0,CreatedBy='$user_id',ModifiedBy=0,CalModifiedBy=0,CreatedDate='$CreatedDate',CreatedTime='$CreatedTime',StartPhoto='$StartPhoto',InTime='$CreatedTime'";
 $conn->query($sql);
 $PostId = mysqli_insert_id($conn);
 $TripNo = rand(1000,9999)."".$PostId;
 $sql2 = "UPDATE tbl_trip_details SET TripNo='$TripNo' WHERE id='$PostId'";
 $conn->query($sql2);
-echo "<script>window.location.href='running-trips.php';</script>";
+header('Location: running-trips.php');
+exit;
 }
 else{
 $sql = "UPDATE tbl_trip_details SET InDate='$InDate',TripDetails='$TripDetails',OpeningReading='$OpeningReading',StartPhoto='$StartPhoto' WHERE id='$id'";
 $conn->query($sql);
-echo "<script>window.location.href='running-trips.php';</script>";
+header('Location: running-trips.php');
+exit;
 }
 }
 ?>

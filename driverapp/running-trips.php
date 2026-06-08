@@ -2,7 +2,7 @@
 session_start();
 include_once 'config.php';
 include_once 'auth.php';
-$user_id = $_SESSION['Admin']['id'];
+$user_id = $_SESSION['User']['id'];
 $MainPage = "Customers";
 $Page = "View-Customers";
 ?>

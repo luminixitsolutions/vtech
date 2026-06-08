@@ -128,7 +128,7 @@ $query = "SELECT * FROM tbl_users WHERE Phone = '$Phone' AND Password = '$Passwo
 if($_POST['action']=='Login'){
 $Username = addslashes(trim($_POST['Username']));
 $Password = addslashes(trim($_POST['Password']));
-$query = "SELECT * FROM tbl_users WHERE (Phone = '$Username' OR EmailId='$Username') AND Status=1 AND Roll IN(39)";
+$query = "SELECT * FROM tbl_users WHERE (Phone = '$Username' OR EmailId='$Username') AND Status=1 AND Roll IN(39,46)";
  $rncnt = getRow($query);
  $row = getRecord($query);
  if($rncnt > 0){
@@ -179,9 +179,10 @@ $row = getRecord($query);
 $_SESSION['User'] = $row;
 $uid = $row['id'];
 $Phone = $row['Phone'];
+$Roll = $row['Roll'];
 $user_id = $_SESSION['User']['id'];
 unset($_SESSION['otp']);      
-echo json_encode(array('status'=>1,'Username'=>$Phone,'uid'=>$uid));
+echo json_encode(array('status'=>1,'Username'=>$Phone,'uid'=>$uid,'roll'=>$Roll));
 }
 else{
 echo json_encode(array('status'=>0));   

@@ -136,7 +136,7 @@ if($rncnt11 > 0){
         <div class="main-container  text-center" style="background-color:#fff;">
 
              <div class="container ">
-                <h5 class="card-header fancy-heading">ðŸš€ PROJECT DASHBOARD</h5>
+                <h5 class="card-header fancy-heading">PROJECT DASHBOARD</h5>
 
                 <div class="row text-center mt-4">
 <?php 

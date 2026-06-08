@@ -1,172 +1,83 @@
 <?php
 include '../config.php';
+include '../inc-project-abstract-queries.php';
 
-## Read value
-$ProjectId = $_POST['ProjectId'];
-$ProjectSubHeadId = $_POST['subheadid'];
-$roll = $_POST['roll'];
-$dist = $_POST['dist'];
-$val2 = $_POST['val'];
-$draw = $_POST['draw'];
-$row = $_POST['start'];
-$rowperpage = $_POST['length']; // Rows display per page
-$columnIndex = $_POST['order'][0]['column']; // Column index
-$columnName = $_POST['columns'][$columnIndex]['data']; // Column name
-$columnSortOrder = $_POST['order'][0]['dir']; // asc or desc
-$searchValue = mysqli_real_escape_string($conn,$_POST['search']['value']); // Search value
+$ProjectId = isset($_POST['ProjectId']) ? (int) $_POST['ProjectId'] : 0;
+$ProjectSubHeadId = isset($_POST['subheadid']) ? (int) $_POST['subheadid'] : 0;
+$roll = isset($_POST['roll']) ? trim((string) $_POST['roll']) : '';
+$dist = isset($_POST['dist']) ? trim((string) $_POST['dist']) : '';
+$val2 = isset($_POST['val']) ? trim((string) $_POST['val']) : '';
+$draw = isset($_POST['draw']) ? (int) $_POST['draw'] : 0;
+$row = isset($_POST['start']) ? (int) $_POST['start'] : 0;
+$rowperpage = isset($_POST['length']) ? (int) $_POST['length'] : 10;
+$columnIndex = isset($_POST['order'][0]['column']) ? (int) $_POST['order'][0]['column'] : 0;
+$columnName = isset($_POST['columns'][$columnIndex]['data']) ? $_POST['columns'][$columnIndex]['data'] : 'Fname';
+$columnSortOrder = isset($_POST['order'][0]['dir']) ? $_POST['order'][0]['dir'] : 'asc';
+$searchValue = isset($_POST['search']['value']) ? mysqli_real_escape_string($conn, $_POST['search']['value']) : '';
 
-## Search 
-$searchQuery = " ";
-if($searchValue != ''){
-    $searchQuery = " and (tu.Fname like '%".$searchValue."%' or 
-        tu.Phone like '%".$searchValue."%' or 
-        tu.Taluka like'%".$searchValue."%' or 
-        tu.Village like'%".$searchValue."%' or 
-        tu.District like'%".$searchValue."%' or 
-        tu.BeneficiaryId like'%".$searchValue."%' or 
-        tu.Address like'%".$searchValue."%') ";
+$allowedSortColumns = array(
+    'ProjectType', 'BeneficiaryId', 'Fname', 'Phone', 'Taluka', 'Village', 'District', 'Address', 'Lattitude', 'Longitude'
+);
+if (!in_array($columnName, $allowedSortColumns, true)) {
+    $columnName = 'Fname';
 }
+$columnSortOrder = strtolower($columnSortOrder) === 'desc' ? 'DESC' : 'ASC';
 
-if($roll == 'totapp'){
-$sql = "SELECT tu.* FROM tbl_users tu WHERE tu.ProjectType=1 AND tu.ProjectId='$ProjectId' AND tu.District!='' AND tu.ProjectSubHeadId='$ProjectSubHeadId'";
-if($dist !=''){
-    $sql.=" AND tu.District='$dist'";
-}
-}
-if($roll == 'capacity'){
-$sql = "SELECT tu.* FROM tbl_users tu WHERE tu.PumpCapacity='$val2' AND tu.ProjectType=1 AND  ProjectId='$ProjectId' AND tu.District!='' AND tu.ProjectSubHeadId='$ProjectSubHeadId'";
-if($dist !=''){
-    $sql.=" AND tu.District='$dist'";
-}
-}
-if($roll == 'surveydone'){
-$sql = "SELECT * FROM tbl_users tu WHERE tu.FieldSurveyDetails='$val2' AND tu.ProjectType=1 AND tu.ProjectId='$ProjectId' AND tu.District!='' AND tu.ProjectSubHeadId='$ProjectSubHeadId'";
-if($dist !=''){
-    $sql.=" AND District='$dist'";
-}
-}
-if($roll == 'surveyrejected'){
-$sql = "SELECT tu.* FROM tbl_users tu WHERE tu.SurveyMatch='$val2' AND tu.ProjectType=1 AND tu.ProjectId='$ProjectId' AND tu.District!='' AND tu.ProjectSubHeadId='$ProjectSubHeadId'";
-if($dist !=''){
-    $sql.=" AND tu.District='$dist'";
-}
-}
-if($roll == 'surveypending'){
-$sql = "SELECT tu.* FROM tbl_users tu WHERE tu.FieldSurveyDetails='$val2' AND tu.ProjectType=1 AND tu.ProjectId='$ProjectId' AND tu.District!='' AND tu.ProjectSubHeadId='$ProjectSubHeadId'";
-if($dist !=''){
-    $sql.=" AND tu.District='$dist'";
-}
-}
-if($roll == 'deliverychallan'){
-$sql = "SELECT tu.* FROM tbl_users tu WHERE tu.ProjectType=1 AND tu.ProjectId='$ProjectId' AND tu.District!='' AND tu.ProjectSubHeadId='$ProjectSubHeadId' AND EXISTS (SELECT 1 FROM tbl_sell ts WHERE ts.CustId=tu.id AND ts.SellType='Challan')";
-if($dist !=''){
-    $sql.=" AND tu.District='$dist'";
-}
-}
-if($roll == 'dispatch'){
-$sql = "SELECT * FROM tbl_sell ts INNER JOIN tbl_users tu ON tu.id=ts.CustId WHERE tu.ProjectType=1 AND tu.ProjectId='$ProjectId' AND tu.District!='' AND tu.ProjectSubHeadId='$ProjectSubHeadId'";
-if($dist !=''){
-    $sql.=" AND tu.District='$dist'";
-}
-}
-if($roll == 'installation'){
-    if($val2 == 'Yes'){
-     $sql = "SELECT tu.*,ti.Lattitude AS InstLattitude,ti.Longitude AS InstLongitude,ti.id AS InstId FROM tbl_installations ti 
-                    LEFT JOIN tbl_users tu ON ti.CustId=tu.id WHERE tu.ProjectId='$ProjectId' AND tu.Roll=5 AND tu.FieldSurveyDetails=1 AND ti.InstallStatus='Yes' AND ti.Type=2 AND tu.ProjectSubHeadId='$ProjectSubHeadId'";
-    }
-    else{
-        $sql = "SELECT tu.* FROM tbl_users tu WHERE tu.ProjectId = '$ProjectId' AND tu.ProjectSubHeadId = '$ProjectSubHeadId' AND tu.Roll = 5 AND tu.FieldSurveyDetails = 1 AND tu.ProjectType = 1 AND tu.id NOT IN ( SELECT ti.CustId FROM tbl_installations ti WHERE ti.InstallStatus = 'Yes' AND ti.Type = 2 )";
-    }
-if($dist !=''){
-    $sql.=" AND tu.District='$dist'";
-}
-}
-if($roll == 'dataupload'){
-$sql = "SELECT * FROM tbl_installations ts INNER JOIN tbl_users tu ON tu.id=ts.CustId WHERE tu.ProjectType=1 AND ts.DataUploadStatus='$val2' AND tu.ProjectId='$ProjectId' AND tu.District!='' AND tu.ProjectSubHeadId='$ProjectSubHeadId'";
-if($dist !=''){
-    $sql.=" AND tu.District='$dist'";
-}
-}
-if($roll == 'inspection'){
- if($val2 == 'Yes'){
-     $sql = "SELECT tu.*,ti.Lattitude AS InstLattitude,ti.Longitude AS InstLongitude,ti.id AS InstId FROM tbl_installations ti 
-                    LEFT JOIN tbl_users tu ON ti.CustId=tu.id WHERE tu.ProjectId='$ProjectId' AND tu.Roll=5 AND tu.FieldSurveyDetails=1 AND ti.PoInspection='Yes' AND ti.Type=2 AND tu.ProjectSubHeadId='$ProjectSubHeadId'";
-    }
-    else{
-        $sql = "SELECT tu.* FROM tbl_users tu WHERE tu.ProjectId = '$ProjectId' AND tu.ProjectSubHeadId = '$ProjectSubHeadId' AND tu.Roll = 5 AND tu.FieldSurveyDetails = 1 AND tu.ProjectType = 1 AND tu.id NOT IN ( SELECT ti.CustId FROM tbl_installations ti WHERE ti.PoInspection = 'Yes' AND ti.Type = 2 )";
-    }
-    if($dist !=''){
-    $sql.=" AND tu.District='$dist'";
-}
-}
-if($roll == 'inspectiondis'){
-$sql = "SELECT * FROM tbl_installations ts INNER JOIN tbl_users tu ON tu.id=ts.CustId WHERE tu.ProjectType=1 AND ts.InspectionDiscrepancy='$val2' AND tu.ProjectId='$ProjectId' AND tu.District!='' AND tu.ProjectSubHeadId='$ProjectSubHeadId'";
-if($dist !=''){
-    $sql.=" AND tu.District='$dist'";
-}
+$searchQuery = '';
+if ($searchValue !== '') {
+    $searchQuery = " AND (tu.Fname LIKE '%" . $searchValue . "%' OR
+        tu.Phone LIKE '%" . $searchValue . "%' OR
+        tu.Taluka LIKE '%" . $searchValue . "%' OR
+        tu.Village LIKE '%" . $searchValue . "%' OR
+        tu.District LIKE '%" . $searchValue . "%' OR
+        tu.BeneficiaryId LIKE '%" . $searchValue . "%' OR
+        tu.Address LIKE '%" . $searchValue . "%') ";
 }
 
-if($roll == 'billsubmitted'){
-$sql = "SELECT * FROM tbl_installations ts INNER JOIN tbl_users tu ON tu.id=ts.CustId WHERE tu.ProjectType=1 AND ts.CircleOfficeStatus='$val2' AND tu.ProjectId='$ProjectId' AND tu.ProjectSubHeadId='$ProjectSubHeadId'";
-if($dist !=''){
-    $sql.=" AND tu.District='$dist'";
+$sql = projectAbstractListSql($conn, $roll, $ProjectId, $ProjectSubHeadId, $dist, $val2);
+if ($sql === '') {
+    echo json_encode(array(
+        'draw' => $draw,
+        'iTotalRecords' => 0,
+        'iTotalDisplayRecords' => 0,
+        'aaData' => array(),
+    ));
+    exit;
 }
-}
 
-## Total number of records without filtering
-$totalRecords = getRow($sql);
+$totalRecords = projectAbstractCount($conn, $roll, $ProjectId, $ProjectSubHeadId, $dist, $val2);
+$totalRecordwithFilter = (int) getRecord("SELECT COUNT(*) AS cnt FROM ($sql $searchQuery) abstract_filtered")['cnt'];
 
-## Total number of records with filtering
-$totalRecordwithFilter = getRow($sql." ".$searchQuery);
-
-## Fetch records
-$empQuery = $sql." ".$searchQuery." order by ".$columnName." ".$columnSortOrder." limit ".$row.",".$rowperpage;
+$empQuery = $sql . $searchQuery . ' ORDER BY tu.' . $columnName . ' ' . $columnSortOrder . ' LIMIT ' . $row . ',' . $rowperpage;
 $empRecords = mysqli_query($conn, $empQuery);
 $data = array();
 
-while ($row = mysqli_fetch_assoc($empRecords)) {
-
-   
-
-
-    if ($row['ProjectType'] == '1') {
-        $ProjectType = "Pump Projects";
+while ($rowData = mysqli_fetch_assoc($empRecords)) {
+    if ((int) ($rowData['ProjectType'] ?? 0) === 1) {
+        $ProjectType = 'Pump Projects';
     } else {
-        $ProjectType = "Rooftop Projects";
+        $ProjectType = 'Rooftop Projects';
     }
 
-if($InstallStatus == 'No' || $PoInspection == 'No' || $DispatchStatus == 'Yes' || $DispatchStatus == 'No'){
-    $Action = "";
-}
-else{
-     $Action = "<a href='add-pump-installation.php?id=".$row['InstId']."&ProjectId=".$ProjectId."'><i class='lnr lnr-pencil mr-2'></i></a>";
-   
-}
-
-
-     $data[] = array(
-            "ProjectType"=>$ProjectType,
-            "BeneficiaryId"=>$row['BeneficiaryId'],
-            "Fname"=>$row['Fname'] . " " . $row['Lname'],
-            "Phone"=>$row['Phone'],
-            "Taluka"=>$row['Taluka'],
-            "Village"=>$row['Village'],
-            "District"=>$row['District'],
-            "Address"=>$row['Address'],
-             "Lattitude"=>$row['InstLattitude'],
-            "Longitude"=>$row['InstLongitude'],
-            
-            
-        );
+    $data[] = array(
+        'ProjectType' => $ProjectType,
+        'BeneficiaryId' => $rowData['BeneficiaryId'] ?? '',
+        'Fname' => trim((string) ($rowData['Fname'] ?? '') . ' ' . (string) ($rowData['Lname'] ?? '')),
+        'Phone' => $rowData['Phone'] ?? '',
+        'Taluka' => $rowData['Taluka'] ?? '',
+        'Village' => $rowData['Village'] ?? '',
+        'District' => $rowData['District'] ?? '',
+        'Address' => $rowData['Address'] ?? '',
+        'Lattitude' => $rowData['Lattitude'] ?? '',
+        'Longitude' => $rowData['Longitude'] ?? '',
+    );
 }
 
-
-## Response
 $response = array(
-    "draw" => intval($draw),
-    "iTotalRecords" => $totalRecords,
-    "iTotalDisplayRecords" => $totalRecordwithFilter,
-    "aaData" => $data
+    'draw' => $draw,
+    'iTotalRecords' => $totalRecords,
+    'iTotalDisplayRecords' => $totalRecordwithFilter,
+    'aaData' => $data,
 );
 
 echo json_encode($response);

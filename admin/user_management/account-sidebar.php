@@ -373,10 +373,41 @@
 
 </ul>
 </li>
+<?php } if(in_array("255", $Options)) {?>
+<li class="sidenav-item <?php if($MainPage=='Transportor') {?> open active <?php } ?>">
+<a href="javascript:" class="sidenav-link sidenav-toggle">
+<i class="sidenav-icon feather icon-package"></i>
+<div>Transportor Account</div>
+</a>
+<ul class="sidenav-menu">
+   <?php if(in_array("14", $Options)) {?>  
+<li class="sidenav-item">
+<a href="add-transportor.php" class="sidenav-link">
+<div> Add Transportor Account</div>
+<?php if($Page=='Add-Transportor') {?>
+<div class="pl-1 ml-auto">
+<span class="badge badge-dot badge-primary"></span>
+</div>
+<?php } ?>
+</a>
+</li>
+<?php } ?>
+<li class="sidenav-item">
+<a href="view-transportor.php" class="sidenav-link">
+<div> View Transportor Account</div>
+<?php if($Page=='View-Transportor') {?>
+<div class="pl-1 ml-auto">
+<span class="badge badge-dot badge-primary"></span>
+</div>
+<?php } ?>
+</a>
+</li>
+</ul>
+</li>
 <?php } if(in_array("116", $Options)) {?>
 <li class="sidenav-item <?php if($MainPage=='Drivers') {?> open active <?php } ?>">
 <a href="javascript:" class="sidenav-link sidenav-toggle">
-<i class="sidenav-icon feather icon-user"></i>
+<i class="sidenav-icon feather icon-navigation"></i>
 <div>Driver Account</div>
 </a>
 <ul class="sidenav-menu">
@@ -402,7 +433,6 @@
 <?php } ?>
 </a>
 </li>
-
 </ul>
 </li>
 <?php } if(in_array("22", $Options)) {?>

@@ -1,7 +1,6 @@
 <?php session_start();
 $sessionid = session_id();
 require_once 'config.php';
-//require_once 'auth.php';
 $PageName = "Home";
 if($_REQUEST['uid'] == ''){
   $uid = $_SESSION['User']['id'];
@@ -12,6 +11,11 @@ $uid = $_REQUEST['uid'];
 $sql11 = "SELECT * FROM tbl_users WHERE id='$uid'";
 $row = getRecord($sql11);
 $_SESSION['User'] = $row;
+if ((int) ($row['Roll'] ?? 0) === 46) {
+    echo "<script>window.location.href='../transportorapp/home.php';</script>";
+    exit();
+}
+$user_id = $uid;
 ?>
 <!doctype html>
 <html lang="en" class="h-100">

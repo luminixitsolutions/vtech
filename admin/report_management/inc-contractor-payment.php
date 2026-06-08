@@ -485,7 +485,6 @@ function contractorBillingContractorsByProjectSubHead($conn, $projectId, $subhea
         INNER JOIN tbl_users tu ON tu.id = tc.ContractorId AND tu.Roll = '40'
         WHERE cust.ProjectId = '$projectId' AND cust.ProjectSubHeadId = '$subheadId'
         GROUP BY tc.ContractorId, tu.Fname, tu.Lname
-        HAVING total_commission > 0
         ORDER BY total_commission DESC, total_sites DESC, tu.Fname ASC, tu.Lname ASC";
 
     contractorPaymentEnsureTable($conn);

@@ -9,11 +9,12 @@ function accountDashboardRegistry()
         array('option' => '20', 'label' => 'Company', 'href' => 'view-company.php', 'icon' => 'briefcase', 'tone' => 'company', 'group' => 'business', 'count_sql' => 'Roll=10'),
         array('option' => '22', 'label' => 'Dealer', 'href' => 'view-dealer.php', 'icon' => 'shopping-bag', 'tone' => 'dealer', 'group' => 'partners', 'count_sql' => 'Roll=9'),
         array('option' => '23', 'label' => 'Agency', 'href' => 'view-agency.php', 'icon' => 'award', 'tone' => 'agency', 'group' => 'partners', 'count_sql' => 'Roll=11'),
-        array('option' => '21', 'label' => 'Employee', 'href' => 'view-employee.php', 'icon' => 'user-check', 'tone' => 'employee', 'group' => 'staff', 'count_sql' => 'Roll NOT IN(1,3,4,5,9,10,8,11,34,35,36,37,39,40,26,27,42)'),
+        array('option' => '21', 'label' => 'Employee', 'href' => 'view-employee.php', 'icon' => 'user-check', 'tone' => 'employee', 'group' => 'staff', 'count_sql' => 'Roll NOT IN(1,3,4,5,9,10,8,11,34,35,36,37,39,40,26,27,42,46)'),
         array('option' => '125', 'label' => 'Store Incharge', 'href' => 'view-store-incharge.php', 'icon' => 'home', 'tone' => 'store', 'group' => 'operations', 'count_sql' => 'Roll=27'),
         array('option' => '126', 'label' => 'Dispatch Officer', 'href' => 'view-dispatch-officer.php', 'icon' => 'truck', 'tone' => 'dispatch', 'group' => 'operations', 'count_sql' => 'Roll=26'),
         array('option' => '127', 'label' => 'Contractor', 'href' => 'view-installer.php', 'icon' => 'hard-drive', 'tone' => 'contractor', 'group' => 'operations', 'count_sql' => 'Roll=40'),
         array('option' => '128', 'label' => 'Installer', 'href' => 'view-installer-employee.php', 'icon' => 'settings', 'tone' => 'installer', 'group' => 'operations', 'count_sql' => 'Roll IN(34,35,36,37)'),
+        array('option' => '255', 'label' => 'Transportor', 'href' => 'view-transportor.php', 'icon' => 'package', 'tone' => 'transportor', 'group' => 'operations', 'count_sql' => 'Roll=46'),
         array('option' => '116', 'label' => 'Driver', 'href' => 'view-drivers.php', 'icon' => 'navigation', 'tone' => 'driver', 'group' => 'operations', 'count_sql' => 'Roll=39'),
         array('option' => '129', 'label' => 'Maintenance Engineer', 'href' => 'view-maintaince-engineer.php', 'icon' => 'tool', 'tone' => 'maintenance', 'group' => 'operations', 'count_sql' => 'Roll=42'),
     );

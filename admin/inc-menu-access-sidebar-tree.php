@@ -169,6 +169,10 @@ function getMenuAccessDetailedTree()
                 menuAccessTreeItem(216, 'Add Installer'),
                 menuAccessTreeItem(217, 'View Installer'),
             ]),
+            menuAccessTreeGroup('Transportor Account', [
+                menuAccessTreeItem(256, 'Add Transportor Account'),
+                menuAccessTreeItem(257, 'View Transportor Account'),
+            ]),
             menuAccessTreeGroup('Driver Account', [
                 menuAccessTreeItem(218, 'Add Driver Account'),
                 menuAccessTreeItem(219, 'View Driver Account'),

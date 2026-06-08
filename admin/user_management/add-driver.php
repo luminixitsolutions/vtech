@@ -65,39 +65,6 @@ $row7 = getRecord($sql7);
                                     <input type="hidden" name="id" value="<?php echo $_GET['id']; ?>" id="userid">
                                     <input type="hidden" name="action" value="Save" id="action">
                                     <div class="form-row">
-                                       
-                                       <div class="form-group col-md-4">
-<label class="form-label">Vehical No <span class="text-danger">*</span></label>
-<input type="text" name="VehicalNo" class="form-control" id="VehicalNo" placeholder="Vehical No" value="<?php echo $row7["VehicalNo"]; ?>" required>
-<div class="clearfix"></div>
-</div>
-<div class="form-group col-md-4">
-<label class="form-label">Vehical Model </label>
-<input type="text" name="VehicalModel" class="form-control" id="VehicalModel" placeholder="Vehical Model" value="<?php echo $row7["VehicalModel"]; ?>" >
-<div class="clearfix"></div>
-</div>
-<div class="form-group col-md-4">
-<label class="form-label">Engine No </label>
-<input type="text" name="EngineNo" class="form-control" id="EngineNo" placeholder="Engine No" value="<?php echo $row7["EngineNo"]; ?>" >
-<div class="clearfix"></div>
-</div>
-<div class="form-group col-md-4">
-<label class="form-label">Vehical Average <span class="text-danger">*</span></label>
-<input type="text" name="VehAverage" class="form-control" id="VehAverage" placeholder="Vehical Average" value="<?php echo $row7["VehAverage"]; ?>" required>
-<div class="clearfix"></div>
-</div>
-<div class="form-group col-md-4">
-<label class="form-label">Vehical Company Name </label>
-<input type="text" name="CompanyName" class="form-control" id="CompanyName" placeholder="Vehical Company Name" value="<?php echo $row7["CompanyName"]; ?>" >
-<div class="clearfix"></div>
-</div>
-
-<div class="form-group col-md-4">
-<label class="form-label">Per Day Vehicle </label>
-<input type="text" name="PerDayVehicle" class="form-control" id="PerDayVehicle" placeholder="" value="<?php echo $row7["PerDayVehicle"]; ?>" >
-<div class="clearfix"></div>
-</div>
-
 
                                          <div class="form-group col-md-6" >
 <label class="form-label"> Company</label>
@@ -164,6 +131,19 @@ else{
 </select>
 <div class="clearfix"></div>
 </div>               
+<div class="form-group col-md-12">
+<label class="form-label">Transportor <span class="text-danger">*</span></label>
+<select class="form-control" name="UnderUser" id="UnderUser" required>
+<option selected="" value="">Select Transportor</option>
+<?php
+$sqlTransportor = "SELECT * FROM tbl_users WHERE Status='1' AND Roll=46 ORDER BY Fname";
+foreach (getList($sqlTransportor) as $result) {
+?>
+<option <?php if (($row7['UnderUser'] ?? '') == $result['id']) { ?> selected <?php } ?> value="<?php echo $result['id']; ?>"><?php echo $result['Fname']; ?></option>
+<?php } ?>
+</select>
+<div class="clearfix"></div>
+</div>
                                        <div class="form-group col-md-12">
                                             <label class="form-label">Driver Name <span
                                                     class="text-danger">*</span></label>
@@ -172,7 +152,37 @@ else{
                                                 autocomplete="off">
                                         </div>
 
-                                       
+                                       <div class="form-group col-md-4">
+<label class="form-label">Vehical No <span class="text-danger">*</span></label>
+<input type="text" name="VehicalNo" class="form-control" id="VehicalNo" placeholder="Vehical No" value="<?php echo $row7["VehicalNo"]; ?>" required>
+<div class="clearfix"></div>
+</div>
+<div class="form-group col-md-4">
+<label class="form-label">Vehical Model </label>
+<input type="text" name="VehicalModel" class="form-control" id="VehicalModel" placeholder="Vehical Model" value="<?php echo $row7["VehicalModel"]; ?>" >
+<div class="clearfix"></div>
+</div>
+<div class="form-group col-md-4">
+<label class="form-label">Engine No </label>
+<input type="text" name="EngineNo" class="form-control" id="EngineNo" placeholder="Engine No" value="<?php echo $row7["EngineNo"]; ?>" >
+<div class="clearfix"></div>
+</div>
+<div class="form-group col-md-4">
+<label class="form-label">Vehical Average <span class="text-danger">*</span></label>
+<input type="text" name="VehAverage" class="form-control" id="VehAverage" placeholder="Vehical Average" value="<?php echo $row7["VehAverage"]; ?>" required>
+<div class="clearfix"></div>
+</div>
+<div class="form-group col-md-4">
+<label class="form-label">Vehical Company Name </label>
+<input type="text" name="CompanyName" class="form-control" id="CompanyName" placeholder="Vehical Company Name" value="<?php echo $row7["CompanyName"]; ?>" >
+<div class="clearfix"></div>
+</div>
+
+<div class="form-group col-md-4">
+<label class="form-label">Per Day Vehicle </label>
+<input type="text" name="PerDayVehicle" class="form-control" id="PerDayVehicle" placeholder="" value="<?php echo $row7["PerDayVehicle"]; ?>" >
+<div class="clearfix"></div>
+</div>
 
  <div class="form-group col-md-12">
                                             <label class="form-label">Permanent Address </label>

@@ -69,103 +69,26 @@ $Projectname = $row['Name'];
                           
 <input type="hidden" id="ProjectId" value="<?php echo $_GET['projid'];?>">
 
-<?php 
-    function getDetails($val,$dist,$val2){
-        global $conn;
-        if($val == 'totapp'){
-            $sql2 = "SELECT * FROM tbl_users WHERE District='$dist' AND ProjectType=1 AND ProjectId='".$_GET['projid']."' AND ProjectSubHeadId='".$_GET['SubHeadProjectId']."'";
-            $rncnt2 = getRow($sql2);
-        }
-        if($val == 'capacity'){
-            $sql2 = "SELECT * FROM tbl_users WHERE PumpCapacity='$val2' AND ProjectType=1 AND District='$dist' AND ProjectId='".$_GET['projid']."' AND ProjectSubHeadId='".$_GET['SubHeadProjectId']."'";
-            $rncnt2 = getRow($sql2);
-        }
-        if($val == 'surveydone'){
-            $sql2 = "SELECT * FROM tbl_users WHERE FieldSurveyDetails='$val2' AND ProjectType=1 AND District='$dist' AND ProjectId='".$_GET['projid']."' AND ProjectSubHeadId='".$_GET['SubHeadProjectId']."'";
-            $rncnt2 = getRow($sql2);
-        }
-        if($val == 'surveyrejected'){
-            $sql2 = "SELECT * FROM tbl_users WHERE SurveyMatch='$val2' AND ProjectType=1 AND District='$dist' AND ProjectId='".$_GET['projid']."' AND ProjectSubHeadId='".$_GET['SubHeadProjectId']."'";
-            $rncnt2 = getRow($sql2);
-        }
-        if($val == 'surveypending'){
-            $sql2 = "SELECT * FROM tbl_users WHERE FieldSurveyDetails='$val2' AND ProjectType=1 AND District='$dist' AND ProjectId='".$_GET['projid']."' AND ProjectSubHeadId='".$_GET['SubHeadProjectId']."'";
-            $rncnt2 = getRow($sql2);
-        }
-        if($val == 'deliverychallan'){
-            // Count customers with at least one challan (multiple challans for same customer = 1)
-            $sql2 = "SELECT COUNT(DISTINCT ts.CustId) AS cnt FROM tbl_sell ts INNER JOIN tbl_users tu ON tu.id=ts.CustId WHERE ts.SellType='Challan' AND tu.ProjectType=1 AND tu.District='$dist' AND tu.ProjectId='".$_GET['projid']."' AND tu.ProjectSubHeadId='".$_GET['SubHeadProjectId']."'";
-            $row2 = getRecord($sql2);
-            $rncnt2 = (int) ($row2['cnt'] ?? 0);
-        }
-        if($val == 'dispatch'){
-            // Count unique customers only (do not merge/count repeated customers in abstract)
-            $sql2 = "SELECT COUNT(DISTINCT tu.id) AS cnt FROM tbl_sell ts INNER JOIN tbl_users tu ON tu.id=ts.CustId WHERE tu.ProjectType=1 AND tu.District='$dist' AND tu.ProjectId='".$_GET['projid']."' AND tu.ProjectSubHeadId='".$_GET['SubHeadProjectId']."'";
-            $row2 = getRecord($sql2);
-            $rncnt2 = (int) ($row2['cnt'] ?? 0);
-        }
-        if($val == 'dispatchpending'){
-            
-            $sql2 = "
-SELECT tu.id
-FROM tbl_users tu
-LEFT JOIN tbl_sell ts 
-    ON tu.id = ts.CustId 
-    AND ts.Inst_Dispatcher_Otp_Verify = 1
-WHERE tu.ProjectId='".$_GET['projid']."'
-AND tu.ProjectSubHeadId='".$_GET['SubHeadProjectId']."'
-AND tu.Roll=5
-AND tu.FieldSurveyDetails=1
-AND tu.ProjectType=1
-AND tu.District='$dist'
-AND ts.CustId IS NULL
-";
+<?php
+    include_once 'inc-project-abstract-queries.php';
 
-$rncnt2 = getRow($sql2);
-            
+    function getDetails($val, $dist, $val2)
+    {
+        global $conn;
+        $projectId = isset($_GET['projid']) ? (int) $_GET['projid'] : 0;
+        $subheadId = isset($_GET['SubHeadProjectId']) ? (int) $_GET['SubHeadProjectId'] : 0;
+
+        if ($val === 'installationpending') {
+            return projectAbstractCount($conn, 'installationpending', $projectId, $subheadId, $dist, $val2);
         }
-        if($val == 'installation'){
-            if($val2 == 'Yes'){
-                 $sql2 = "SELECT * FROM tbl_installations ti 
-                    LEFT JOIN tbl_users tu ON ti.CustId=tu.id WHERE tu.ProjectId='".$_GET['projid']."' AND tu.District='$dist' AND tu.Roll=5 AND tu.FieldSurveyDetails=1 AND ti.InstallStatus='Yes' AND ti.Type=2 AND tu.ProjectSubHeadId='".$_GET['SubHeadProjectId']."'";
-                $rncnt2 = getRow($sql2);    
-            }
-            else{
-              $sql2 = "SELECT * FROM tbl_users tu WHERE tu.ProjectId = '".$_GET['projid']."' AND tu.District='$dist' AND tu.ProjectSubHeadId = '".$_GET['SubHeadProjectId']."' AND tu.Roll = 5 AND tu.FieldSurveyDetails = 1 AND tu.ProjectType = 1 AND tu.id NOT IN ( SELECT ti.CustId FROM tbl_installations ti WHERE ti.InstallStatus = 'Yes' AND ti.Type = 2 )";  
-            $rncnt2 = getRow($sql2);    
-                
-            }
-            
-           
+        if ($val === 'datauploadpending') {
+            return projectAbstractCount($conn, 'datauploadpending', $projectId, $subheadId, $dist, $val2);
         }
-        if($val == 'dataupload'){
-            $sql2 = "SELECT * FROM tbl_installations ts INNER JOIN tbl_users tu ON tu.id=ts.CustId WHERE tu.ProjectType=1 AND tu.District='$dist' AND ts.DataUploadStatus='$val2' AND tu.ProjectId='".$_GET['projid']."' AND tu.ProjectSubHeadId='".$_GET['SubHeadProjectId']."'";
-            $rncnt2 = getRow($sql2);
+        if ($val === 'inspectionpending') {
+            return projectAbstractCount($conn, 'inspectionpending', $projectId, $subheadId, $dist, $val2);
         }
-        if($val == 'inspection'){
-           if($val2 == 'Yes'){
-                 $sql2 = "SELECT * FROM tbl_installations ti 
-                    LEFT JOIN tbl_users tu ON ti.CustId=tu.id WHERE tu.ProjectId='".$_GET['projid']."' AND tu.District='$dist' AND tu.Roll=5 AND tu.FieldSurveyDetails=1 AND ti.PoInspection='Yes' AND ti.Type=2 AND tu.ProjectSubHeadId='".$_GET['SubHeadProjectId']."'";
-                $rncnt2 = getRow($sql2);    
-            }
-            else{
-              $sql2 = "SELECT * FROM tbl_users tu WHERE tu.ProjectId = '".$_GET['projid']."' AND tu.District='$dist' AND tu.ProjectSubHeadId = '".$_GET['SubHeadProjectId']."' AND tu.Roll = 5 AND tu.FieldSurveyDetails = 1 AND tu.ProjectType = 1 AND tu.id NOT IN ( SELECT ti.CustId FROM tbl_installations ti WHERE ti.PoInspection = 'Yes' AND ti.Type = 2 )";  
-            $rncnt2 = getRow($sql2);    
-                
-            }
-        }
-        if($val == 'inspectiondis'){
-            $sql2 = "SELECT * FROM tbl_installations ts INNER JOIN tbl_users tu ON tu.id=ts.CustId WHERE tu.ProjectType=1 AND tu.District='$dist' AND ts.InspectionDiscrepancy='$val2'  AND tu.ProjectId='".$_GET['projid']."' AND tu.ProjectSubHeadId='".$_GET['SubHeadProjectId']."'";
-            $rncnt2 = getRow($sql2);
-        }
-        if($val == 'dcr'){
-             $sql2 = "SELECT * FROM tbl_installations ts INNER JOIN tbl_users tu ON tu.id=ts.CustId WHERE tu.ProjectType=1 AND tu.District='$dist' AND ts.DcrVerify='$val2' AND tu.ProjectId='".$_GET['projid']."' AND tu.ProjectSubHeadId='".$_GET['SubHeadProjectId']."'";
-            $rncnt2 = getRow($sql2);
-        }
-        
-        
-        //echo $sql2;
-        return $rncnt2;
+
+        return projectAbstractCount($conn, $val, $projectId, $subheadId, $dist, $val2);
     }
 
 ?>
@@ -244,11 +167,11 @@ $rncnt2 = getRow($sql2);
                         $totdeliverychallan+=getDetails('deliverychallan',$result['District'],'');
                         $totdispatch+=getDetails('dispatch',$result['District'],'');
                         $totinstallationdone+=getDetails('installation',$result['District'],'Yes');
-                        $totinstallationpending+=getDetails('dispatch',$result['District'],'') - getDetails('installation',$result['District'],'Yes')+getDetails('dispatchpending',$result['District'],'');
+                        $totinstallationpending+=getDetails('installationpending',$result['District'],'');
                         $totdatauploadone+=getDetails('dataupload',$result['District'],'Yes');
-                        $totdatauploapending+=getDetails('installation',$result['District'],'Yes') - getDetails('dataupload',$result['District'],'Yes');
+                        $totdatauploapending+=getDetails('datauploadpending',$result['District'],'');
                         $totinspectiondone+=getDetails('inspection',$result['District'],'Yes');
-                        $totinspectionpending+=getDetails('dataupload',$result['District'],'Yes') - getDetails('inspection',$result['District'],'Yes');
+                        $totinspectionpending+=getDetails('inspectionpending',$result['District'],'');
                         $totinspectiondis+=getDetails('inspectiondis',$result['District'],'Yes');
                         
                         $totdcrpending+=getDetails('dcr',$result['District'],'No');
@@ -263,22 +186,22 @@ $rncnt2 = getRow($sql2);
                         <td><a href="total-beneficiary.php?roll=capacity&dist=<?php echo $result['District'];?>&projid=<?php echo $_REQUEST['projid'];?>&val=20&subheadid=<?php echo $_REQUEST['SubHeadProjectId'];?>&title=7.5 HP" target="_blank"><?php echo getDetails('capacity',$result['District'],'20');?></a></td>
                         <td><a href="total-beneficiary.php?roll=surveydone&dist=<?php echo $result['District'];?>&projid=<?php echo $_REQUEST['projid'];?>&val=1&subheadid=<?php echo $_REQUEST['SubHeadProjectId'];?>&title=Survey Done As Per Portal" target="_blank"><?php echo getDetails('surveydone',$result['District'],'1');?></a></td>
                         <td></td>
-                        <td><a href="total-beneficiary.php?roll=surveyrejected&dist=<?php echo $result['District'];?>&projid=<?php echo $_REQUEST['projid'];?>&val=0&subheadid=<?php echo $_REQUEST['SubHeadProjectId'];?>&title=Survey Rejected" target="_blank"><?php echo getDetails('surveyrejected',$result['District'],'2');?></a></td>
+                        <td><a href="total-beneficiary.php?roll=surveyrejected&dist=<?php echo $result['District'];?>&projid=<?php echo $_REQUEST['projid'];?>&val=2&subheadid=<?php echo $_REQUEST['SubHeadProjectId'];?>&title=Survey Rejected" target="_blank"><?php echo getDetails('surveyrejected',$result['District'],'2');?></a></td>
                         <td style="background-color:#fee2d6;"><a href="total-beneficiary.php?roll=surveypending&dist=<?php echo $result['District'];?>&projid=<?php echo $_REQUEST['projid'];?>&val=0&subheadid=<?php echo $_REQUEST['SubHeadProjectId'];?>&title=Survey Pending" target="_blank"><?php echo getDetails('surveypending',$result['District'],'0');?></a></td>
                         
                         <td><a href="total-beneficiary.php?roll=deliverychallan&dist=<?php echo $result['District'];?>&projid=<?php echo $_REQUEST['projid'];?>&val=&subheadid=<?php echo $_REQUEST['SubHeadProjectId'];?>&title=Delivery Challan" target="_blank"><?php echo getDetails('deliverychallan',$result['District'],'');?></a></td>
                         <td><a href="total-beneficiary.php?roll=dispatch&dist=<?php echo $result['District'];?>&projid=<?php echo $_REQUEST['projid'];?>&val=&subheadid=<?php echo $_REQUEST['SubHeadProjectId'];?>&title=Material Dispatch" target="_blank"><?php echo getDetails('dispatch',$result['District'],'');?></a></td>
                         <td><a href="total-beneficiary.php?roll=installation&dist=<?php echo $result['District'];?>&projid=<?php echo $_REQUEST['projid'];?>&val=Yes&subheadid=<?php echo $_REQUEST['SubHeadProjectId'];?>&title=Installation Done" target="_blank"><?php echo getDetails('installation',$result['District'],'Yes');?></a></td>
                         
-                        <td style="background-color:#fee2d6;"><a href="total-beneficiary.php?roll=installation&dist=<?php echo $result['District'];?>&projid=<?php echo $_REQUEST['projid'];?>&val=No&subheadid=<?php echo $_REQUEST['SubHeadProjectId'];?>&title=Installation Pending" target="_blank"><?php echo getDetails('dispatch',$result['District'],'') - getDetails('installation',$result['District'],'Yes')+getDetails('dispatchpending',$result['District'],'');?></a></td>
+                        <td style="background-color:#fee2d6;"><a href="total-beneficiary.php?roll=installationpending&dist=<?php echo $result['District'];?>&projid=<?php echo $_REQUEST['projid'];?>&val=&subheadid=<?php echo $_REQUEST['SubHeadProjectId'];?>&title=Installation Pending" target="_blank"><?php echo getDetails('installationpending',$result['District'],'');?></a></td>
                         <!--<td style="background-color:#fee2d6;"><a href="total-beneficiary.php?roll=installation&dist=<?php echo $result['District'];?>&projid=<?php echo $_REQUEST['projid'];?>&val=No&subheadid=<?php echo $_REQUEST['SubHeadProjectId'];?>&title=Installation Pending" target="_blank"><?php echo getDetails('installation',$result['District'],'No');?></a></td>-->
                         
-                        <td><a href="total-beneficiary.php?roll=dataupload&dist=<?php echo $result['District'];?>&projid=<?php echo $_REQUEST['projid'];?>&val=Yes&title=Data Upload Done" target="_blank"><?php echo getDetails('dataupload',$result['District'],'Yes');?></a></td>
-                        <td style="background-color:#fee2d6;"><a href="total-beneficiary.php?roll=dataupload&dist=<?php echo $result['District'];?>&projid=<?php echo $_REQUEST['projid'];?>&val=No&subheadid=<?php echo $_REQUEST['SubHeadProjectId'];?>&title=Data Upload Pending" target="_blank"><?php echo getDetails('installation',$result['District'],'Yes') - getDetails('dataupload',$result['District'],'Yes');?></a></td>
+                        <td><a href="total-beneficiary.php?roll=dataupload&dist=<?php echo $result['District'];?>&projid=<?php echo $_REQUEST['projid'];?>&val=Yes&subheadid=<?php echo $_REQUEST['SubHeadProjectId'];?>&title=Data Upload Done" target="_blank"><?php echo getDetails('dataupload',$result['District'],'Yes');?></a></td>
+                        <td style="background-color:#fee2d6;"><a href="total-beneficiary.php?roll=datauploadpending&dist=<?php echo $result['District'];?>&projid=<?php echo $_REQUEST['projid'];?>&val=&subheadid=<?php echo $_REQUEST['SubHeadProjectId'];?>&title=Data Upload Pending" target="_blank"><?php echo getDetails('datauploadpending',$result['District'],'');?></a></td>
                         
                         <td><a href="total-beneficiary.php?roll=inspection&dist=<?php echo $result['District'];?>&projid=<?php echo $_REQUEST['projid'];?>&val=Yes&subheadid=<?php echo $_REQUEST['SubHeadProjectId'];?>&title=Inspection Done" target="_blank"><?php echo getDetails('inspection',$result['District'],'Yes');?></a></td>
                         <td><a href="total-beneficiary.php?roll=inspectiondis&dist=<?php echo $result['District'];?>&projid=<?php echo $_REQUEST['projid'];?>&val=Yes&subheadid=<?php echo $_REQUEST['SubHeadProjectId'];?>&title=Inspection Discrepancy" target="_blank"><?php echo getDetails('inspectiondis',$result['District'],'Yes');?></a></td>
-                        <td style="background-color:#fee2d6;"><a href="total-beneficiary.php?roll=inspection&dist=<?php echo $result['District'];?>&projid=<?php echo $_REQUEST['projid'];?>&val=No&subheadid=<?php echo $_REQUEST['SubHeadProjectId'];?>&title=Inspection Pending" target="_blank"><?php echo getDetails('dataupload',$result['District'],'Yes') - getDetails('inspection',$result['District'],'Yes');?></a></td>
+                        <td style="background-color:#fee2d6;"><a href="total-beneficiary.php?roll=inspectionpending&dist=<?php echo $result['District'];?>&projid=<?php echo $_REQUEST['projid'];?>&val=&subheadid=<?php echo $_REQUEST['SubHeadProjectId'];?>&title=Inspection Pending" target="_blank"><?php echo getDetails('inspectionpending',$result['District'],'');?></a></td>
                     <td><a href="total-beneficiary.php?roll=dcr&dist=<?php echo $result['District'];?>&projid=<?php echo $_REQUEST['projid'];?>&val=No&subheadid=<?php echo $_REQUEST['SubHeadProjectId'];?>&title=DCR Verification Pending" target="_blank"><?php echo getDetails('dcr',$result['District'],'No');?></a></td>
                     <td><a href="total-beneficiary.php?roll=dcr&dist=<?php echo $result['District'];?>&projid=<?php echo $_REQUEST['projid'];?>&val=Yes&subheadid=<?php echo $_REQUEST['SubHeadProjectId'];?>&title=DCR Verification Done" target="_blank"><?php echo getDetails('dcr',$result['District'],'Yes');?></a></td>
                     </tr>
@@ -292,17 +215,17 @@ $rncnt2 = getRow($sql2);
                         <th><a href="total-beneficiary.php?roll=capacity&dist=&projid=<?php echo $_REQUEST['projid'];?>&val=20&subheadid=<?php echo $_REQUEST['SubHeadProjectId'];?>" target="_blank"><?php echo $tot7hp;?></a></th>
                         <th><a href="total-beneficiary.php?roll=surveydone&dist=&projid=<?php echo $_REQUEST['projid'];?>&val=1&subheadid=<?php echo $_REQUEST['SubHeadProjectId'];?>" target="_blank"><?php echo $totsurveydone;?></a></th>
                         <th></th>
-                        <th><a href="total-beneficiary.php?roll=surveyrejected&dist=&projid=<?php echo $_REQUEST['projid'];?>&val=0&subheadid=<?php echo $_REQUEST['SubHeadProjectId'];?>" target="_blank"><?php echo $totsurveyreject;?></a></th>
+                        <th><a href="total-beneficiary.php?roll=surveyrejected&dist=&projid=<?php echo $_REQUEST['projid'];?>&val=2&subheadid=<?php echo $_REQUEST['SubHeadProjectId'];?>" target="_blank"><?php echo $totsurveyreject;?></a></th>
                         <th><a href="total-beneficiary.php?roll=surveypending&dist=&projid=<?php echo $_REQUEST['projid'];?>&val=0&subheadid=<?php echo $_REQUEST['SubHeadProjectId'];?>" target="_blank"><?php echo $totsurveypending;?></a></th>
                         <th><a href="total-beneficiary.php?roll=deliverychallan&dist=&projid=<?php echo $_REQUEST['projid'];?>&val=&subheadid=<?php echo $_REQUEST['SubHeadProjectId'];?>&title=Delivery Challan" target="_blank"><?php echo $totdeliverychallan;?></a></th>
                         <th><a href="total-beneficiary.php?roll=dispatch&dist=&projid=<?php echo $_REQUEST['projid'];?>&val=&subheadid=<?php echo $_REQUEST['SubHeadProjectId'];?>" target="_blank"><?php echo $totdispatch;?></a></th>
                         <th><a href="total-beneficiary.php?roll=installation&dist=&projid=<?php echo $_REQUEST['projid'];?>&val=Yes&subheadid=<?php echo $_REQUEST['SubHeadProjectId'];?>" target="_blank"><?php echo $totinstallationdone;?></a></th>
-                        <th><a href="total-beneficiary.php?roll=installation&dist=&projid=<?php echo $_REQUEST['projid'];?>&val=No&subheadid=<?php echo $_REQUEST['SubHeadProjectId'];?>" target="_blank"><?php echo $totinstallationpending;?></a></th>
+                        <th><a href="total-beneficiary.php?roll=installationpending&dist=&projid=<?php echo $_REQUEST['projid'];?>&val=&subheadid=<?php echo $_REQUEST['SubHeadProjectId'];?>" target="_blank"><?php echo $totinstallationpending;?></a></th>
                         <th><a href="total-beneficiary.php?roll=dataupload&dist=&projid=<?php echo $_REQUEST['projid'];?>&val=Yes&subheadid=<?php echo $_REQUEST['SubHeadProjectId'];?>" target="_blank"><?php echo $totdatauploadone;?></a></th>
-                        <th><a href="total-beneficiary.php?roll=dataupload&dist=&projid=<?php echo $_REQUEST['projid'];?>&val=No&subheadid=<?php echo $_REQUEST['SubHeadProjectId'];?>" target="_blank"><?php echo $totdatauploapending;?></a></th>
+                        <th><a href="total-beneficiary.php?roll=datauploadpending&dist=&projid=<?php echo $_REQUEST['projid'];?>&val=&subheadid=<?php echo $_REQUEST['SubHeadProjectId'];?>" target="_blank"><?php echo $totdatauploapending;?></a></th>
                         <th><a href="total-beneficiary.php?roll=inspection&dist=&projid=<?php echo $_REQUEST['projid'];?>&val=Yes&subheadid=<?php echo $_REQUEST['SubHeadProjectId'];?>" target="_blank"><?php echo $totinspectiondone;?></a></th>
                         <th><a href="total-beneficiary.php?roll=inspectiondis&dist=&projid=<?php echo $_REQUEST['projid'];?>&val=Yes&subheadid=<?php echo $_REQUEST['SubHeadProjectId'];?>" target="_blank"><?php echo $totinspectiondis;?></a></th>
-                        <th><a href="total-beneficiary.php?roll=inspection&dist=&projid=<?php echo $_REQUEST['projid'];?>&val=No&subheadid=<?php echo $_REQUEST['SubHeadProjectId'];?>" target="_blank"><?php echo $totinspectionpending;?></a></th>
+                        <th><a href="total-beneficiary.php?roll=inspectionpending&dist=&projid=<?php echo $_REQUEST['projid'];?>&val=&subheadid=<?php echo $_REQUEST['SubHeadProjectId'];?>" target="_blank"><?php echo $totinspectionpending;?></a></th>
                      <th><a href="total-beneficiary.php?roll=dcr&dist=&projid=<?php echo $_REQUEST['projid'];?>&val=No&subheadid=<?php echo $_REQUEST['SubHeadProjectId'];?>" target="_blank"><?php echo $totdcrpending;?></a></th>
                     <th><a href="total-beneficiary.php?roll=dcr&dist=&projid=<?php echo $_REQUEST['projid'];?>&val=Yes&subheadid=<?php echo $_REQUEST['SubHeadProjectId'];?>" target="_blank"><?php echo $totdcrdone;?></a></th>
                     </tr>

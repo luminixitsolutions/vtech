@@ -248,6 +248,8 @@
 .acct-dash-tone-installer .acct-dash-quick-icon { background: linear-gradient(135deg, #06b6d4, #0891b2); }
 .acct-dash-tone-driver .acct-dash-stat-icon,
 .acct-dash-tone-driver .acct-dash-quick-icon { background: linear-gradient(135deg, #84cc16, #65a30d); }
+.acct-dash-tone-transportor .acct-dash-stat-icon,
+.acct-dash-tone-transportor .acct-dash-quick-icon { background: linear-gradient(135deg, #a855f7, #9333ea); }
 .acct-dash-tone-maintenance .acct-dash-stat-icon,
 .acct-dash-tone-maintenance .acct-dash-quick-icon { background: linear-gradient(135deg, #ef4444, #dc2626); }
 
