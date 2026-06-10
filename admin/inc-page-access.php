@@ -96,6 +96,7 @@ function adminPageAccessBasenameRules()
         'distribute-item-store-executive-2.php' => [71],
         'view-distribute-item-store-executive.php' => [71],
         'add-sell.php' => [26], 'view-sells.php' => [26],
+        'return-challans.php' => [26], 'view-return-challan.php' => [26], 'edit-challan.php' => [26],
         'assign-challan-to-dispatcher.php' => [82],
         'assign-site-to-installation.php' => [83],
         'installation-project-dashboard.php' => [68],
@@ -280,7 +281,7 @@ function adminPageAccessShouldSkip($relativePath, $basename)
     if (preg_match('/-session\.php$/i', $basename) || $basename === 'purchase-order-session.php') {
         return true;
     }
-    if (in_array($basename, ['invoice.php', 'view_cart.php', 'print-delivery-challan.php'], true)) {
+    if (in_array($basename, ['invoice.php', 'view_cart.php', 'print-delivery-challan.php', 'inc-challan-return.php'], true)) {
         return true;
     }
     if (in_array($basename, adminPageAccessSkipBasenames(), true)) {

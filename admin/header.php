@@ -704,6 +704,16 @@ $fileSubmissionReminderAlert = $fileSubmissionReminderCount > 0;
 <?php } ?>
 </a>
 </li>
+<li class="sidenav-item">
+<a href="return-challans.php" class="sidenav-link">
+<div> Return Challans</div>
+<?php if($Page=='Return-Challans' || $Page=='Edit-Challan') {?>
+<div class="pl-1 ml-auto">
+<span class="badge badge-dot badge-primary"></span>
+</div>
+<?php } ?>
+</a>
+</li>
 </ul>
 </li>
 <?php } if(in_array("82", $Options)) {?>
