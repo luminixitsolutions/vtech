@@ -28,6 +28,7 @@ msedclSmartRenderListPage('pmsgy', [
     'sample_file' => '../sample_files/msedcl_smart_pmsgy_sample.csv',
     'capacity_reference_file' => 'download-capacity-master-ids.php',
     'page_slug' => 'pmsgy.php',
+    'show_consumer_no_col' => true,
     'show_mahadiscom_btn' => true,
     'show_delete_btn' => true,
     'datatable_export' => true,

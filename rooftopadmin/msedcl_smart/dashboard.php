@@ -82,9 +82,9 @@ $hasCharts = ($dash['total'] > 0);
         <div class="msedcl-dash-stat-grid">
             <?php
             msedclSmartDashboardStatCard('Total Customers', $dash['total'], 'abstract.php', 'users', 'All uploaded records', 'total');
-            msedclSmartDashboardStatCard('PMSGY Portal', $dash['pmsgy'], 'pmsgy.php', 'upload-cloud', 'Awaiting Mahadiscom', 'pmsgy');
-            msedclSmartDashboardStatCard('Mahadiscom Portal', $dash['mahadiscom'], 'mahadiscom.php', 'file-text', 'Awaiting payment', 'mahadiscom');
-            msedclSmartDashboardStatCard('Payment Done', $dash['payment_done'], 'payment.php', 'check-circle', 'Paid — pending forward', 'payment');
+            msedclSmartDashboardStatCard('PMSGY Portal', $dash['pmsgy'], 'pmsgy.php', 'upload-cloud', 'All PMSGY uploads (incl. Mahadiscom done)', 'pmsgy');
+            msedclSmartDashboardStatCard('Mahadiscom Portal', $dash['mahadiscom'], 'mahadiscom.php', 'file-text', 'All Mahadiscom records (incl. payment done)', 'mahadiscom');
+            msedclSmartDashboardStatCard('Payment Done', $dash['payment_done'], 'payment.php', 'check-circle', 'All payments marked done', 'payment');
             msedclSmartDashboardStatCard('Survey Pending', $dash['survey_pending'], 'survey-pending.php', 'clock', 'Ready for survey', 'survey');
             msedclSmartDashboardStatCard('Survey Done', $dash['survey_done'], 'abstract.php', 'map', 'Completed surveys', 'total');
             ?>
@@ -207,11 +207,11 @@ $hasCharts = ($dash['total'] > 0);
     new Chart(document.getElementById('msedclStageDoughnut'), {
         type: 'doughnut',
         data: {
-            labels: ['PMSGY Portal', 'Mahadiscom Portal', 'Survey Pending', 'Survey Done'],
+            labels: ['PMSGY (awaiting)', 'Mahadiscom (awaiting)', 'Survey Pending', 'Survey Done'],
             datasets: [{
                 data: [
-                    <?php echo (int) $dash['pmsgy']; ?>,
-                    <?php echo (int) $dash['mahadiscom']; ?>,
+                    <?php echo (int) $dash['stage_pmsgy']; ?>,
+                    <?php echo (int) $dash['stage_mahadiscom']; ?>,
                     <?php echo (int) $dash['survey_pending']; ?>,
                     <?php echo (int) $dash['survey_done']; ?>
                 ],

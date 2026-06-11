@@ -36,6 +36,7 @@ function msedclSmartRenderListPage($listType, array $config)
     $showForwardBtn = !empty($config['show_forward_btn']);
     $showDeleteBtn = !empty($config['show_delete_btn']);
     $showSurveyColumns = !empty($config['show_survey_columns']);
+    $showConsumerNoCol = !empty($config['show_consumer_no_col']);
     $excelColumnsHint = isset($config['excel_columns_hint']) ? trim((string) $config['excel_columns_hint']) : '';
     $showActionCol = ($showMahadiscomBtn || $showPaymentBtn || $showDeleteBtn);
     $enableDatatableExport = !empty($config['datatable_export']);
@@ -133,6 +134,9 @@ function msedclSmartRenderListPage($listType, array $config)
                         <th>Beneficiary ID</th>
                         <th>Customer Name</th>
                         <th>Mobile</th>
+                        <?php if ($showConsumerNoCol) { ?>
+                        <th>Consumer No</th>
+                        <?php } ?>
                         <th>District</th>
                         <th>Taluka</th>
                         <th>Village</th>
@@ -150,6 +154,9 @@ function msedclSmartRenderListPage($listType, array $config)
                     <?php
                     if (empty($rows)) {
                         $colspan = 9;
+                        if ($showConsumerNoCol) {
+                            $colspan++;
+                        }
                         if ($showSurveyColumns) {
                             $colspan++;
                         }
@@ -186,6 +193,11 @@ function msedclSmartRenderListPage($listType, array $config)
                         <td><?php echo htmlspecialchars((string) $row['BeneficiaryId']); ?></td>
                         <td><?php echo htmlspecialchars((string) $row['CustName']); ?></td>
                         <td><?php echo htmlspecialchars((string) $row['CellNo']); ?></td>
+                        <?php if ($showConsumerNoCol) {
+                            $consumerNoDisp = trim((string) ($row['ConsumerNo'] ?? ''));
+                            ?>
+                        <td><?php echo htmlspecialchars($consumerNoDisp !== '' ? $consumerNoDisp : '—'); ?></td>
+                        <?php } ?>
                         <td><?php echo htmlspecialchars((string) $row['District']); ?></td>
                         <td><?php echo htmlspecialchars((string) $row['Taluka']); ?></td>
                         <td><?php echo htmlspecialchars((string) $row['Village']); ?></td>
@@ -194,7 +206,7 @@ function msedclSmartRenderListPage($listType, array $config)
                         <td><?php echo msedclSmartTelephonicSurveyHtml($custUserId, $userSurvey['SurveyDetails'] ?? 0); ?></td>
                         <td><?php echo msedclSmartFieldSurveyHtml($custUserId, $userSurvey['FieldSurveyDetails'] ?? 0); ?></td>
                         <?php } else { ?>
-                        <td><span class="badge badge-secondary"><?php echo htmlspecialchars(msedclSmartStageLabel($row['CurrentStage'])); ?></span>
+                        <td><span class="badge <?php echo htmlspecialchars(msedclSmartListStatusBadgeClass($listType, $row)); ?>"><?php echo htmlspecialchars(msedclSmartListStatusLabel($listType, $row)); ?></span>
                             <?php if ($forwardLabel !== '') { ?>
                             <div class="small text-muted mt-1"><?php echo htmlspecialchars($forwardLabel); ?></div>
                             <?php } ?>
@@ -202,11 +214,13 @@ function msedclSmartRenderListPage($listType, array $config)
                         <?php } ?>
                         <?php if ($showActionCol) { ?>
                         <td>
-                            <?php if ($showMahadiscomBtn) { ?>
+                            <?php if ($showMahadiscomBtn && (int) $row['MahadiscomApplied'] === 0) { ?>
                             <button type="button" class="btn btn-sm btn-primary msedcl-smart-action-btn"
                                 data-customer-id="<?php echo (int) $row['id']; ?>"
                                 data-action="mahadiscom"
                                 data-confirm="Mark this customer as applied on Mahadiscom portal?">Mark Mahadiscom</button>
+                            <?php } elseif ($showMahadiscomBtn && (int) $row['MahadiscomApplied'] === 1) { ?>
+                            <span class="text-success small">Done as Mahadiscom<?php echo !empty($row['MahadiscomAppliedDate']) ? ' ' . date('d/m/Y', strtotime($row['MahadiscomAppliedDate'])) : ''; ?></span>
                             <?php } ?>
                             <?php if ($showPaymentBtn && (int) $row['MahadiscomApplied'] === 1 && (int) $row['PaymentDone'] === 0) { ?>
                             <button type="button" class="btn btn-sm btn-success msedcl-smart-action-btn"
@@ -214,7 +228,7 @@ function msedclSmartRenderListPage($listType, array $config)
                                 data-action="payment"
                                 data-confirm="Mark payment as done? Customer will move to Survey Pending.">Payment Yes</button>
                             <?php } elseif ($showPaymentBtn && (int) $row['PaymentDone'] === 1) { ?>
-                            <span class="text-success small">Paid <?php echo !empty($row['PaymentDoneDate']) ? date('d/m/Y', strtotime($row['PaymentDoneDate'])) : ''; ?></span>
+                            <span class="text-success small">Payment Done<?php echo !empty($row['PaymentDoneDate']) ? ' ' . date('d/m/Y', strtotime($row['PaymentDoneDate'])) : ''; ?></span>
                             <?php } ?>
                             <?php if ($canDelete) { ?>
                             <button type="button" class="btn btn-sm btn-danger msedcl-smart-delete-btn ml-1"
@@ -239,7 +253,7 @@ function msedclSmartRenderListPage($listType, array $config)
             <?php if ($excelColumnsHint !== '') { ?>
             Excel columns: <?php echo htmlspecialchars($excelColumnsHint); ?>
             <?php } else { ?>
-            Excel columns: Beneficiary ID, Customer Name, Taluka, Village, Block, District, Mobile, Rooftop Capacity (Master ID from Rooftop Plant Capacity), Consumer number.
+            Excel columns: Beneficiary ID, Customer Name, Taluka, Village, Block, District, Mobile, Rooftop Capacity (Master ID from Rooftop Plant Capacity), Consumer No.
             <?php } ?>
             <?php if ($capacityReferenceFile !== '') { ?> Use <strong>Capacity Master IDs</strong> download for valid IDs.<?php } ?>
             <?php if ($showDeleteBtn) { ?> Delete is allowed only until the customer is forwarded to Co-ordinator assign.<?php } ?>

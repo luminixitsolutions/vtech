@@ -13,6 +13,8 @@ function getMsedclSmartDashboardData()
     $paymentDone = $counts['payment_done'];
     $surveyPending = $counts['survey_pending'];
     $surveyDone = $counts['survey_done'];
+    $stagePmsgy = $counts['pmsgy_awaiting'];
+    $stageMahadiscom = $counts['mahadiscom_awaiting'];
 
     $today = date('Y-m-d');
     $importedToday = msedclSmartCount("Status=1 AND DATE(CreatedDateTime)='$today'");
@@ -66,9 +68,12 @@ function getMsedclSmartDashboardData()
         'abstract_rows' => is_array($abstractRows) ? $abstractRows : [],
         'monthly_stats' => is_array($monthlyStats) ? $monthlyStats : [],
         'capacity_stats' => is_array($capacityStats) ? $capacityStats : [],
+        'stage_pmsgy' => $stagePmsgy,
+        'stage_mahadiscom' => $stageMahadiscom,
         'funnel' => [
             ['label' => 'PMSGY Portal', 'count' => $pmsgy, 'pct' => $pct($pmsgy, $total), 'color' => '#2563eb'],
             ['label' => 'Mahadiscom Portal', 'count' => $mahadiscom, 'pct' => $pct($mahadiscom, $total), 'color' => '#7c3aed'],
+            ['label' => 'Payment Done', 'count' => $paymentDone, 'pct' => $pct($paymentDone, $total), 'color' => '#059669'],
             ['label' => 'Survey Pending', 'count' => $surveyPending, 'pct' => $pct($surveyPending, $total), 'color' => '#d97706'],
             ['label' => 'Survey Done', 'count' => $surveyDone, 'pct' => $pct($surveyDone, $total), 'color' => '#64748b'],
         ],

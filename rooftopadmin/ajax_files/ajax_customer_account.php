@@ -46,6 +46,7 @@ $UnderUser = addslashes(trim($_POST['UnderUser']));
 
 $ProjectType = addslashes(trim($_POST['ProjectType']));
 $BeneficiaryId = addslashes(trim($_POST['BeneficiaryId']));
+$ConsumerNo = addslashes(trim($_POST['ConsumerNo']));
 $Taluka = addslashes(trim($_POST['Taluka']));
 $Village = addslashes(trim($_POST['Village']));
 $District = addslashes(trim($_POST['District']));
@@ -117,6 +118,18 @@ $StructureMake = $_POST['StructureMake'];
 $DealerId = $_POST['DealerId'];
 
 $CreatedDate = date('Y-m-d');
+
+function saveCustomerConsumerNo($conn, $custId, $consumerNo)
+{
+    $custId = (int) $custId;
+    if ($custId <= 0) {
+        return;
+    }
+
+    $consumerNo = mysqli_real_escape_string($conn, (string) $consumerNo);
+    $conn->query("INSERT INTO tbl_user2 SET id='$custId', ConsumerNo='$consumerNo'
+        ON DUPLICATE KEY UPDATE ConsumerNo='$consumerNo'");
+}
 
 $randno = rand(1,100);
 $src = $_FILES['Photo']['tmp_name'];
@@ -224,6 +237,7 @@ $EmpId = mysqli_insert_id($conn);
 $CustomerId = "VTECH-C".$EmpId;
 $sql3 = "UPDATE tbl_users SET CustomerId='$CustomerId' WHERE id='$EmpId'";
      $conn->query($sql3);
+saveCustomerConsumerNo($conn, $EmpId, $ConsumerNo);
 
 if($ProjectType == 1){
        $number = count($_POST["ProdId"]);
@@ -269,6 +283,7 @@ else{
  else{
  $sql = "UPDATE tbl_users SET DealerId='$DealerId',DealerAmt='$DealerAmt',TotalAmount='$TotalAmount',Block='$Block',WoNo='$WoNo',AgencyId='$AgencyId',Roll=5,SchemeId='$SchemeId',ColgId='$ColgId',Fname='$Fname',Mname='$Mname',Lname='$Lname',Phone='$Phone',EmailId='$EmailId',Phone2='$Phone2',Password='$Password',CountryId='$CountryId',StateId='$StateId',CityId='$CityId',Address='$Address',Pincode='$Pincode',Status='$Status',BranchId='$BranchId',ModifiedDate='$CreatedDate',ModifiedBy='$user_id',Dob='$Dob',Area='$Area',UserType='$UserType',UnderUser='$UnderUser',ProjectType='$ProjectType',BeneficiaryId='$BeneficiaryId',Taluka='$Taluka',Village='$Village',District='$District',PumpCapacity='$PumpCapacity',RooftopPlantCapacity='$RooftopPlantCapacity',Lattitude='$Lattitude',Longitude='$Longitude',OffOnGrid='$OffOnGrid',SanctionLoad='$SanctionLoad',LoadExtension='$LoadExtension',WaterSource='$WaterSource',SummerDepth='$SummerDepth',WinterDepth='$WinterDepth',PumpHead='$PumpHead',BgNumber='$BgNumber',BgValidity='$BgValidity',BgClaimPeriod='$BgClaimPeriod',InsuranceNumber='$InsuranceNumber',InsuranceAgency='$InsuranceAgency',InsuranceValidity='$InsuranceValidity',InstallationVendor='$InstallationVendor',PumpHeadSelect='$PumpHeadSelect',AcDc='$AcDc',Surface='$Surface',AadharCard='$AadharCard',AadharCard2='$AadharCard2',PanCard='$PanCard',PanCard2='$PanCard2',AadharNo='$AadharNo',PanNo='$PanNo',GstCertificate='$GstCertificate',GstNo='$GstNo',AccountName='$AccountName',BankName='$BankName',AccountNo='$AccountNo',IfscCode='$IfscCode',Branch='$Branch',UpiNo='$UpiNo',GumastaNo='$GumastaNo',Gumasta='$Gumasta',MsmeNo='$MsmeNo',Msme='$Msme',InspectionDate='$InspectionDate',CommissioningDate='$CommissioningDate',CustType='$CustType',BoreDia='$BoreDia',CompName='$CompName',CompAddress='$CompAddress',CompPhone='$CompPhone',AuthorName='$AuthorName',CompId='$CompId',Structure1='$Structure1',Structure2='$Structure2',Structure3='$Structure3',TotalDepth='$TotalDepth',PumpOutletSize='$PumpOutletSize',ModuleMake='$ModuleMake',StructureMake='$StructureMake',ProjectId='$ProjectId',ModuleWatt='$ModuleWatt',ModuleQty='$ModuleQty',SelectionDoneBy='$SelectionDoneBy',ProjectSubHeadId='$ProjectSubHeadId' WHERE id='$id'"; 
 $conn->query($sql);
+saveCustomerConsumerNo($conn, $id, $ConsumerNo);
 
 $sql = "DELETE FROM tbl_general_ledger WHERE UserId='$id'";
 $conn->query($sql);

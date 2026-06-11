@@ -4,6 +4,9 @@
  */
 
 define('MSEDCL_SMART_STAGE_PMSGY', 'pmsgy');
+define('MSEDCL_SMART_PMSGY_AGENCY_ID', 300);
+define('MSEDCL_SMART_PMSGY_PROJECT_ID', 103);
+define('MSEDCL_SMART_PMSGY_PROJECT_SUB_HEAD_ID', 4);
 define('MSEDCL_SMART_STAGE_MAHADISCOM', 'mahadiscom');
 define('MSEDCL_SMART_STAGE_SURVEY_PENDING', 'survey_pending');
 define('MSEDCL_SMART_STAGE_SURVEY_DONE', 'survey_done');
@@ -164,6 +167,11 @@ function msedclSmartEnsureTables()
         $conn->query("ALTER TABLE tbl_rooftop_msedcl_smart_customers ADD COLUMN CustUserId INT NOT NULL DEFAULT 0 AFTER UpdatedBy, ADD KEY idx_cust_user (CustUserId)");
     }
 
+    $consumerNoCol = $conn->query("SHOW COLUMNS FROM tbl_rooftop_msedcl_smart_customers LIKE 'ConsumerNo'");
+    if ($consumerNoCol && $consumerNoCol->num_rows === 0) {
+        $conn->query("ALTER TABLE tbl_rooftop_msedcl_smart_customers ADD COLUMN ConsumerNo VARCHAR(50) DEFAULT NULL AFTER WoNo");
+    }
+
     $conn->query("CREATE TABLE IF NOT EXISTS tbl_rooftop_msedcl_smart_history (
       id INT UNSIGNED NOT NULL AUTO_INCREMENT,
       CustomerId INT NOT NULL DEFAULT 0,
@@ -228,7 +236,8 @@ function msedclSmartDetectColumnMap(array $allRows)
         'block' => ['block'],
         'address' => ['address'],
         'pump_capacity' => ['rooftop capacity id', 'rooftop capacity', 'pump capacity id', 'pump capacity', 'capacity'],
-        'wo_no' => ['consumer number', 'consumer no', 'consumer no.', 'wo no', 'wo number', 'work order', 'won'],
+        'consumer_no' => ['consumer number', 'consumer no', 'consumer no.', 'consumer number.', 'cosumenr no', 'cosumenr number'],
+        'wo_no' => ['wo no', 'wo number', 'work order', 'won', 'sanction order no', 'sanction order'],
         'payment_done' => ['payment yes/no', 'payment yes no', 'payment done', 'payment', 'paid', 'payment status'],
     ];
 
@@ -266,7 +275,7 @@ function msedclSmartDetectColumnMap(array $allRows)
             'district' => 5,
             'cell_no' => 7,
             'pump_capacity' => 8,
-            'wo_no' => 9,
+            'consumer_no' => 9,
         ];
     }
     return $map;
@@ -401,6 +410,16 @@ function msedclSmartResolveRooftopCapacityMasterId($value)
     return ['ok' => false, 'id' => '', 'message' => 'Rooftop Capacity not found in master: ' . $value];
 }
 
+function msedclSmartResolvedRooftopCapacityId(array $row)
+{
+    $cap = trim((string) ($row['PumpCapacity'] ?? ''));
+    if ($cap === '') {
+        $cap = trim((string) ($row['RooftopPlantCapacity'] ?? ''));
+    }
+
+    return $cap;
+}
+
 function msedclSmartFindCustomerByBeneficiaryId($beneficiaryId)
 {
     msedclSmartEnsureTables();
@@ -453,6 +472,32 @@ function msedclSmartPerformerName($userId)
     return trim((string) ($row['Fname'] ?? '') . ' ' . (string) ($row['Lname'] ?? ''));
 }
 
+function msedclSmartApplyPmsgyRooftopUserMeta($userId, $consumerNo = '')
+{
+    global $conn;
+
+    $userId = (int) $userId;
+    if ($userId < 1) {
+        return false;
+    }
+
+    $agencyId = (int) MSEDCL_SMART_PMSGY_AGENCY_ID;
+    $projectId = (int) MSEDCL_SMART_PMSGY_PROJECT_ID;
+    $subHeadId = (int) MSEDCL_SMART_PMSGY_PROJECT_SUB_HEAD_ID;
+    $escConsumer = mysqli_real_escape_string($conn, trim((string) $consumerNo));
+
+    $conn->query("UPDATE tbl_users SET
+        AgencyId='$agencyId',
+        ProjectId='$projectId',
+        ProjectSubHeadId='$subHeadId'
+        WHERE id='$userId' LIMIT 1");
+
+    $conn->query("INSERT INTO tbl_user2 SET id='$userId', ConsumerNo='$escConsumer'
+        ON DUPLICATE KEY UPDATE ConsumerNo='$escConsumer'");
+
+    return true;
+}
+
 function msedclSmartInsertFromRow(array $row, array $map, $userId, $sourceFile = '')
 {
     msedclSmartEnsureTables();
@@ -496,6 +541,8 @@ function msedclSmartInsertFromRow(array $row, array $map, $userId, $sourceFile =
     }
     $escPump = mysqli_real_escape_string($conn, (string) $capRes['id']);
     $escWo = mysqli_real_escape_string($conn, msedclSmartFieldValue($row, $map, 'wo_no'));
+    $consumerNo = msedclSmartFieldValue($row, $map, 'consumer_no');
+    $escConsumer = mysqli_real_escape_string($conn, $consumerNo);
     $userId = (int) $userId;
 
     $sql = "INSERT INTO tbl_rooftop_msedcl_smart_customers SET
@@ -509,6 +556,7 @@ function msedclSmartInsertFromRow(array $row, array $map, $userId, $sourceFile =
         Address='$escAddress',
         PumpCapacity='$escPump',
         WoNo='$escWo',
+        ConsumerNo='$escConsumer',
         PmsgyApplied=1,
         PmsgyAppliedDate='$today',
         CurrentStage='" . MSEDCL_SMART_STAGE_PMSGY . "',
@@ -537,6 +585,7 @@ function msedclSmartInsertFromRow(array $row, array $map, $userId, $sourceFile =
         'Address' => msedclSmartFieldValue($row, $map, 'address'),
         'PumpCapacity' => (string) $capRes['id'],
         'WoNo' => msedclSmartFieldValue($row, $map, 'wo_no'),
+        'ConsumerNo' => $consumerNo,
     ];
     $rooftopUserId = msedclSmartResolveRooftopUserId($smartRow, $userId);
     if ($rooftopUserId < 1) {
@@ -549,6 +598,8 @@ function msedclSmartInsertFromRow(array $row, array $map, $userId, $sourceFile =
             'message' => 'Could not add rooftop customer (tbl_users).',
         ];
     }
+
+    $conn->query("UPDATE tbl_rooftop_msedcl_smart_customers SET CustUserId='$rooftopUserId', UpdatedDateTime='$now', UpdatedBy='$userId' WHERE id='$newId' LIMIT 1");
 
     return ['ok' => true, 'id' => $newId, 'label' => $beneficiaryId, 'user_id' => $rooftopUserId];
 }
@@ -620,9 +671,12 @@ function msedclSmartUpdateUserFromSmartRow($userId, array $row)
     $escBlock = mysqli_real_escape_string($conn, trim((string) ($row['Block'] ?? '')));
     $escAddress = mysqli_real_escape_string($conn, trim((string) ($row['Address'] ?? '')));
     $escBeneficiary = mysqli_real_escape_string($conn, msedclSmartNormalizeBeneficiaryId($row['BeneficiaryId'] ?? ''));
-    $escPump = mysqli_real_escape_string($conn, trim((string) ($row['PumpCapacity'] ?? '')));
+    $escPump = mysqli_real_escape_string($conn, msedclSmartResolvedRooftopCapacityId($row));
     $escWo = mysqli_real_escape_string($conn, trim((string) ($row['WoNo'] ?? '')));
     $stateId = (int) msedclSmartDefaultStateId();
+    $agencyId = (int) MSEDCL_SMART_PMSGY_AGENCY_ID;
+    $projectId = (int) MSEDCL_SMART_PMSGY_PROJECT_ID;
+    $subHeadId = (int) MSEDCL_SMART_PMSGY_PROJECT_SUB_HEAD_ID;
 
     $sql = "UPDATE tbl_users SET
         BeneficiaryId='$escBeneficiary',
@@ -634,8 +688,12 @@ function msedclSmartUpdateUserFromSmartRow($userId, array $row)
         Block='$escBlock',
         Address='$escAddress',
         PumpCapacity='$escPump',
+        RooftopPlantCapacity='$escPump',
         WoNo='$escWo',
         StateId='$stateId',
+        AgencyId='$agencyId',
+        ProjectId='$projectId',
+        ProjectSubHeadId='$subHeadId',
         ProjectType=2,
         Roll=5,
         Status=1
@@ -695,10 +753,15 @@ function msedclSmartCreateUserFromSmartRow(array $row, $performedBy = 0)
     $fields['Village'] = trim((string) ($row['Village'] ?? ''));
     $fields['Block'] = trim((string) ($row['Block'] ?? ''));
     $fields['Address'] = trim((string) ($row['Address'] ?? ''));
-    $fields['PumpCapacity'] = trim((string) ($row['PumpCapacity'] ?? ''));
+    $capId = msedclSmartResolvedRooftopCapacityId($row);
+    $fields['PumpCapacity'] = $capId;
+    $fields['RooftopPlantCapacity'] = $capId;
     $fields['WoNo'] = trim((string) ($row['WoNo'] ?? ''));
     $fields['StateId'] = $stateId;
     $fields['CountryId'] = 1;
+    $fields['AgencyId'] = MSEDCL_SMART_PMSGY_AGENCY_ID;
+    $fields['ProjectId'] = MSEDCL_SMART_PMSGY_PROJECT_ID;
+    $fields['ProjectSubHeadId'] = MSEDCL_SMART_PMSGY_PROJECT_SUB_HEAD_ID;
     $fields['ProjectType'] = 2;
     $fields['Roll'] = 5;
     $fields['Status'] = 1;
@@ -764,6 +827,10 @@ function msedclSmartResolveRooftopUserId(array $row, $performedBy = 0)
         $userId = msedclSmartCreateUserFromSmartRow($row, $performedBy);
     } else {
         msedclSmartUpdateUserFromSmartRow($userId, $row);
+    }
+
+    if ($userId > 0) {
+        msedclSmartApplyPmsgyRooftopUserMeta($userId, trim((string) ($row['ConsumerNo'] ?? '')));
     }
 
     return $userId;
@@ -1201,6 +1268,44 @@ function msedclSmartStageLabel($stage)
     return isset($labels[$stage]) ? $labels[$stage] : ucfirst(str_replace('_', ' ', (string) $stage));
 }
 
+/**
+ * Page-specific status label for list views (keeps completed records visible on their source page).
+ */
+function msedclSmartListStatusLabel($listType, array $row)
+{
+    if ($listType === 'pmsgy') {
+        if ((int) ($row['MahadiscomApplied'] ?? 0) === 1) {
+            return 'Done as Mahadiscom';
+        }
+
+        return 'PMSGY Portal';
+    }
+    if ($listType === 'mahadiscom') {
+        if ((int) ($row['PaymentDone'] ?? 0) === 1) {
+            return 'Payment Done';
+        }
+
+        return 'Awaiting Payment';
+    }
+
+    return msedclSmartStageLabel($row['CurrentStage'] ?? '');
+}
+
+function msedclSmartListStatusBadgeClass($listType, array $row)
+{
+    if ($listType === 'pmsgy' && (int) ($row['MahadiscomApplied'] ?? 0) === 1) {
+        return 'badge-success';
+    }
+    if ($listType === 'mahadiscom' && (int) ($row['PaymentDone'] ?? 0) === 1) {
+        return 'badge-success';
+    }
+    if ($listType === 'mahadiscom') {
+        return 'badge-warning';
+    }
+
+    return 'badge-secondary';
+}
+
 function msedclSmartLoadUserSurveyMap(array $rows)
 {
     $ids = [];
@@ -1263,9 +1368,9 @@ function msedclSmartBuildListSql($listType, array $filters = [])
     $sql = "SELECT * FROM tbl_rooftop_msedcl_smart_customers WHERE Status=1";
 
     if ($listType === 'pmsgy') {
-        $sql .= " AND PmsgyApplied=1 AND CurrentStage='" . MSEDCL_SMART_STAGE_PMSGY . "'";
+        $sql .= " AND PmsgyApplied=1";
     } elseif ($listType === 'mahadiscom') {
-        $sql .= " AND MahadiscomApplied=1 AND CurrentStage='" . MSEDCL_SMART_STAGE_MAHADISCOM . "'";
+        $sql .= " AND MahadiscomApplied=1";
     } elseif ($listType === 'payment') {
         $sql .= " AND PaymentDone=1 AND CurrentStage='" . MSEDCL_SMART_STAGE_SURVEY_PENDING . "' AND SurveyDone=0 AND CustUserId=0";
     } elseif ($listType === 'survey_pending') {
@@ -1292,7 +1397,7 @@ function msedclSmartCount($where = 'Status=1')
 }
 
 /**
- * Dashboard counts aligned with each list page filter (mutually exclusive stages + payment queue).
+ * Dashboard counts aligned with list pages (includes completed records at each portal).
  */
 function msedclSmartDashboardCounts()
 {
@@ -1300,15 +1405,18 @@ function msedclSmartDashboardCounts()
 
     return [
         'total' => msedclSmartCount('Status=1'),
-        'pmsgy' => msedclSmartCount("Status=1 AND CurrentStage='" . MSEDCL_SMART_STAGE_PMSGY . "'"),
-        'mahadiscom' => msedclSmartCount("Status=1 AND CurrentStage='" . MSEDCL_SMART_STAGE_MAHADISCOM . "'"),
-        'payment_done' => msedclSmartCount(
-            "Status=1 AND PaymentDone=1 AND CurrentStage='" . MSEDCL_SMART_STAGE_SURVEY_PENDING . "' AND SurveyDone=0 AND CustUserId=0"
-        ),
+        'pmsgy' => msedclSmartCount('Status=1 AND PmsgyApplied=1'),
+        'mahadiscom' => msedclSmartCount('Status=1 AND MahadiscomApplied=1'),
+        'payment_done' => msedclSmartCount('Status=1 AND PaymentDone=1'),
         'survey_pending' => msedclSmartCount(
             "Status=1 AND CurrentStage='" . MSEDCL_SMART_STAGE_SURVEY_PENDING . "' AND SurveyDone=0"
         ),
         'survey_done' => msedclSmartCount('Status=1 AND SurveyDone=1'),
+        'pmsgy_awaiting' => msedclSmartCount("Status=1 AND CurrentStage='" . MSEDCL_SMART_STAGE_PMSGY . "'"),
+        'mahadiscom_awaiting' => msedclSmartCount("Status=1 AND CurrentStage='" . MSEDCL_SMART_STAGE_MAHADISCOM . "'"),
+        'payment_awaiting_forward' => msedclSmartCount(
+            "Status=1 AND PaymentDone=1 AND CurrentStage='" . MSEDCL_SMART_STAGE_SURVEY_PENDING . "' AND SurveyDone=0 AND CustUserId=0"
+        ),
     ];
 }
 
@@ -1461,9 +1569,9 @@ function msedclSmartAbstractSqlParts(array $filters = [], $rowDistrict = null)
 function msedclSmartAbstractMetricConditions()
 {
     return [
-        'pmsgy' => "CurrentStage='" . MSEDCL_SMART_STAGE_PMSGY . "'",
-        'mahadiscom' => "CurrentStage='" . MSEDCL_SMART_STAGE_MAHADISCOM . "'",
-        'payment' => "PaymentDone=1 AND CurrentStage='" . MSEDCL_SMART_STAGE_SURVEY_PENDING . "' AND SurveyDone=0",
+        'pmsgy' => 'PmsgyApplied=1',
+        'mahadiscom' => 'MahadiscomApplied=1',
+        'payment' => 'PaymentDone=1',
         'survey' => 'SurveyDone=1',
     ];
 }
@@ -1471,9 +1579,9 @@ function msedclSmartAbstractMetricConditions()
 function msedclSmartAbstractMetricLabel($metric)
 {
     $labels = [
-        'pmsgy' => 'PMSGY Portal (Awaiting Mahadiscom)',
-        'mahadiscom' => 'Mahadiscom Portal (Awaiting Payment)',
-        'payment' => 'Payment Done (Survey Pending)',
+        'pmsgy' => 'PMSGY Portal (all uploads)',
+        'mahadiscom' => 'Mahadiscom Portal (all marked)',
+        'payment' => 'Payment Done (all marked)',
         'survey' => 'Survey Done',
     ];
 

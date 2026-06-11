@@ -73,6 +73,17 @@ $Page = "Add-Rooftop-Customers";
 $id = $_GET['id'];
 $sql7 = "SELECT * FROM tbl_users WHERE id='$id'";
 $row7 = getRecord($sql7);
+if ($id != '') {
+    $row7u2 = getRecord("SELECT ConsumerNo FROM tbl_user2 WHERE id='$id'");
+    if (is_array($row7u2) && array_key_exists('ConsumerNo', $row7u2)) {
+        $row7['ConsumerNo'] = $row7u2['ConsumerNo'];
+    }
+}
+if ((int) ($row7['ProjectType'] ?? 0) === 2
+    && trim((string) ($row7['RooftopPlantCapacity'] ?? '')) === ''
+    && trim((string) ($row7['PumpCapacity'] ?? '')) !== '') {
+    $row7['RooftopPlantCapacity'] = $row7['PumpCapacity'];
+}
 if($row7['WaterSource']==''){
     $WaterSource = $row7['FieldWaterSource'];
     $sql = "UPDATE tbl_users SET WaterSource='$WaterSource' WHERE id='$id'";
@@ -208,12 +219,11 @@ if($_REQUEST["action"]=="deletelink")
                                         </div>
 
  <div class="form-group col-md-6">
-                                            <label class="form-label">Consumer No  </label>
+                                            <label class="form-label">Beneficiary Id  </label>
                                             <input type="text" name="BeneficiaryId" id="BeneficiaryId" class="form-control"
                                                 placeholder="" value="<?php echo $row7["BeneficiaryId"]; ?>"
                                                 autocomplete="off">
                                         </div>
-
                                         <div class="form-group col-md-6">
                                             <label class="form-label">Name Of Beneficiary/Grampanchayat </label>
                                             <input type="text" name="Fname" id="Fname" class="form-control"
@@ -467,7 +477,7 @@ else{
                                         </div>
 
                                         <div class="form-group col-md-4 Rooftop" style="display:block;">
-                                            <label class="form-label">Application No. </label>
+                                            <label class="form-label">Consumer No </label>
                                             <input type="text" name="ConsumerNo" id="ConsumerNo" class="form-control"
                                                 placeholder="" value="<?php echo $row7["ConsumerNo"]; ?>">
                                             <div class="clearfix"></div>
