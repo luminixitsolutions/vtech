@@ -69,7 +69,9 @@ $Projectname = $row['Name'];
                           
 <input type="hidden" id="ProjectId" value="<?php echo $_GET['projid'];?>">
 
-<?php 
+<?php
+    include_once 'inc-project-abstract-queries.php';
+
     function getDetails($val,$subheadid,$val2){
         global $conn;
         if($val == 'totapp'){
@@ -139,6 +141,12 @@ $Projectname = $row['Name'];
             $sql2 = "SELECT * FROM tbl_installations ts INNER JOIN tbl_users tu ON tu.id=ts.CustId WHERE tu.ProjectType=1 AND ts.DcrVerify='$val2'  AND tu.ProjectId='".$_GET['projid']."' AND tu.ProjectSubHeadId='".$subheadid."'";
             $rncnt2 = getRow($sql2);
         }
+        if($val == 'work_order_done'){
+            $rncnt2 = projectAbstractCount($conn, 'work_order_done', (int) $_GET['projid'], (int) $subheadid, '', '');
+        }
+        if($val == 'work_order_pending'){
+            $rncnt2 = projectAbstractCount($conn, 'work_order_pending', (int) $_GET['projid'], (int) $subheadid, '', '');
+        }
         
         
         //echo $sql2;
@@ -162,6 +170,8 @@ $Projectname = $row['Name'];
                     <th>Parital Material Dispatch</th>
                     <th>Material Dispatch</th>
                     <th>Material Dispatch Pending</th>
+                    <th>Work Done</th>
+                    <th>Work Pending</th>
                     <th>Installation Done</th>
                     <th>Installation Pending</th>
                     <th>Data Upload Done</th>
@@ -203,6 +213,8 @@ $Projectname = $row['Name'];
                        
                         $totsurveypending+=getDetails('surveypending',$result['id'],'0');
                         $totdispatch+=getDetails('dispatch',$result['id'],'');
+                        $totworkdone+=getDetails('work_order_done',$result['id'],'');
+                        $totworkpending+=getDetails('work_order_pending',$result['id'],'');
                         $totinstallationdone+=getDetails('installation',$result['id'],'Yes');
                         $totinstallationpending+=getDetails('dispatch',$result['id'],'') - getDetails('installation',$result['id'],'Yes');
                         $totdatauploadone+=getDetails('dataupload',$result['id'],'Yes');
@@ -232,6 +244,10 @@ $Projectname = $row['Name'];
                         <td><a href="total-beneficiary.php?roll=dispatch&projid=<?php echo $_REQUEST['projid'];?>&val=&subheadid=<?php echo $result['id'];?>&title=Material Dispatch" target="_blank"><?php echo getDetails('dispatch',$result['id'],'');?></a></td>
                         
                         <td><?php echo getDetails('surveydone',$result['id'],'1') - getDetails('dispatch',$result['id'],'');?></td>
+
+                        <td><a href="total-beneficiary.php?roll=work_order_done&projid=<?php echo $_REQUEST['projid'];?>&val=&subheadid=<?php echo $result['id'];?>&title=Work Done" target="_blank"><?php echo getDetails('work_order_done',$result['id'],'');?></a></td>
+
+                        <td style="background-color:#fee2d6;"><a href="total-beneficiary.php?roll=work_order_pending&projid=<?php echo $_REQUEST['projid'];?>&val=&subheadid=<?php echo $result['id'];?>&title=Work Pending" target="_blank"><?php echo getDetails('work_order_pending',$result['id'],'');?></a></td>
                         
                         <td><a href="total-beneficiary.php?roll=installation&projid=<?php echo $_REQUEST['projid'];?>&val=Yes&subheadid=<?php echo $result['id'];?>&title=Installation Done" target="_blank"><?php echo getDetails('installation',$result['id'],'Yes');?></a></td>
                         
@@ -275,6 +291,10 @@ $Projectname = $row['Name'];
                         <th><a href="total-beneficiary.php?roll=dispatch&dist=&projid=<?php echo $_REQUEST['projid'];?>&val=" target="_blank"><?php echo $totdispatch;?></a></th>
                         
                         <th><?php echo $totsurveydone-$totdispatch;?></th>
+
+                        <th><a href="total-beneficiary.php?roll=work_order_done&dist=&projid=<?php echo $_REQUEST['projid'];?>&val=&title=Work Done" target="_blank"><?php echo $totworkdone;?></a></th>
+
+                        <th><a href="total-beneficiary.php?roll=work_order_pending&dist=&projid=<?php echo $_REQUEST['projid'];?>&val=&title=Work Pending" target="_blank"><?php echo $totworkpending;?></a></th>
                         
                         <th><a href="total-beneficiary.php?roll=installation&dist=&projid=<?php echo $_REQUEST['projid'];?>&val=Yes" target="_blank"><?php echo $totinstallationdone;?></a></th>
                         

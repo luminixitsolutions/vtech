@@ -5,6 +5,24 @@ function projectAbstractEscape($conn, $value)
     return mysqli_real_escape_string($conn, (string) $value);
 }
 
+function projectAbstractHasColumn($conn, $table, $column)
+{
+    static $cache = array();
+    $key = $table . '.' . $column;
+    if (!array_key_exists($key, $cache)) {
+        $tableEsc = preg_replace('/[^a-zA-Z0-9_]/', '', $table);
+        $columnEsc = preg_replace('/[^a-zA-Z0-9_]/', '', $column);
+        try {
+            $check = $conn->query("SHOW COLUMNS FROM `$tableEsc` LIKE '$columnEsc'");
+            $cache[$key] = $check && $check->num_rows > 0;
+        } catch (Exception $e) {
+            $cache[$key] = false;
+        }
+    }
+
+    return $cache[$key];
+}
+
 function projectAbstractScopeSql($conn, $projectId, $subheadId, $dist = '', $alias = 'tu')
 {
     $projectId = (int) $projectId;
@@ -164,6 +182,30 @@ function projectAbstractListSql($conn, $roll, $projectId, $subheadId, $dist = ''
                 SELECT 1 FROM tbl_installations ti
                 WHERE ti.CustId=tu.id AND ti.DcrVerify='$val2Esc'
             )";
+    }
+
+    if ($roll === 'work_order_done') {
+        if (projectAbstractHasColumn($conn, 'tbl_users', 'WorkOrderDone')) {
+            return "SELECT tu.* FROM tbl_users tu WHERE tu.WorkOrderDone='Yes' $scope";
+        }
+
+        if (projectAbstractHasColumn($conn, 'tbl_users', 'WoNo')) {
+            return "SELECT tu.* FROM tbl_users tu WHERE TRIM(IFNULL(tu.WoNo,''))!='' $scope";
+        }
+
+        return "SELECT tu.* FROM tbl_users tu WHERE 1=0";
+    }
+
+    if ($roll === 'work_order_pending') {
+        if (projectAbstractHasColumn($conn, 'tbl_users', 'WorkOrderDone')) {
+            return "SELECT tu.* FROM tbl_users tu WHERE IFNULL(tu.WorkOrderDone,'No')!='Yes' AND tu.FieldSurveyDetails!=2 $scope";
+        }
+
+        if (projectAbstractHasColumn($conn, 'tbl_users', 'WoNo')) {
+            return "SELECT tu.* FROM tbl_users tu WHERE TRIM(IFNULL(tu.WoNo,''))='' AND tu.FieldSurveyDetails!=2 $scope";
+        }
+
+        return "SELECT tu.* FROM tbl_users tu WHERE tu.FieldSurveyDetails!=2 $scope";
     }
 
     return '';

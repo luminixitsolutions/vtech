@@ -6,6 +6,8 @@ include_once 'auth.php';
 $user_id = $_SESSION['Admin']['id'];
 $MainPage = "Assign-Dispatch-Officer";
 $Page = "Assign-Dispatch-Officer";
+
+$return_qs = http_build_query($_GET);
 ?>
 <!DOCTYPE html>
 <html lang="en" class="default-style layout-fixed layout-navbar-fixed">
@@ -40,6 +42,21 @@ $Page = "Assign-Dispatch-Officer";
 <?php include_once 'top_header.php'; ?>
 
 <?php
+
+if (isset($_POST['unassign_beneficiary'])) {
+    $uid = intval($_POST['unassign_user_id']);
+    if ($uid > 0) {
+        $sqlUn = "UPDATE tbl_users SET DispatchOfficerStatus='0', DispatchOfficerId=NULL, DispatchOfficerDate=NULL 
+                  WHERE id='" . $uid . "' AND ProjectType='1' AND StoreInchStatus='1' AND DispatchOfficerStatus='1'";
+        $conn->query($sqlUn);
+    }
+    $loc = 'assign-to-dispatch-officer.php';
+    if (!empty($_POST['return_qs'])) {
+        $loc .= '?' . $_POST['return_qs'];
+    }
+    echo "<script>alert('Beneficiary unassigned successfully'); window.location.href=" . json_encode($loc) . ";</script>";
+    exit;
+}
 
 if(isset($_POST['submit'])){
 
@@ -234,6 +251,12 @@ if (!empty($_POST['selected_ids_combined'])) {
    </div>
 </form>
 
+<form id="unassign-beneficiary-form" method="post" action="" style="display:none;">
+    <input type="hidden" name="unassign_user_id" id="unassign_user_id" value="">
+    <input type="hidden" name="unassign_beneficiary" value="1">
+    <input type="hidden" name="return_qs" value="<?php echo htmlspecialchars($return_qs, ENT_QUOTES, 'UTF-8'); ?>">
+</form>
+
  <form id="validation-form" method="post" enctype="multipart/form-data" action="">   
   
         <?php 
@@ -268,6 +291,7 @@ if (!empty($_POST['selected_ids_combined'])) {
                 <th>State</th>
                 <th>Village</th>
                 <th>District</th>
+                <th>Unassign</th>
                 <!--<th>QTN NO</th>
                 <th>QTN Date</th>
                 <th>Paid Status</th>
@@ -386,6 +410,14 @@ if($_REQUEST['StateId']!=''){
                                                      <td><?php echo $row['StateName']; ?></td>
             <td><?php echo $row['Village']; ?></td>
             <td><?php echo $row['District']; ?></td>
+            <td>
+                <?php if ($isAssigned) { ?>
+                    <button type="submit" class="btn btn-sm btn-outline-warning" form="unassign-beneficiary-form"
+                        onclick="document.getElementById('unassign_user_id').value='<?php echo (int)$row['id']; ?>'; return confirm('Unassign this beneficiary from the dispatch officer?');">Unassign</button>
+                <?php } else { ?>
+                    <span class="text-muted">—</span>
+                <?php } ?>
+            </td>
              
                 <!--<td>-</td>
                 <td>-</td>
