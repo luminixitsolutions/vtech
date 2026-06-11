@@ -95,14 +95,14 @@ if($_POST['action']=='view'){?>
         </thead>
         <tbody>
           <?php 
-          $AcDc = $_POST['AcDc']; 
-    $Surface = $_POST['Surface'];
-    $PumpCapacity = $_POST['PumpCapacity'];
-    $WaterSource = $_POST['WaterSource'];
-    $BoreDia = $_POST['BoreDia'];
-    $PumpHead = $_POST['PumpHead'];
-        $AgencyId = $_POST['AgencyId'];
-    $PumpOutletSize = $_POST['PumpOutletSize'];
+          $AcDc = trim((string) ($_POST['AcDc'] ?? $_POST['acdc'] ?? ''));
+    $Surface = trim((string) ($_POST['Surface'] ?? ''));
+    $PumpCapacity = trim((string) ($_POST['PumpCapacity'] ?? ''));
+    $WaterSource = trim((string) ($_POST['WaterSource'] ?? ''));
+    $BoreDia = trim((string) ($_POST['BoreDia'] ?? ''));
+    $PumpHead = trim((string) ($_POST['PumpHead'] ?? ''));
+    $AgencyId = trim((string) ($_POST['AgencyId'] ?? ''));
+    $PumpOutletSize = trim((string) ($_POST['PumpOutletSize'] ?? ''));
  $srno = 1;
   $sql = "SELECT tp.id,tp.ProductName,tp.Unit,tps.Qty FROM tbl_product_specification tps 
          INNER JOIN tbl_products tp ON tps.ProdId=tp.id WHERE tp.Roll!=1 AND tps.Qty>0 AND tp.ProdSpec=1";

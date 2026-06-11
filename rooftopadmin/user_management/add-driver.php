@@ -164,6 +164,19 @@ else{
 </select>
 <div class="clearfix"></div>
 </div>              
+<div class="form-group col-md-12">
+<label class="form-label">Transportor <span class="text-danger">*</span></label>
+<select class="form-control" name="UnderUser" id="UnderUser" required>
+<option selected="" value="">Select Transportor</option>
+<?php
+$sqlTransportor = "SELECT * FROM tbl_users WHERE Status='1' AND Roll=46 ORDER BY Fname";
+foreach (getList($sqlTransportor) as $result) {
+?>
+<option <?php if (($row7['UnderUser'] ?? '') == $result['id']) { ?> selected <?php } ?> value="<?php echo $result['id']; ?>"><?php echo htmlspecialchars($result['Fname']); ?></option>
+<?php } ?>
+</select>
+<div class="clearfix"></div>
+</div>
                                        <div class="form-group col-md-12">
                                             <label class="form-label">Driver Name <span
                                                     class="text-danger">*</span></label>

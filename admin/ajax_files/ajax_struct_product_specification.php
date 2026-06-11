@@ -1,7 +1,11 @@
 <?php 
 session_start();
 include_once '../config.php';
-if($_POST['action']=='view'){?>
+if($_POST['action']=='view'){
+    $esc = function ($value) use ($conn) {
+        return $conn->real_escape_string(trim((string) $value));
+    };
+?>
 <table id="example" class="table table-striped table-bordered dt-responsive nowrap" style="width:100%">
         <thead>
             <tr>
@@ -16,20 +20,32 @@ if($_POST['action']=='view'){?>
         </thead>
         <tbody>
           <?php 
-          $AcDc = $_POST['AcDc'] ?? ''; 
-    $Surface = $_POST['Surface'] ?? '';
-    $PumpCapacity = $_POST['PumpCapacity'] ?? '';
-    $ModuleWatt = $_POST['ModuleWatt'] ?? '';
-    $ModuleQty = $_POST['ModuleQty'] ?? '';
-    $Structure = $_POST['Structure'] ?? '';
-    $ModuleMake = $_POST['ModuleMake'] ?? '';
-    $StructureMake = $_POST['StructureMake'] ?? '';
-    $AgencyId = $_POST['AgencyId'] ?? '';
-    $SchemeId = $_POST['SchemeId'] ?? '';
+          $AcDc = $esc($_POST['AcDc'] ?? ''); 
+    $Surface = $esc($_POST['Surface'] ?? '');
+    $PumpCapacity = $esc($_POST['PumpCapacity'] ?? '');
+    $ModuleWatt = $esc($_POST['ModuleWatt'] ?? '');
+    $ModuleQty = $esc($_POST['ModuleQty'] ?? '');
+    $Structure = $esc($_POST['Structure'] ?? '');
+    $ModuleMake = $esc($_POST['ModuleMake'] ?? '');
+    $StructureMake = $esc($_POST['StructureMake'] ?? '');
+    $AgencyId = $esc($_POST['AgencyId'] ?? '');
+    $SchemeId = $esc($_POST['SchemeId'] ?? '');
+    $structureName = '';
+    if ($Structure !== '') {
+        $structRow = getRecord("SELECT Name FROM tbl_common_master WHERE id='$Structure' LIMIT 1");
+        $structureName = $structRow['Name'] ?? '';
+    }
+    $structureKey = $structureName !== '' ? preg_replace('/\s+/', '', strtolower($structureName)) : '';
  $srno = 1;
   $sql = "SELECT * FROM tbl_products WHERE Status='1' AND ProdSpec=2 ORDER BY id DESC";
    $rx = $conn->query($sql);
   while($nx = $rx->fetch_assoc()){
+        if ($structureKey !== '') {
+            $productKey = preg_replace('/\s+/', '', strtolower($nx['ProductName']));
+            if (strpos($productKey, $structureKey) === false) {
+                continue;
+            }
+        }
   		$sql2 = "SELECT * FROM tbl_struct_product_specification WHERE ProdId='".$nx['id']."'";
   		if($AcDc!=''){
   		   $sql2.=" AND AcDc='$AcDc'";
@@ -63,12 +79,7 @@ if($_POST['action']=='view'){?>
       }
       $sql2 .= " ORDER BY id DESC LIMIT 1";
   		$row2 = getRecord($sql2);
-  		if($row2['Qty'] > 0){
-  		    $Qty = $row2['Qty'];
-  		}
-  		else{
-  		    $Qty = 0;
-  		}
+  		$Qty = ($row2 && isset($row2['Qty']) && $row2['Qty'] !== '' && $row2['Qty'] !== null) ? $row2['Qty'] : '0';
   ?>
            <tr>
              <td><?php echo $srno; ?></td>
@@ -87,7 +98,11 @@ if($_POST['action']=='view'){?>
  <?php } 
 
 
- if($_POST['action']=='view2'){?>
+ if($_POST['action']=='view2'){
+    $esc = function ($value) use ($conn) {
+        return $conn->real_escape_string(trim((string) $value));
+    };
+?>
 <table id="example2" class="table table-striped table-bordered dt-responsive nowrap" style="width:100%">
         <thead>
             <tr>
@@ -102,58 +117,30 @@ if($_POST['action']=='view'){?>
         </thead>
         <tbody>
           <?php 
-          $AcDc = $_POST['AcDc']; 
-    $Surface = $_POST['Surface'];
-    $PumpCapacity = $_POST['PumpCapacity'];
-     $ModuleWatt = $_POST['ModuleWatt'];
-    $ModuleQty = $_POST['ModuleQty'];
-    $Structure1 = $_POST['Structure1'];
-    $Structure2 = $_POST['Structure2'];
-    $Structure3 = $_POST['Structure3'];
-    $ModuleMake = $_POST['ModuleMake'];
-    $StructureMake = $_POST['StructureMake'];
-    $AgencyId = $_POST['AgencyId'];
-    $SchemeId = $_POST['SchemeId'];
+    $Surface = $esc($_POST['Surface'] ?? '');
+    $PumpCapacity = $esc($_POST['PumpCapacity'] ?? '');
+    $ModuleWatt = $esc($_POST['ModuleWatt'] ?? '');
+    $ModuleQty = $esc($_POST['ModuleQty'] ?? '');
+    $Structure1 = $esc($_POST['Structure1'] ?? '');
+    $Structure2 = $esc($_POST['Structure2'] ?? '');
+    $Structure3 = $esc($_POST['Structure3'] ?? '');
+    $ModuleMake = $esc($_POST['ModuleMake'] ?? '');
+    $StructureMake = $esc($_POST['StructureMake'] ?? '');
+    $AgencyId = $esc($_POST['AgencyId'] ?? '');
+    $SchemeId = $esc($_POST['SchemeId'] ?? '');
  $srno = 1;
  if($Structure1!=''){
  $sql = "SELECT tp.id,tp.ProductName,tp.Unit,tps.Qty,tps.Structure FROM tbl_struct_product_specification tps 
          INNER JOIN tbl_products tp ON tps.ProdId=tp.id WHERE tps.Qty>0 AND tp.ProdSpec=2";
-      if($AcDc!=''){
-         $sql.=" AND tps.AcDc='$AcDc'";
-      }
-      if($Surface!=''){
-        $sql.=" AND tps.Surface='$Surface'";
-      }
-      if($PumpCapacity!=''){
-        $sql.=" AND tps.PumpCapacity='$PumpCapacity'";
-      }
-      if($WaterSource!=''){
-        $sql.=" AND tps.WaterSource='$WaterSource'";
-      }
-      if($BoreDia!=''){
-        $sql.=" AND tps.BoreDia='$BoreDia'";
-      }
-      if($PumpHead!=''){
-        $sql.=" AND tps.PumpHead='$PumpHead'";
-      }
-      /*if($Structure1!='' || $Structure2!='' || $Structure3!=''){
-        $sql.=" AND (tps.Structure='$Structure1' OR tps.Structure='$Structure2' OR tps.Structure='$Structure3')";
-      }*/
-      if($Structure1!=''){
-        $sql.=" AND tps.Structure='$Structure1'";
-      }
-      if($ModuleMake!=''){
-        $sql.=" AND tps.ModuleMake='$ModuleMake'";
-      }
-      if($StructureMake!=''){
-        $sql.=" AND tps.StructureMake='$StructureMake'";
-      }
-      if($AgencyId!=''){
-        $sql.=" AND tps.AgencyId='$AgencyId'";
-      }
-      if($SchemeId!=''){
-        $sql.=" AND tps.SchemeId='$SchemeId'";
-      }
+      if($Surface!=''){ $sql.=" AND tps.Surface='$Surface'"; }
+      if($PumpCapacity!=''){ $sql.=" AND tps.PumpCapacity='$PumpCapacity'"; }
+      if($ModuleWatt!=''){ $sql.=" AND tps.ModuleWatt='$ModuleWatt'"; }
+      if($ModuleQty!=''){ $sql.=" AND tps.ModuleQty='$ModuleQty'"; }
+      if($Structure1!=''){ $sql.=" AND tps.Structure='$Structure1'"; }
+      if($ModuleMake!=''){ $sql.=" AND tps.ModuleMake='$ModuleMake'"; }
+      if($StructureMake!=''){ $sql.=" AND tps.StructureMake='$StructureMake'"; }
+      if($AgencyId!=''){ $sql.=" AND tps.AgencyId='$AgencyId'"; }
+      if($SchemeId!=''){ $sql.=" AND tps.SchemeId='$SchemeId'"; }
 
       $sql.=" GROUP BY tps.ProdId ORDER BY tp.ProductName";
       //echo $sql;
@@ -179,39 +166,15 @@ $srno2 = $srno;
   if($Structure2!=''){
  $sql = "SELECT tp.id,tp.ProductName,tp.Unit,tps.Qty,tps.Structure FROM tbl_struct_product_specification tps 
          INNER JOIN tbl_products tp ON tps.ProdId=tp.id WHERE tps.Qty>0 AND tp.ProdSpec=2";
-      if($AcDc!=''){
-         $sql.=" AND tps.AcDc='$AcDc'";
-      }
-      if($Surface!=''){
-        $sql.=" AND tps.Surface='$Surface'";
-      }
-      if($PumpCapacity!=''){
-        $sql.=" AND tps.PumpCapacity='$PumpCapacity'";
-      }
-      if($WaterSource!=''){
-        $sql.=" AND tps.WaterSource='$WaterSource'";
-      }
-      if($BoreDia!=''){
-        $sql.=" AND tps.BoreDia='$BoreDia'";
-      }
-      if($PumpHead!=''){
-        $sql.=" AND tps.PumpHead='$PumpHead'";
-      }
-      if($Structure2!=''){
-        $sql.=" AND tps.Structure='$Structure2'";
-      }
-      if($ModuleMake!=''){
-        $sql.=" AND tps.ModuleMake='$ModuleMake'";
-      }
-      if($StructureMake!=''){
-        $sql.=" AND tps.StructureMake='$StructureMake'";
-      }
-      if($AgencyId!=''){
-        $sql.=" AND tps.AgencyId='$AgencyId'";
-      }
-      if($SchemeId!=''){
-        $sql.=" AND tps.SchemeId='$SchemeId'";
-      }
+      if($Surface!=''){ $sql.=" AND tps.Surface='$Surface'"; }
+      if($PumpCapacity!=''){ $sql.=" AND tps.PumpCapacity='$PumpCapacity'"; }
+      if($ModuleWatt!=''){ $sql.=" AND tps.ModuleWatt='$ModuleWatt'"; }
+      if($ModuleQty!=''){ $sql.=" AND tps.ModuleQty='$ModuleQty'"; }
+      if($Structure2!=''){ $sql.=" AND tps.Structure='$Structure2'"; }
+      if($ModuleMake!=''){ $sql.=" AND tps.ModuleMake='$ModuleMake'"; }
+      if($StructureMake!=''){ $sql.=" AND tps.StructureMake='$StructureMake'"; }
+      if($AgencyId!=''){ $sql.=" AND tps.AgencyId='$AgencyId'"; }
+      if($SchemeId!=''){ $sql.=" AND tps.SchemeId='$SchemeId'"; }
 
       $sql.="  GROUP BY tps.ProdId ORDER BY tp.ProductName";
       //echo $sql;
@@ -237,39 +200,15 @@ $srno3 = $srno2;
   if($Structure3!=''){
  $sql = "SELECT tp.id,tp.ProductName,tp.Unit,tps.Qty,tps.Structure FROM tbl_struct_product_specification tps 
          INNER JOIN tbl_products tp ON tps.ProdId=tp.id WHERE tps.Qty>0 AND tp.ProdSpec=2";
-      if($AcDc!=''){
-         $sql.=" AND tps.AcDc='$AcDc'";
-      }
-      if($Surface!=''){
-        $sql.=" AND tps.Surface='$Surface'";
-      }
-      if($PumpCapacity!=''){
-        $sql.=" AND tps.PumpCapacity='$PumpCapacity'";
-      }
-      if($WaterSource!=''){
-        $sql.=" AND tps.WaterSource='$WaterSource'";
-      }
-      if($BoreDia!=''){
-        $sql.=" AND tps.BoreDia='$BoreDia'";
-      }
-      if($PumpHead!=''){
-        $sql.=" AND tps.PumpHead='$PumpHead'";
-      }
-      if($Structure3!=''){
-        $sql.=" AND tps.Structure='$Structure3'";
-      }
-      if($ModuleMake!=''){
-        $sql.=" AND tps.ModuleMake='$ModuleMake'";
-      }
-      if($StructureMake!=''){
-        $sql.=" AND tps.StructureMake='$StructureMake'";
-      }
-      if($AgencyId!=''){
-        $sql.=" AND tps.AgencyId='$AgencyId'";
-      }
-      if($SchemeId!=''){
-        $sql.=" AND tps.SchemeId='$SchemeId'";
-      }
+      if($Surface!=''){ $sql.=" AND tps.Surface='$Surface'"; }
+      if($PumpCapacity!=''){ $sql.=" AND tps.PumpCapacity='$PumpCapacity'"; }
+      if($ModuleWatt!=''){ $sql.=" AND tps.ModuleWatt='$ModuleWatt'"; }
+      if($ModuleQty!=''){ $sql.=" AND tps.ModuleQty='$ModuleQty'"; }
+      if($Structure3!=''){ $sql.=" AND tps.Structure='$Structure3'"; }
+      if($ModuleMake!=''){ $sql.=" AND tps.ModuleMake='$ModuleMake'"; }
+      if($StructureMake!=''){ $sql.=" AND tps.StructureMake='$StructureMake'"; }
+      if($AgencyId!=''){ $sql.=" AND tps.AgencyId='$AgencyId'"; }
+      if($SchemeId!=''){ $sql.=" AND tps.SchemeId='$SchemeId'"; }
 
       $sql.="  GROUP BY tps.ProdId ORDER BY tp.ProductName";
       //echo $sql;

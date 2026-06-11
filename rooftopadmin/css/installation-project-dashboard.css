@@ -1,0 +1,248 @@
+/* Installation project dashboards — main & sub-head */
+
+.ipd-page {
+  padding: 0.25rem 0 2rem;
+}
+
+.ipd-shell {
+  border: none;
+  border-radius: 16px;
+  box-shadow: 0 4px 24px rgba(15, 23, 42, 0.08);
+  overflow: hidden;
+  background: #fff;
+}
+
+.ipd-shell .ipd-body {
+  padding: 1.75rem 1.5rem 2rem;
+  background: linear-gradient(180deg, #f8fafc 0%, #ffffff 42%);
+}
+
+.ipd-header {
+  text-align: center;
+  padding: 1.35rem 1.5rem;
+  margin: 0;
+  border: none;
+  border-bottom: 1px solid #e2e8f0;
+  font-size: 1.15rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: #475569;
+  background: #f8fafc;
+  box-shadow: none;
+}
+
+.ipd-breadcrumb {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 1.25rem;
+  font-size: 0.875rem;
+  color: #64748b;
+}
+
+.ipd-breadcrumb a {
+  color: #64748b;
+  text-decoration: none;
+  font-weight: 500;
+}
+
+.ipd-breadcrumb a:hover {
+  color: #334155;
+  text-decoration: underline;
+}
+
+/* Main dashboard — project tiles */
+.ipd-project-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(168px, 1fr));
+  gap: 1.25rem;
+}
+
+.ipd-project-link {
+  display: block;
+  text-decoration: none !important;
+  color: inherit;
+  height: 100%;
+}
+
+.ipd-project-card {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 132px;
+  padding: 1.35rem 1rem;
+  border-radius: 14px;
+  color: #fff;
+  text-align: center;
+  overflow: hidden;
+  transition: transform 0.25s ease, box-shadow 0.25s ease;
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.12);
+}
+
+.ipd-project-card::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='0.08'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
+  opacity: 0.6;
+  pointer-events: none;
+}
+
+.ipd-project-card::after {
+  content: "";
+  position: absolute;
+  right: -20px;
+  bottom: -20px;
+  width: 80px;
+  height: 80px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.12);
+}
+
+.ipd-project-link:hover .ipd-project-card {
+  transform: translateY(-6px);
+  box-shadow: 0 14px 32px rgba(0, 0, 0, 0.18);
+}
+
+.ipd-project-icon {
+  position: relative;
+  z-index: 1;
+  font-size: 1.75rem;
+  margin-bottom: 0.65rem;
+  opacity: 0.95;
+}
+
+.ipd-project-name {
+  position: relative;
+  z-index: 1;
+  margin: 0;
+  font-size: 0.8rem;
+  font-weight: 700;
+  line-height: 1.35;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  word-break: break-word;
+}
+
+.ipd-project-card.ipd-tone-0 { background: linear-gradient(145deg, #475569, #64748b); }
+.ipd-project-card.ipd-tone-1 { background: linear-gradient(145deg, #334155, #475569); }
+.ipd-project-card.ipd-tone-2 { background: linear-gradient(145deg, #1e40af, #3b82f6); }
+.ipd-project-card.ipd-tone-3 { background: linear-gradient(145deg, #047857, #059669); }
+.ipd-project-card.ipd-tone-4 { background: linear-gradient(145deg, #0d9488, #14b8a6); }
+.ipd-project-card.ipd-tone-5 { background: linear-gradient(145deg, #0369a1, #0284c7); }
+.ipd-project-card.ipd-tone-6 { background: linear-gradient(145deg, #6d28d9, #7c3aed); }
+
+/* Sub-head dashboard — stat cards */
+.ipd-stat-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  gap: 1.25rem;
+}
+
+.ipd-stat-link {
+  display: block;
+  text-decoration: none !important;
+  color: inherit;
+  height: 100%;
+}
+
+.ipd-stat-card {
+  display: flex;
+  flex-direction: column;
+  min-height: 140px;
+  padding: 1.25rem 1.35rem;
+  background: #fff;
+  border: 1px solid #e2e8f0;
+  border-radius: 14px;
+  border-left: 4px solid #94a3b8;
+  box-shadow: 0 2px 12px rgba(15, 23, 42, 0.06);
+  transition: transform 0.25s ease, box-shadow 0.25s ease, border-color 0.25s ease;
+  height: 100%;
+}
+
+.ipd-stat-link:hover .ipd-stat-card {
+  transform: translateY(-4px);
+  box-shadow: 0 12px 28px rgba(15, 23, 42, 0.12);
+  border-left-color: #475569;
+}
+
+.ipd-stat-label {
+  flex: 1;
+  margin: 0 0 0.75rem;
+  font-size: 0.8rem;
+  font-weight: 700;
+  line-height: 1.4;
+  color: #334155;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+.ipd-stat-meta {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 0.75rem;
+}
+
+.ipd-stat-count {
+  font-size: 2rem;
+  font-weight: 800;
+  line-height: 1;
+  color: #334155;
+  letter-spacing: -0.02em;
+}
+
+.ipd-stat-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.35rem 0.65rem;
+  font-size: 0.7rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: #64748b;
+  background: #f1f5f9;
+  border-radius: 999px;
+}
+
+.ipd-stat-badge .feather {
+  width: 14px;
+  height: 14px;
+}
+
+.ipd-empty {
+  grid-column: 1 / -1;
+  text-align: center;
+  padding: 3rem 1rem;
+  color: #94a3b8;
+  font-size: 0.95rem;
+}
+
+@media (max-width: 575.98px) {
+  .ipd-header {
+    font-size: 0.95rem;
+    padding: 1rem;
+  }
+
+  .ipd-shell .ipd-body {
+    padding: 1.25rem 1rem 1.5rem;
+  }
+
+  .ipd-project-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 0.85rem;
+  }
+
+  .ipd-project-card {
+    min-height: 110px;
+    padding: 1rem 0.65rem;
+  }
+
+  .ipd-stat-grid {
+    grid-template-columns: 1fr;
+  }
+}

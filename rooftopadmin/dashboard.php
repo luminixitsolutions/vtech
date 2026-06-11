@@ -246,7 +246,7 @@ else if($Roll != 1){
   <?php 
   $sql12 = "SELECT * FROM tbl_common_master WHERE Status='1' AND Roll=6";
   $row12 = getList($sql12);
-  foreach($row12 as $result){
+  foreach ((array) $row12 as $result) {
     $sql55 = "SELECT * FROM tbl_rooftop_service_complaint WHERE ClainStatus='".$result['Name']."'";
     $rncnt55 = getRow($sql55);
      ?>

@@ -67,6 +67,11 @@ $Page = "View-Contractor-Commission";
                 </style>
 
                 <?php
+                $inspectionApprovalCol = $conn->query("SHOW COLUMNS FROM tbl_rooftop_contractor_commision LIKE 'InspectionApprovalVal'");
+                if (!$inspectionApprovalCol || $inspectionApprovalCol->num_rows === 0) {
+                    $conn->query("ALTER TABLE tbl_rooftop_contractor_commision ADD COLUMN InspectionApprovalVal DECIMAL(12,2) NOT NULL DEFAULT 0.00 AFTER InspectionVal");
+                }
+
                 $UserId = $_GET['UserId'];
                 $ProjectHeadId = $_GET['ProjectHeadId'];
                 $ProjectSubHeadId = $_GET['ProjectSubHeadId'];
@@ -92,9 +97,10 @@ $Page = "View-Contractor-Commission";
                                         $FoundationVal = $_POST['FoundationVal'][$i];
                                         $InstallationVal = $_POST['InstallationVal'][$i];
                                         $InspectionVal = $_POST['InspectionVal'][$i];
+                                        $InspectionApprovalVal = $_POST['InspectionApprovalVal'][$i];
                                         $DocumentationVal = $_POST['DocumentationVal'][$i];
 
-                                        $sql = "INSERT INTO tbl_rooftop_contractor_commision SET CreatedBy='$user_id',CreatedDate='$CreatedDate',ProjectHeadId='$ProjectId',ProjectSubHeadId='$ProjectSubHeadId',UserId='$UserId',Capacity='$Capacity',SelectionVal='$SelectionVal',FieldSurveyVal='$FieldSurveyVal',DispatchVal='$DispatchVal',FoundationVal='$FoundationVal',InstallationVal='$InstallationVal',InspectionVal='$InspectionVal',DocumentationVal='$DocumentationVal'";
+                                        $sql = "INSERT INTO tbl_rooftop_contractor_commision SET CreatedBy='$user_id',CreatedDate='$CreatedDate',ProjectHeadId='$ProjectId',ProjectSubHeadId='$ProjectSubHeadId',UserId='$UserId',Capacity='$Capacity',SelectionVal='$SelectionVal',FieldSurveyVal='$FieldSurveyVal',DispatchVal='$DispatchVal',FoundationVal='$FoundationVal',InstallationVal='$InstallationVal',InspectionVal='$InspectionVal',InspectionApprovalVal='$InspectionApprovalVal',DocumentationVal='$DocumentationVal'";
                                         $conn->query($sql);
                                     }
                                 }
@@ -115,9 +121,10 @@ $Page = "View-Contractor-Commission";
                                         $FoundationVal = $_POST['FoundationVal'][$i];
                                         $InstallationVal = $_POST['InstallationVal'][$i];
                                         $InspectionVal = $_POST['InspectionVal'][$i];
+                                        $InspectionApprovalVal = $_POST['InspectionApprovalVal'][$i];
                                         $DocumentationVal = $_POST['DocumentationVal'][$i];
 
-                                        $sql = "INSERT INTO tbl_rooftop_contractor_commision SET CreatedBy='$user_id',CreatedDate='$CreatedDate',ProjectHeadId='$ProjectId',ProjectSubHeadId='$ProjectSubHeadId',UserId='$UserId',Capacity='$Capacity',SelectionVal='$SelectionVal',FieldSurveyVal='$FieldSurveyVal',DispatchVal='$DispatchVal',FoundationVal='$FoundationVal',InstallationVal='$InstallationVal',InspectionVal='$InspectionVal',DocumentationVal='$DocumentationVal'";
+                                        $sql = "INSERT INTO tbl_rooftop_contractor_commision SET CreatedBy='$user_id',CreatedDate='$CreatedDate',ProjectHeadId='$ProjectId',ProjectSubHeadId='$ProjectSubHeadId',UserId='$UserId',Capacity='$Capacity',SelectionVal='$SelectionVal',FieldSurveyVal='$FieldSurveyVal',DispatchVal='$DispatchVal',FoundationVal='$FoundationVal',InstallationVal='$InstallationVal',InspectionVal='$InspectionVal',InspectionApprovalVal='$InspectionApprovalVal',DocumentationVal='$DocumentationVal'";
                                         $conn->query($sql);
                                     }
                                 }
@@ -192,7 +199,7 @@ $Page = "View-Contractor-Commission";
                                             global $conn;
                                             $sql = "SELECT $val AS Value FROM tbl_rooftop_contractor_commision WHERE Capacity='$capacity' AND UserId='$uid' AND ProjectHeadId='$ProjectHeadId' AND ProjectSubHeadId='$ProjectSubHeadId'";
                                             $row = getRecord($sql);
-                                            return $row['Value'];
+                                            return $row['Value'] ?? 0;
                                         }
                                         ?>
                                         <table>
@@ -293,16 +300,30 @@ $Page = "View-Contractor-Commission";
                                             </tr>
                                             <tr>
                                                 <td>7</td>
-                                                <td>Documentation</td>
+                                                <td>Inspection Approval</td>
                                                 <?php foreach ($row as $result) {
                                                     if ($_GET['UserId'] != '') {
-                                                        $val7 = getCommision('DocumentationVal', $result['id'], $_GET['UserId'], $_GET['ProjectHeadId'], $_GET['ProjectSubHeadId']);
+                                                        $val7 = getCommision('InspectionApprovalVal', $result['id'], $_GET['UserId'], $_GET['ProjectHeadId'], $_GET['ProjectSubHeadId']);
                                                     } else {
                                                         $val7 = 0;
                                                     }
                                                 ?>
 
-                                                    <td><input type="text" class="form-control" value="<?php echo $val7; ?>" name="DocumentationVal[]"></td>
+                                                    <td><input type="text" class="form-control" value="<?php echo $val7; ?>" name="InspectionApprovalVal[]"></td>
+                                                <?php } ?>
+                                            </tr>
+                                            <tr>
+                                                <td>8</td>
+                                                <td>Documentation</td>
+                                                <?php foreach ($row as $result) {
+                                                    if ($_GET['UserId'] != '') {
+                                                        $val8 = getCommision('DocumentationVal', $result['id'], $_GET['UserId'], $_GET['ProjectHeadId'], $_GET['ProjectSubHeadId']);
+                                                    } else {
+                                                        $val8 = 0;
+                                                    }
+                                                ?>
+
+                                                    <td><input type="text" class="form-control" value="<?php echo $val8; ?>" name="DocumentationVal[]"></td>
                                                 <?php } ?>
                                             </tr>
                                         </table>

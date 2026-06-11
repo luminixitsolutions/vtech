@@ -65,6 +65,7 @@ $Page = "Running-Trips";
             $sql.= " ORDER BY te.CreatedDate DESC";
             //echo $sql;
             $res = $conn->query($sql);
+            if ($res) {
             while($row = $res->fetch_assoc())
             {
                
@@ -87,7 +88,7 @@ $Page = "Running-Trips";
              <?php } ?>
             </td><?php } ?>
             </tr>
-           <?php $i++;} ?>
+           <?php $i++;} } ?>
         </tbody>
     </table>
 </div>

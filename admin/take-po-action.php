@@ -356,6 +356,31 @@ function po_collect_po_stock_preview($conn, $poId, $poRow)
     margin-top: -11px;
 }
 
+.po-regular-products-table .po-qty-col {
+    min-width: 110px;
+    width: 110px;
+    white-space: nowrap;
+}
+.po-regular-products-table .po-qty-input {
+    min-width: 100px;
+    width: 100px;
+    text-align: left;
+}
+.po-table-scroll {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    width: 100%;
+    max-width: 100%;
+    margin-bottom: 1rem;
+}
+.po-regular-products-table {
+    min-width: 960px;
+    margin-bottom: 0;
+}
+.po-regular-products-table .po-product-col {
+    min-width: 320px;
+}
+
     </style>
     <div class="layout-wrapper layout-2">
         <div class="layout-inner">
@@ -614,10 +639,6 @@ if (isset($_POST['submit_po_store_transfer_confirm'])) {
     }
     if ($BranchIdStore <= 0 || empty($TransferDate)) {
         echo "<script>alert('Please select store and transfer date.');window.location.href='take-po-action.php?id=$poId';</script>";
-        exit;
-    }
-    if ($Roll != 1 && $Roll != 7 && $BranchIdStore != intval($BranchId)) {
-        echo "<script>alert('Invalid store selection.');window.location.href='take-po-action.php?id=$poId';</script>";
         exit;
     }
 
@@ -957,17 +978,15 @@ if (isset($_POST['submit_po_store_transfer_confirm'])) {
                                     <input type="hidden" name="CustomerId" value="<?php echo htmlspecialchars(isset($row7['CustomerId']) ? (string) $row7['CustomerId'] : '', ENT_QUOTES, 'UTF-8'); ?>">
                                     <input type="hidden" name="BranchId" value="<?php echo htmlspecialchars(isset($row7['BranchId']) ? (string) $row7['BranchId'] : '', ENT_QUOTES, 'UTF-8'); ?>">
                                     <div class="form-row">
-<h5>Regular Products</h5>
-<table class="table table-striped table-bordered dt-responsive nowrap" style="width:100%">
+<h5 class="col-12">Regular Products</h5>
+<div class="col-12 po-table-scroll">
+<table class="table table-striped table-bordered dt-responsive nowrap po-regular-products-table" style="width:100%">
         <thead>
             <tr>
-              <th>#</th>
-              <th>Product</th>
-              <th>MODEL NO.</th>
-             <!--  <th>SERIAL NO.</th> -->
+              <th class="po-product-col">Product</th>
+              <th class="po-qty-col">Qty</th>
+              <th>Model No.</th>
               <th>Unit</th>
-
-               <th>Qty</th>
             </tr>
         </thead>
         <tbody>
@@ -981,12 +1000,10 @@ if (isset($_POST['submit_po_store_transfer_confirm'])) {
                     
                 ?>
             <tr>
-                <td><?php echo $i2;?></td>
-                <td><?php echo $result['ProductName'];?></td>
+                <td class="po-product-col"><?php echo $result['ProductName'];?></td>
+               <td class="po-qty-col"><input type="text" value="<?php echo $result['Qty'];?>" name="Qty[]" class="form-control po-qty-input"></td>
                 <td><?php echo $result['ModelNo'];?></td>
-               <!--  <td><input type="text" value="<?php echo $SerialNo;?>" name="SerialNo[]" class="form-control"></td> -->
                 <td><?php echo $result['Purity'];?></td>
-               <td><input type="text" value="<?php echo $result['Qty'];?>" name="Qty[]" class="form-control"></td>
                 <input type="hidden" name="ProductName[]" value='<?php echo $result['ProductName'];?>'>
 <input type="hidden" value="N/A" name="SerialNo[]" class="form-control">
                  <input type="hidden" name="SrNo[]" value="<?php echo (int) $i2; ?>">
@@ -1002,6 +1019,7 @@ if (isset($_POST['submit_po_store_transfer_confirm'])) {
         <?php $i2++; }  ?>
         </tbody>
     </table>
+</div>
 
    
 
@@ -1183,13 +1201,11 @@ if (isset($_POST['submit_po_store_preview']) && $poStoreAssignUnlocked && empty(
     $poPreviewBranchId = intval($_POST['PoStoreBranchId']);
     $poPreviewTransferDateRaw = isset($_POST['PoStoreTransferDate']) ? trim($_POST['PoStoreTransferDate']) : '';
     if ($poPreviewBranchId > 0 && $poPreviewTransferDateRaw !== '') {
-        if ($Roll == 1 || $Roll == 7 || $poPreviewBranchId === intval($BranchId)) {
-            $pv = po_collect_po_stock_preview($conn, intval($id), $row7);
-            $poPreviewLines = $pv['rows'];
-            $poPreviewHasTransferable = !empty($pv['has_transferable']);
-            $poPreviewBlocked = empty($poPreviewHasTransferable);
-            $poPreviewShow = true;
-        }
+        $pv = po_collect_po_stock_preview($conn, intval($id), $row7);
+        $poPreviewLines = $pv['rows'];
+        $poPreviewHasTransferable = !empty($pv['has_transferable']);
+        $poPreviewBlocked = empty($poPreviewHasTransferable);
+        $poPreviewShow = true;
     }
 }
 ?>
@@ -1338,11 +1354,7 @@ if (isset($_POST['submit_po_store_preview']) && $poStoreAssignUnlocked && empty(
                         <select class="form-control" name="PoStoreBranchId" required>
                             <option value="">Select store</option>
                             <?php
-                            if ($Roll == 1 || $Roll == 7) {
-                                $sqlBr = "SELECT * FROM tbl_branch WHERE Status='1'";
-                            } else {
-                                $sqlBr = "SELECT * FROM tbl_branch WHERE Status='1' AND id='".intval($BranchId)."'";
-                            }
+                            $sqlBr = "SELECT * FROM tbl_branch WHERE Status='1' ORDER BY Name ASC";
                             $rowBr = getList($sqlBr);
                             if (!empty($rowBr) && is_array($rowBr)) {
                                 foreach ($rowBr as $br) {
@@ -1374,11 +1386,7 @@ if (isset($_POST['submit_po_store_preview']) && $poStoreAssignUnlocked && empty(
                     <select class="form-control" name="PoStoreBranchId" id="PoStoreBranchId" required>
                         <option value="">Select store</option>
                         <?php
-                        if ($Roll == 1 || $Roll == 7) {
-                            $sqlBr = "SELECT * FROM tbl_branch WHERE Status='1'";
-                        } else {
-                            $sqlBr = "SELECT * FROM tbl_branch WHERE Status='1' AND id='".intval($BranchId)."'";
-                        }
+                        $sqlBr = "SELECT * FROM tbl_branch WHERE Status='1' ORDER BY Name ASC";
                         $rowBr = getList($sqlBr);
                         if (!empty($rowBr) && is_array($rowBr)) {
                             foreach ($rowBr as $br) {

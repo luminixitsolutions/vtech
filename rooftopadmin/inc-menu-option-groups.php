@@ -18,9 +18,9 @@ function menuAccessPumpOnlyOptionIds()
         154, 155, 156, 157, 158, 159,
         80, 81, 68, 144, 145, 146, 161, 162,
         35, 37, 42, 66, 85, 87, 88,
-        164, 121,
+        121,
         174, 175, 176, 177, 178, 179, 180, 181, 182,
-        39, 115, 119, 120, 142, 143, 160, 184, 185, 186, 187,
+        39, 143, 160, 186, 187,
         61,
     ];
 }
@@ -31,7 +31,7 @@ function getMenuOptionGroups()
         'Lead Management' => [44, 45, 46, 47, 48, 49, 50, 51, 52, 63],
         'Master Management' => [1, 2, 3, 4, 5, 6, 7, 8, 9, 12, 13, 15, 16, 53, 54],
         'Product Management' => [24],
-        'User Accounts' => [18, 19, 20, 21, 22, 23],
+        'User Accounts' => [18, 19, 20, 21, 22, 23, 255, 256, 257],
         'Customer Assignment' => [55, 79],
         'Production Plan' => [130, 131],
         'Survey' => [147, 148],
@@ -40,10 +40,10 @@ function getMenuOptionGroups()
         'Store & Dispatch Assignment' => [58, 70, 60, 71],
         'Item Transfer' => [165, 166, 72, 183],
         'Delivery & Installation' => [26, 82, 83, 167, 84],
-        'Service Complaint' => [28, 135, 136, 137],
+        'Service Complaint' => [164, 28, 135, 136, 137],
         'MPUVNL & Tasks' => [93, 94, 95, 96, 118],
         'Other Modules' => [138, 139, 69, 37],
-        'Reports' => [29, 30, 31, 38, 40, 65, 99, 100, 101, 102, 103, 104, 105, 106, 107, 108, 109, 110, 111, 112],
+        'Reports' => [29, 30, 31, 38, 40, 65, 99, 100, 101, 102, 103, 104, 105, 106, 107, 108, 109, 110, 111, 112, 115, 119, 120, 142, 183, 184, 185],
         'Insurance Site' => [168, 169, 170, 171, 172, 173],
         'MSEDCL SMART Project' => [188, 189, 190, 191, 192, 193],
         'Action' => [MENU_ACCESS_OPT_ADD, MENU_ACCESS_OPT_EDIT, MENU_ACCESS_OPT_DELETE],
@@ -177,6 +177,16 @@ function userHasAnyMenuOption(array $options, array $ids)
     return false;
 }
 
+function menuAccessServiceComplaintOptionIds()
+{
+    return getMenuOptionGroups()['Service Complaint'];
+}
+
+function menuAccessReportsOptionIds()
+{
+    return getMenuOptionGroups()['Reports'];
+}
+
 function menuAccessOptionIsChecked($id, array $selectedOptions)
 {
     return in_array($id, $selectedOptions, false)
@@ -191,6 +201,10 @@ function menuAccessOptionIsChecked($id, array $selectedOptions)
 function menuAccessBuiltinOptionLabels()
 {
     return [
+        164 => 'Service Dashboard',
+        255 => 'Transportor Account',
+        256 => 'Add Transportor Account',
+        257 => 'View Transportor Account',
         160 => 'Dispatch Customer CSV Report',
         168 => 'Insurance Site Dashboard',
         169 => 'Pending Insurance',

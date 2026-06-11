@@ -2,6 +2,8 @@
 session_start();
 include_once 'config.php';
 include_once 'auth.php';
+require_once 'inc-challan-return.php';
+challanReturnEnsureTables($conn);
 $user_id = $_SESSION['Admin']['id'];
 $MainPage = "Sell";
 $Page = "View-Sell";
@@ -204,6 +206,7 @@ else{
                 <?php if(in_array("10", $Options) || in_array("11", $Options)) {?>
                 <th>Action</th>
              <?php } ?>
+                <th>Return Challan</th>
             </tr>
         </thead>
         <tbody>
@@ -292,7 +295,20 @@ else{
               
             </td>
          <?php } ?>
-              
+                <td>
+                    <?php
+                    $isReturned = ((int) ($row['ReturnStatus'] ?? 0) === 1) || challanReturnAlreadyReturned($conn, $row['id']);
+                    if ($isReturned) { ?>
+                        <span class="badge badge-success">Returned</span>
+                    <?php } else { ?>
+                        <button type="button" class="btn btn-sm btn-warning btn-return-challan"
+                            data-sell-id="<?php echo (int) $row['id']; ?>"
+                            data-invoice-no="<?php echo htmlspecialchars($row['InvoiceNo'], ENT_QUOTES, 'UTF-8'); ?>"
+                            data-cust-name="<?php echo htmlspecialchars($row['CustName'], ENT_QUOTES, 'UTF-8'); ?>">
+                            Return
+                        </button>
+                    <?php } ?>
+                </td>
             </tr>
            <?php $i++;} ?>
         </tbody>
@@ -300,6 +316,38 @@ else{
                     </div>
                         
 
+                        <div class="modal fade" id="returnChallanModal" tabindex="-1" role="dialog" aria-labelledby="returnChallanModalLabel" aria-hidden="true">
+                            <div class="modal-dialog" role="document">
+                                <div class="modal-content">
+                                    <div class="modal-header">
+                                        <h5 class="modal-title" id="returnChallanModalLabel">Return Challan</h5>
+                                        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                                            <span aria-hidden="true">&times;</span>
+                                        </button>
+                                    </div>
+                                    <form id="returnChallanForm">
+                                        <div class="modal-body">
+                                            <input type="hidden" name="sell_id" id="return_sell_id" value="">
+                                            <p class="mb-2"><strong>Challan:</strong> <span id="return_invoice_no"></span></p>
+                                            <p class="mb-3"><strong>Customer:</strong> <span id="return_cust_name"></span></p>
+                                            <div class="form-group">
+                                                <label class="form-label">Return Date <span class="text-danger">*</span></label>
+                                                <input type="date" class="form-control" name="return_date" id="return_date" value="<?php echo date('Y-m-d'); ?>" required>
+                                            </div>
+                                            <div class="form-group">
+                                                <label class="form-label">Remarks</label>
+                                                <textarea class="form-control" name="remarks" id="return_remarks" rows="3" placeholder="Enter return remarks"></textarea>
+                                            </div>
+                                            <div id="return_challan_alert" class="alert d-none" role="alert"></div>
+                                        </div>
+                                        <div class="modal-footer">
+                                            <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>
+                                            <button type="submit" class="btn btn-warning" id="btnSubmitReturn">Submit Return</button>
+                                        </div>
+                                    </form>
+                                </div>
+                            </div>
+                        </div>
 					</div>
                     <!-- [ content ] End -->
                     <!-- [ Layout footer ] Start -->
@@ -314,8 +362,8 @@ else{
     <!-- / Layout wrapper -->
 
     <!-- Core scripts -->
-    <script src="<?php echo $SiteUrl;?>/assets/js/bootstrap.min.js"></script>
     <script src="<?php echo $SiteUrl;?>/assets/js/jquery.min.js"></script>
+    <script src="<?php echo $SiteUrl;?>/assets/js/bootstrap.min.js"></script>
     <script  src="<?php echo $SiteUrl;?>/assets/js/pdfmake.min.js"></script>
     <script src="<?php echo $SiteUrl;?>/assets/js/vfs_fonts.js"></script>
    <script src="<?php echo $SiteUrl;?>/assets/js/datatables.min.js"></script>
@@ -353,6 +401,53 @@ else{
                 }
             });
 
+        });
+
+        $(document).on('click', '.btn-return-challan', function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            $('#return_sell_id').val($(this).data('sell-id'));
+            $('#return_invoice_no').text($(this).data('invoice-no'));
+            $('#return_cust_name').text($(this).data('cust-name'));
+            $('#return_remarks').val('');
+            $('#return_date').val('<?php echo date('Y-m-d'); ?>');
+            $('#return_challan_alert').addClass('d-none').removeClass('alert-success alert-danger').text('');
+            $('#returnChallanModal').appendTo('body').modal('show');
+        });
+
+        $('#returnChallanForm').on('submit', function(e) {
+            e.preventDefault();
+            if (!confirm('Are you sure you want to return this challan? All items and serial numbers will be added back to stock.')) {
+                return;
+            }
+            var $btn = $('#btnSubmitReturn');
+            $btn.prop('disabled', true);
+            $.ajax({
+                url: 'ajax_files/ajax_challan_return.php',
+                type: 'POST',
+                dataType: 'json',
+                data: {
+                    action: 'returnChallan',
+                    sell_id: $('#return_sell_id').val(),
+                    return_date: $('#return_date').val(),
+                    remarks: $('#return_remarks').val()
+                },
+                success: function(res) {
+                    var $alert = $('#return_challan_alert');
+                    $alert.removeClass('d-none alert-success alert-danger');
+                    if (res.success) {
+                        $alert.addClass('alert-success').text(res.message);
+                        setTimeout(function() { window.location.reload(); }, 800);
+                    } else {
+                        $alert.addClass('alert-danger').text(res.message || 'Return failed.');
+                        $btn.prop('disabled', false);
+                    }
+                },
+                error: function() {
+                    $('#return_challan_alert').removeClass('d-none').addClass('alert-danger').text('Request failed. Please try again.');
+                    $btn.prop('disabled', false);
+                }
+            });
         });
     
 });

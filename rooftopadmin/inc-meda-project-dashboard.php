@@ -468,6 +468,34 @@
                                      </div>
                                 </div></a>
                             </div>
+
+                            <div class="col-sm-6 col-xl-2">
+                                  <a href="project-abstract-of-abstract.php?projid=<?php echo $_GET['prjid'];?>&subheadid=<?php echo $_GET['id'];?>&title=<?php echo urlencode((string) $_GET['name']); ?>">
+                               <div class="card mb-4 bg-pattern-3-dark" style="height: 100px;">
+                                    <div class="card-body" style="padding-top: 15px; padding-bottom: 15px; padding-right: 5px; padding-left: 10px;">
+                                        <div class="d-flex align-items-center">
+                                            <div class="ml-3">
+                                                <h6 class="mb-0" style="color: black;padding-top: 25px;">Project Abstract of Abstracts</h6>
+                                        <div class="text-large"></div>
+                                     </div>
+                                        </div>
+                                     </div>
+                                </div></a>
+                            </div>
+
+                            <div class="col-sm-6 col-xl-2">
+                                  <a href="contractor-abstract.php?projid=<?php echo $_GET['prjid'];?>&subheadid=<?php echo $_GET['id'];?>&title=<?php echo urlencode((string) $_GET['name']); ?>">
+                               <div class="card mb-4 bg-pattern-3-dark" style="height: 100px;">
+                                    <div class="card-body" style="padding-top: 15px; padding-bottom: 15px; padding-right: 5px; padding-left: 10px;">
+                                        <div class="d-flex align-items-center">
+                                            <div class="ml-3">
+                                                <h6 class="mb-0" style="color: black;padding-top: 25px;">Contractor Abstract</h6>
+                                        <div class="text-large"></div>
+                                     </div>
+                                        </div>
+                                     </div>
+                                </div></a>
+                            </div>
                           
                             
                             

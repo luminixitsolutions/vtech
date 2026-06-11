@@ -9,7 +9,11 @@ $sql77 = "SELECT * FROM tbl_users WHERE id='$user_id'";
 $row77 = getRecord($sql77);
 $Roll = $row77['Roll'];
 $UserCat = $row77['CatId'];
-$Options = explode(',',$row77['Options']);
+if (!function_exists('adminResolveMenuOptionsFromUserRow')) {
+    require_once __DIR__ . '/../inc-menu-option-groups.php';
+}
+$Options = adminResolveMenuOptionsFromUserRow($row77);
+require_once __DIR__ . '/inc-report-sidebar-helpers.php';
 ?>
 <!DOCTYPE html>
 <html lang="en" class="default-style layout-fixed layout-navbar-fixed">
@@ -29,6 +33,34 @@ $Options = explode(',',$row77['Options']);
     <style type="text/css">
     .mr_5 {
         margin-right: 3rem !important;
+    }
+    .report-dashboard-grid > [class*="col-"] > a {
+        display: block;
+        text-decoration: none;
+    }
+    .report-dashboard-grid .card {
+        min-height: 110px;
+        border: none;
+        border-radius: 8px;
+        transition: transform 0.2s ease, box-shadow 0.2s ease;
+    }
+    .report-dashboard-grid .card:hover {
+        transform: translateY(-4px);
+        box-shadow: 0 8px 20px rgba(0, 0, 0, 0.15);
+    }
+    .report-dashboard-grid .card-body {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        min-height: 110px;
+        padding: 1rem 0.75rem;
+    }
+    .report-dashboard-grid .card-body h6 {
+        font-size: 0.82rem;
+        font-weight: 600;
+        line-height: 1.35;
+        margin-bottom: 0;
     }
     </style>
    <div class="layout-wrapper layout-2">
@@ -52,7 +84,7 @@ $Options = explode(',',$row77['Options']);
                                 <div class="card ui-task mb-4">
                                     <h5 class="card-header" style="text-align:center;">REPORT DASHBOARD</h5>
                                     <div class="card-body">             
-                    <div class="row">        
+                    <div class="row report-dashboard-grid">        
                <?php  if(in_array("29", $Options)) {?>
                         <div class="col-sm-6 col-xl-2">
                                 <a href="sell-report.php">
@@ -81,7 +113,7 @@ $Options = explode(',',$row77['Options']);
                                <div class="card bg-warning text-white ui-hover-icon mb-4 bg-pattern-3">
                                         <div class="card-body text-center">
                                        
-                                        <h6 class="mb-0">Stock <br>Report</h6>
+                                        <h6 class="mb-0">Store Inward &amp; Outward Report</h6>
                                         <i class="lnr lnr-users hov-icon"></i>
                                      </div>
                                 </div></a>
@@ -131,6 +163,7 @@ $Options = explode(',',$row77['Options']);
                                 </div></a>
                             </div>  
                             
+                            <?php } if(in_array("185", $Options) || in_array("99", $Options)) {?>
                             <div class="col-sm-6 col-xl-2">
                                 <a href="attendance-report-2.php">
                                <div class="card bg-warning text-white ui-hover-icon mb-4 bg-pattern-3">
@@ -148,7 +181,34 @@ $Options = explode(',',$row77['Options']);
                                <div class="card bg-warning text-white ui-hover-icon mb-4 bg-pattern-3">
                                         <div class="card-body text-center">
                                        
-                                        <h6 class="mb-0">Vehical <br>Report</h6>
+                                        <h6 class="mb-0">Vehicle Entry<br>Report</h6>
+                                        <i class="lnr lnr-users hov-icon"></i>
+                                     </div>
+                                </div></a>
+                            </div>
+                            <div class="col-sm-6 col-xl-2">
+                                <a href="driver-trip-billing-report.php">
+                               <div class="card bg-warning text-white ui-hover-icon mb-4 bg-pattern-3">
+                                        <div class="card-body text-center">
+                                        <h6 class="mb-0">Driver Trip<br>Billing Report</h6>
+                                        <i class="lnr lnr-users hov-icon"></i>
+                                     </div>
+                                </div></a>
+                            </div>
+                            <div class="col-sm-6 col-xl-2">
+                                <a href="driver-trip-billing-summary.php">
+                               <div class="card bg-warning text-white ui-hover-icon mb-4 bg-pattern-3">
+                                        <div class="card-body text-center">
+                                        <h6 class="mb-0">Driver Trip<br>Billing Summary</h6>
+                                        <i class="lnr lnr-users hov-icon"></i>
+                                     </div>
+                                </div></a>
+                            </div>
+                            <div class="col-sm-6 col-xl-2">
+                                <a href="driver-trip-billings.php">
+                               <div class="card bg-warning text-white ui-hover-icon mb-4 bg-pattern-3">
+                                        <div class="card-body text-center">
+                                        <h6 class="mb-0">Driver Trip<br>Billing Manage</h6>
                                         <i class="lnr lnr-users hov-icon"></i>
                                      </div>
                                 </div></a>
@@ -170,24 +230,36 @@ $Options = explode(',',$row77['Options']);
                                <div class="card bg-warning text-white ui-hover-icon mb-4 bg-pattern-3">
                                         <div class="card-body text-center">
                                        
-                                        <h6 class="mb-0">Store Stock Report</h6>
+                                        <h6 class="mb-0">Store Stock Movement Report</h6>
                                         <i class="lnr lnr-users hov-icon"></i>
                                      </div>
                                 </div></a>
                             </div>   
 
+                        <?php } if(in_array("184", $Options) || in_array("101", $Options)) {?>
                         <div class="col-sm-6 col-xl-2">
                                 <a href="store-stock-report-2.php">
                                <div class="card bg-warning text-white ui-hover-icon mb-4 bg-pattern-3">
                                         <div class="card-body text-center">
                                        
-                                        <h6 class="mb-0">Store Stock Report 2</h6>
+                                        <h6 class="mb-0">Store Stock Summary Report</h6>
                                         <i class="lnr lnr-users hov-icon"></i>
                                      </div>
                                 </div></a>
-                            </div>  
+                            </div>
+                        <?php } if (reportSidebarSerialLocationAllowed($Options, $Roll)) { ?>
+                        <div class="col-sm-6 col-xl-2">
+                                <a href="serial-location-report.php">
+                               <div class="card bg-warning text-white ui-hover-icon mb-4 bg-pattern-3">
+                                        <div class="card-body text-center">
+                                        <h6 class="mb-0">Serial No Location Report</h6>
+                                        <i class="lnr lnr-users hov-icon"></i>
+                                     </div>
+                                </div></a>
+                            </div>
+                        <?php } ?>
 
-                      <?php } if(in_array("102", $Options)) {?>   
+                      <?php if(in_array("102", $Options)) {?>   
                       
                       <div class="col-sm-6 col-xl-2">
                                 <a href="store-item-report.php">
@@ -266,21 +338,6 @@ $Options = explode(',',$row77['Options']);
                                      </div>
                                 </div></a>
                             </div>
-<?php }
-$rowDash = getRecord("SELECT Roll, Options FROM tbl_users WHERE id='" . (int) $_SESSION['Admin']['id'] . "'");
-$dashRoll = (int) ($rowDash['Roll'] ?? 0);
-$dashOpts = isset($rowDash['Options']) ? explode(',', $rowDash['Options']) : array();
-if ($dashRoll === 1 || $dashRoll === 7 || $dashRoll === 26 || $dashRoll === 27
-    || in_array('183', $dashOpts) || in_array('165', $dashOpts) || in_array('166', $dashOpts) || in_array('72', $dashOpts)) { ?>
-                        <div class="col-sm-6 col-xl-2">
-                                <a href="serial-location-report.php">
-                               <div class="card bg-info text-white ui-hover-icon mb-4 bg-pattern-3">
-                                        <div class="card-body text-center">
-                                        <h6 class="mb-0">Serial No — Location Report</h6>
-                                        <i class="lnr lnr-map hov-icon"></i>
-                                     </div>
-                                </div></a>
-                            </div>
 <?php } if(in_array("110", $Options)) {?>
 <div class="col-sm-6 col-xl-2">
                                 <a href="before-installation-calling-report.php">
@@ -325,7 +382,26 @@ if ($dashRoll === 1 || $dashRoll === 7 || $dashRoll === 26 || $dashRoll === 27
                                      </div>
                                 </div></a>
                             </div>                           
-<?php } ?>                            
+<?php } if(in_array("142", $Options)) {?>
+<div class="col-sm-6 col-xl-2">
+                                <a href="contractor-payment-dashboard.php">
+                               <div class="card bg-warning text-white ui-hover-icon mb-4 bg-pattern-3">
+                                        <div class="card-body text-center">
+                                        <h6 class="mb-0">Contractor Payment Dashboard</h6>
+                                        <i class="lnr lnr-credit-cards hov-icon"></i>
+                                     </div>
+                                </div></a>
+                            </div>
+<div class="col-sm-6 col-xl-2">
+                                <a href="contractor-commision-report.php">
+                               <div class="card bg-warning text-white ui-hover-icon mb-4 bg-pattern-3">
+                                        <div class="card-body text-center">
+                                        <h6 class="mb-0">Contractor Billing Report</h6>
+                                        <i class="lnr lnr-users hov-icon"></i>
+                                     </div>
+                                </div></a>
+                            </div>
+<?php } ?>
 
     </div>
 </div>

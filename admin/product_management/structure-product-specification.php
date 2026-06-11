@@ -129,7 +129,7 @@ $structSel = function ($field) use ($row7) {
 
 <div class="form-group col-md-4">
       <label class="form-label">Gov Agency <span class="text-danger">*</span></label>
-<select class="form-control" id="AgencyId" name="AgencyId" onchange="getProdList(document.getElementById('Surface').value,document.getElementById('PumpCapacity').value,document.getElementById('ModuleWatt').value,document.getElementById('ModuleQty').value,document.getElementById('Structure').value,document.getElementById('ModuleMake').value,document.getElementById('StructureMake').value,document.getElementById('AgencyId').value,document.getElementById('SchemeId').value)" required>
+<select class="form-control" id="AgencyId" name="AgencyId" required>
 <option selected="" disabled="">Select Agency</option>
   <?php 
  $StateId = $row7['StateId'];
@@ -148,7 +148,7 @@ $structSel = function ($field) use ($row7) {
     
   <div class="form-group col-md-4">
       <label class="form-label">Yojana  <span class="text-danger">*</span></label>
-<select class="form-control" id="SchemeId" name="SchemeId" required onchange="getProdList(document.getElementById('Surface').value,document.getElementById('PumpCapacity').value,document.getElementById('ModuleWatt').value,document.getElementById('ModuleQty').value,document.getElementById('Structure').value,document.getElementById('ModuleMake').value,document.getElementById('StructureMake').value,document.getElementById('AgencyId').value,document.getElementById('SchemeId').value)">
+<select class="form-control" id="SchemeId" name="SchemeId" required>
 <option selected="" disabled="">Select Yojana</option>
   <?php 
  $StateId = $row7['StateId'];
@@ -166,7 +166,7 @@ $structSel = function ($field) use ($row7) {
                                         <div class="form-group col-md-4 Pump">
                                             <label class="form-label">Type Of Pump <span class="text-danger">*</span></label>
 
-                                            <select class="form-control" id="Surface" name="Surface" onchange="getProdList(document.getElementById('Surface').value,document.getElementById('PumpCapacity').value,document.getElementById('ModuleWatt').value,document.getElementById('ModuleQty').value,document.getElementById('Structure').value,document.getElementById('ModuleMake').value,document.getElementById('StructureMake').value,document.getElementById('AgencyId').value,document.getElementById('SchemeId').value)" required>
+                                            <select class="form-control" id="Surface" name="Surface" required>
 <option selected="" disabled="" value="">Select Type Of Pump</option>
   <?php 
         $q = "select * from tbl_common_master WHERE Status='1' AND Roll=4 ORDER BY Name ASC";
@@ -185,7 +185,7 @@ $structSel = function ($field) use ($row7) {
                                         <div class="form-group col-md-3 Pump">
                                             <label class="form-label">Capacity <span class="text-danger">*</span></label>
 
-                                            <select class="form-control" id="PumpCapacity" name="PumpCapacity" onchange="getProdList(document.getElementById('Surface').value,document.getElementById('PumpCapacity').value,document.getElementById('ModuleWatt').value,document.getElementById('ModuleQty').value,document.getElementById('Structure').value,document.getElementById('ModuleMake').value,document.getElementById('StructureMake').value,document.getElementById('AgencyId').value,document.getElementById('SchemeId').value)" required>
+                                            <select class="form-control" id="PumpCapacity" name="PumpCapacity" required>
 <option selected="" disabled="" value="">Select Pump Capacity</option>
   <?php 
         $q = "select * from tbl_common_master WHERE Status='1' AND Roll=2 ORDER BY Name ASC";
@@ -204,7 +204,7 @@ $structSel = function ($field) use ($row7) {
 
                                         <div class="form-group col-md-3 Pump">
                                             <label class="form-label">Module Watt <span class="text-danger">*</span></label>
-                                            <select class="form-control" id="ModuleWatt" name="ModuleWatt" onchange="getProdList(document.getElementById('Surface').value,document.getElementById('PumpCapacity').value,document.getElementById('ModuleWatt').value,document.getElementById('ModuleQty').value,document.getElementById('Structure').value,document.getElementById('ModuleMake').value,document.getElementById('StructureMake').value,document.getElementById('AgencyId').value,document.getElementById('SchemeId').value)" required>
+                                            <select class="form-control" id="ModuleWatt" name="ModuleWatt" required>
 <option selected="" disabled="" value="">Select Module Watt</option>
   <?php 
         $q = "select * from tbl_common_master WHERE Status='1' AND Roll=15 ORDER BY Name ASC";
@@ -221,7 +221,7 @@ $structSel = function ($field) use ($row7) {
 
                                         <div class="form-group col-md-3 Pump">
                                             <label class="form-label">Module Qty <span class="text-danger">*</span></label>
-                                            <select class="form-control" id="ModuleQty" name="ModuleQty" onchange="getProdList(document.getElementById('Surface').value,document.getElementById('PumpCapacity').value,document.getElementById('ModuleWatt').value,document.getElementById('ModuleQty').value,document.getElementById('Structure').value,document.getElementById('ModuleMake').value,document.getElementById('StructureMake').value,document.getElementById('AgencyId').value,document.getElementById('SchemeId').value)" required>
+                                            <select class="form-control" id="ModuleQty" name="ModuleQty" required>
 <option selected="" disabled="" value="">Select Module Qty</option>
   <?php 
         $q = "select * from tbl_common_master WHERE Status='1' AND Roll=16 ORDER BY id ASC";
@@ -239,7 +239,7 @@ $structSel = function ($field) use ($row7) {
 
                                         <div class="form-group col-md-3 Pump">
                                             <label class="form-label">Structure <span class="text-danger">*</span></label>
-                                            <select class="form-control" id="Structure" name="Structure" onchange="getProdList(document.getElementById('Surface').value,document.getElementById('PumpCapacity').value,document.getElementById('ModuleWatt').value,document.getElementById('ModuleQty').value,document.getElementById('Structure').value,document.getElementById('ModuleMake').value,document.getElementById('StructureMake').value,document.getElementById('AgencyId').value,document.getElementById('SchemeId').value)" required>
+                                            <select class="form-control" id="Structure" name="Structure" required>
 <option selected="" disabled="" value="">Select Structure</option>
   <?php 
         $q = "select * from tbl_common_master WHERE Status='1' AND Roll=17 ORDER BY Name ASC";
@@ -256,7 +256,7 @@ $structSel = function ($field) use ($row7) {
 
                                          <div class="form-group col-md-3 Pump">
                                             <label class="form-label">Module Make <span class="text-danger">*</span></label>
-                                            <select class="form-control" id="ModuleMake" name="ModuleMake" onchange="getProdList(document.getElementById('Surface').value,document.getElementById('PumpCapacity').value,document.getElementById('ModuleWatt').value,document.getElementById('ModuleQty').value,document.getElementById('Structure').value,document.getElementById('ModuleMake').value,document.getElementById('StructureMake').value,document.getElementById('AgencyId').value,document.getElementById('SchemeId').value)" required>
+                                            <select class="form-control" id="ModuleMake" name="ModuleMake" required>
 <option selected="" disabled="" value="">Select Module Make</option>
   <?php 
         $q = "select * from tbl_common_master WHERE Status='1' AND Roll=22 ORDER BY Name ASC";
@@ -273,7 +273,7 @@ $structSel = function ($field) use ($row7) {
 
                                         <div class="form-group col-md-3 Pump">
                                             <label class="form-label">Structure Make <span class="text-danger">*</span></label>
-                                            <select class="form-control" id="StructureMake" name="StructureMake" onchange="getProdList(document.getElementById('Surface').value,document.getElementById('PumpCapacity').value,document.getElementById('ModuleWatt').value,document.getElementById('ModuleQty').value,document.getElementById('Structure').value,document.getElementById('ModuleMake').value,document.getElementById('StructureMake').value,document.getElementById('AgencyId').value,document.getElementById('SchemeId').value)" required>
+                                            <select class="form-control" id="StructureMake" name="StructureMake" required>
 <option selected="" disabled="" value="">Select Structure Make</option>
   <?php 
         $q = "select * from tbl_common_master WHERE Status='1' AND Roll=23 ORDER BY Name ASC";
@@ -401,9 +401,7 @@ $structSel = function ($field) use ($row7) {
     });
 
     $(function () {
-        <?php if ($structSpecSaved || $structSpecError !== '' || !empty($_POST['submit'])) { ?>
         reloadStructSpecList();
-        <?php } ?>
     });
 </script>
 

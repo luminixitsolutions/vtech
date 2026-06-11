@@ -5,6 +5,9 @@ include_once 'auth.php';
 $user_id = $_SESSION['Admin']['id'];
 $MainPage = "Service";
 $Page = "View-Service-Complaint";
+$abstractProjid = isset($_REQUEST['projid']) ? (int) $_REQUEST['projid'] : 0;
+$abstractSubheadid = isset($_REQUEST['subheadid']) ? (int) $_REQUEST['subheadid'] : 0;
+$abstractDistrict = isset($_REQUEST['District']) ? trim($_REQUEST['District']) : '';
 ?>
 <!DOCTYPE html>
 <html lang="en" class="default-style layout-fixed layout-navbar-fixed">
@@ -49,7 +52,7 @@ if($_REQUEST["action"]=="delete")
 <h4 class="font-weight-bold py-3 mb-0">View Service Complaint List
     <?php if(in_array("14", $Options)) {?>   
 <span style="float: right;">
-<a href="add-maintaince-complaint.php" class="btn btn-secondary btn-round"><i class="ion ion-md-add mr-2"></i> Add New</a></span><?php } ?>
+<a href="choose-service-type2.php" class="btn btn-secondary btn-round"><i class="ion ion-md-add mr-2"></i> Add New</a></span><?php } ?>
 </h4>
 
 <div class="card" style="padding: 10px;">
@@ -83,15 +86,38 @@ if($_REQUEST["action"]=="delete")
             <?php 
             $i=1;
             $sql = "SELECT tp.*,tc.Name As IssueName,tb.Name As BranchName FROM tbl_rooftop_service_complaint tp 
+            INNER JOIN tbl_users tu ON tu.id = tp.CustId
             LEFT JOIN tbl_rooftop_issues tc ON tc.id=tp.Issue 
-            LEFT JOIN tbl_rooftop_branch tb ON tp.BranchId=tb.id WHERE 1";
-            if($_REQUEST['ClainStatus']!=''){
-                $sql.=" AND tp.ClainStatus='".$_REQUEST['ClainStatus']."'";
+            LEFT JOIN tbl_rooftop_branch tb ON tp.BranchId=tb.id WHERE tu.ProjectType=2 AND tu.Roll=5";
+            if ($abstractSubheadid > 0) {
+                $sql .= " AND tu.ProjectSubHeadId = '$abstractSubheadid'";
+            } elseif ($abstractProjid > 0) {
+                $sql .= " AND tu.ProjectId = '$abstractProjid'";
+            } elseif (!empty($_REQUEST['subheadid'])) {
+                $sql .= " AND tu.ProjectSubHeadId = '".$conn->real_escape_string($_REQUEST['subheadid'])."'";
             }
-            if($_REQUEST['ServiceType']!=''){
-                $sql.=" AND tp.ServiceType='".$_REQUEST['ServiceType']."'";
+            if ($abstractDistrict !== '' && $abstractDistrict !== 'TOTAL') {
+                if ($abstractDistrict === 'NASHIK (MALEGAON)') {
+                    $sql .= " AND UPPER(TRIM(COALESCE(NULLIF(tp.District,''), tu.District,''))) IN ('NASHIK','MALEGAON')";
+                } elseif ($abstractDistrict === 'AHMEDNAGAR') {
+                    $sql .= " AND UPPER(TRIM(COALESCE(NULLIF(tp.District,''), tu.District,''))) IN ('AHMEDNAGAR','AHMEDNAAGAR')";
+                } else {
+                    $distEsc = $conn->real_escape_string(strtoupper($abstractDistrict));
+                    $sql .= " AND UPPER(TRIM(COALESCE(NULLIF(tp.District,''), tu.District,''))) = '".$distEsc."'";
+                }
             }
-            if($_REQUEST['val']=='today'){
+            if($_REQUEST['Status']=='Resolved'){
+                $sql.=" AND tp.ClainStatus='Close'";
+            } elseif($_REQUEST['Status']=='Pending'){
+                $sql.=" AND tp.ClainStatus<>'Close'";
+            }
+            if(!empty($_REQUEST['ClainStatus'])){
+                $sql.=" AND tp.ClainStatus='".$conn->real_escape_string($_REQUEST['ClainStatus'])."'";
+            }
+            if(!empty($_REQUEST['ServiceType'])){
+                $sql.=" AND tp.ServiceType='".$conn->real_escape_string($_REQUEST['ServiceType'])."'";
+            }
+            if(isset($_REQUEST['val']) && $_REQUEST['val']=='today'){
                 $sql.=" AND tp.CreatedDate='".date('Y-m-d')."'";
             }
             $sql.=" ORDER BY tp.CreatedDate DESC";

@@ -1,13 +1,20 @@
-<?php 
-$user_id = $_SESSION['Admin']['id'];
+<?php
+$user_id = (int) ($_SESSION['Admin']['id'] ?? 0);
 $sql77 = "SELECT * FROM tbl_users WHERE id='$user_id'";
 $row77 = getRecord($sql77);
-$Roll = $row77['Roll'];
-$UserCat = $row77['CatId'];
-$Options = explode(',',$row77['Options']);
-$BranchId = $row77['BranchId'];
-$RooftopBranchId = $row77['RooftopBranchId'];
-$MulRooftopBranchId = $row77['MulRooftopBranchId'];
+if (!is_array($row77) || empty($row77['id'])) {
+    header('Location: logout.php');
+    exit;
+}
+$Roll = (int) ($row77['Roll'] ?? 0);
+$UserCat = $row77['CatId'] ?? '';
+$BranchId = $row77['BranchId'] ?? '';
+$RooftopBranchId = $row77['RooftopBranchId'] ?? '';
+$MulRooftopBranchId = $row77['MulRooftopBranchId'] ?? '';
+if (!function_exists('adminResolveMenuOptionsFromUserRow')) {
+    require_once __DIR__ . '/inc-menu-option-groups.php';
+}
+$Options = adminResolveMenuOptionsFromUserRow($row77);
 ?>
 <div id="layout-sidenav" class="layout-sidenav sidenav sidenav-vertical bg-white logo-dark">
      <div class="app-brand demo">
@@ -563,6 +570,16 @@ $MulRooftopBranchId = $row77['MulRooftopBranchId'];
 <?php } ?>
 </a>
 </li>
+<li class="sidenav-item">
+<a href="return-challans.php" class="sidenav-link">
+<div> Return Challans</div>
+<?php if($Page=='Return-Challans' || $Page=='Edit-Challan') {?>
+<div class="pl-1 ml-auto">
+<span class="badge badge-dot badge-primary"></span>
+</div>
+<?php } ?>
+</a>
+</li>
 </ul>
 </li>
 <?php } if(in_array("82", $Options)) {?>
@@ -704,7 +721,7 @@ $MulRooftopBranchId = $row77['MulRooftopBranchId'];
 </li>
 <?php } ?>
 
-<?php if(in_array("28", $Options) || in_array("135", $Options) || in_array("136", $Options) || in_array("137", $Options)) {?>
+<?php if(in_array("28", $Options) || in_array("135", $Options) || in_array("136", $Options) || in_array("137", $Options) || in_array("164", $Options)) {?>
 
 <li class="sidenav-item <?php if($MainPage=='Service') {?> open active <?php } ?>">
 <a href="javascript:" class="sidenav-link sidenav-toggle">
@@ -712,7 +729,19 @@ $MulRooftopBranchId = $row77['MulRooftopBranchId'];
 <div>Services</div>
 </a>
 <ul class="sidenav-menu">
-    <?php if(in_array("137", $Options)) {?>
+    <?php if(in_array("164", $Options)) {?>
+    <li class="sidenav-item">
+            <a href="service-dashboard.php" class="sidenav-link">
+               
+                <div>Service Dashboard</div>
+                <?php if($Page=='Service-Dashboard') {?>
+                <div class="pl-1 ml-auto">
+                <span class="badge badge-dot badge-primary"></span>
+                </div>
+                <?php } ?>
+            </a>
+        </li>
+    <?php } if(in_array("137", $Options)) {?>
 <li class="sidenav-item">
             <a href="beneficiary-service-lists.php" class="sidenav-link">
                
@@ -750,7 +779,7 @@ $MulRooftopBranchId = $row77['MulRooftopBranchId'];
         </li>
 <?php } if(in_array("14", $Options)) {?>
 <li class="sidenav-item">
-<a href="add-maintaince-complaint.php" class="sidenav-link">
+<a href="choose-service-type2.php" class="sidenav-link">
 <div> Add Service Complaint</div>
 <?php if($Page=='Add-Service-Complaint') {?>
 <div class="pl-1 ml-auto">
@@ -759,11 +788,22 @@ $MulRooftopBranchId = $row77['MulRooftopBranchId'];
 <?php } ?>
 </a>
 </li>
-<?php } ?>
+<?php } if(in_array("28", $Options)) {?>
 <li class="sidenav-item">
 <a href="view-service-module.php" class="sidenav-link">
 <div> View Service Complaint</div>
 <?php if($Page=='View-Service-Complaint') {?>
+<div class="pl-1 ml-auto">
+<span class="badge badge-dot badge-primary"></span>
+</div>
+<?php } ?>
+</a>
+</li>
+<?php } ?>
+<li class="sidenav-item <?php if($Page=='Service-Abstract') {?> active <?php } ?>">
+<a href="service-abstract.php" class="sidenav-link">
+<div> Service Abstract</div>
+<?php if($Page=='Service-Abstract') {?>
 <div class="pl-1 ml-auto">
 <span class="badge badge-dot badge-primary"></span>
 </div>

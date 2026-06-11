@@ -58,6 +58,21 @@ $Page = "Add-Customers";
         padding: 20px;
         position: relative;
     }
+
+    .spec-loader-wrap {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        min-height: 120px;
+        padding: 24px 12px;
+        color: #6c757d;
+    }
+
+    .spec-loader-wrap .spinner-border {
+        width: 2rem;
+        height: 2rem;
+        margin-right: 10px;
+    }
     </style>
     <div class="layout-wrapper layout-2">
         <div class="layout-inner">
@@ -247,7 +262,7 @@ else{
 
 <div class="form-group col-md-3">
 			<label class="form-label">Gov Agency <span class="text-danger">*</span></label>
-<select class="form-control" id="AgencyId" name="AgencyId" onchange="getProdList(document.getElementById('AcDc').value,document.getElementById('Surface').value,document.getElementById('PumpCapacity').value,document.getElementById('WaterSource').value,document.getElementById('BoreDia').value,document.getElementById('PumpHead').value,document.getElementById('AgencyId').value,document.getElementById('PumpOutletSize').value)" required>
+<select class="form-control" id="AgencyId" name="AgencyId" onchange="reloadAllProductSpecs()" required>
 <option selected="" disabled="">Select Agency</option>
   <?php 
  $StateId = $row7['StateId'];
@@ -294,7 +309,7 @@ else{
     
 	<div class="form-group col-md-3">
 			<label class="form-label">Yojana </label>
-<select class="form-control" id="SchemeId" name="SchemeId">
+<select class="form-control" id="SchemeId" name="SchemeId" onchange="reloadStructProductSpec()">
 <option selected="" disabled="">Select Yojana</option>
   <?php 
  $StateId = $row7['StateId'];
@@ -461,7 +476,7 @@ else{
                                         <div class="form-group col-md-3 Pump">
                                             <label class="form-label">Type Of Pump </label>
 
-                                            <select class="form-control" id="Surface" name="Surface" onchange="getProdList(document.getElementById('AcDc').value,document.getElementById('Surface').value,document.getElementById('PumpCapacity').value,document.getElementById('WaterSource').value,document.getElementById('BoreDia').value,document.getElementById('PumpHead').value,document.getElementById('AgencyId').value,document.getElementById('PumpOutletSize').value)">
+                                            <select class="form-control" id="Surface" name="Surface" onchange="reloadAllProductSpecs()">
 <option selected="" disabled=""  value="">Select Type Of Pump</option>
   <?php 
         $q = "select * from tbl_common_master WHERE Status='1' AND Roll=4 ORDER BY Name ASC";
@@ -500,7 +515,7 @@ else{
                                         <div class="form-group col-md-4 Pump">
                                             <label class="form-label">Capacity </label>
 
-                                            <select class="form-control" id="PumpCapacity" name="PumpCapacity" onchange="getProdList(document.getElementById('AcDc').value,document.getElementById('Surface').value,document.getElementById('PumpCapacity').value,document.getElementById('WaterSource').value,document.getElementById('BoreDia').value,document.getElementById('PumpHead').value,document.getElementById('AgencyId').value,document.getElementById('PumpOutletSize').value)">
+                                            <select class="form-control" id="PumpCapacity" name="PumpCapacity" onchange="reloadAllProductSpecs()">
 <option selected="" disabled="" value="">Select Pump Capacity</option>
   <?php 
         $q = "select * from tbl_common_master WHERE Status='1' AND Roll=2 ORDER BY id ASC";
@@ -1120,31 +1135,121 @@ $('.compdata').hide();
         $('.otherdoc').show();
     }
 }
-        function getProdList(acdc,Surface,PumpCapacity,WaterSource,BoreDia,PumpHead,AgencyId,PumpOutletSize){
+        function getBosSpecFilters() {
+            return {
+                AcDc: $('#AcDc').val() || '',
+                Surface: $('#Surface').val() || '',
+                PumpCapacity: $('#PumpCapacity').val() || '',
+                WaterSource: $('#WaterSource').val() || '',
+                BoreDia: $('#BoreDia').val() || '',
+                PumpHead: $('#PumpHead').val() || '',
+                AgencyId: $('#AgencyId').val() || '',
+                PumpOutletSize: $('#PumpOutletSize').val() || ''
+            };
+        }
 
-  var action = 'view2';
-      $.ajax({
-  type: "POST",
-  url: "../ajax_files/ajax_product_specification.php",
-   data:{action:action,acdc:acdc,Surface:Surface,PumpCapacity:PumpCapacity,WaterSource:WaterSource,BoreDia:BoreDia,PumpHead:PumpHead,AgencyId:AgencyId,PumpOutletSize:PumpOutletSize},  
-  success: function(data){
-  console.log(data);
-      $('#custresult').html(data);
-  }
-  });
-    }
+        function getStructSpecFilters() {
+            return {
+                Surface: $('#Surface').val() || '',
+                PumpCapacity: $('#PumpCapacity').val() || '',
+                ModuleWatt: $('#ModuleWatt').val() || '',
+                ModuleQty: $('#ModuleQty').val() || '',
+                Structure1: $('#Structure1').val() || '',
+                Structure2: $('#Structure2').val() || '',
+                Structure3: $('#Structure3').val() || '',
+                ModuleMake: $('#ModuleMake').val() || '',
+                StructureMake: $('#StructureMake').val() || '',
+                AgencyId: $('#AgencyId').val() || '',
+                SchemeId: $('#SchemeId').val() || ''
+            };
+        }
 
-    function getProdList2(Surface,PumpCapacity,ModuleWatt,ModuleQty,Structure1,Structure2,Structure3,ModuleMake,StructureMake,AgencyId,SchemeId){
-  var action = 'view2';
-      $.ajax({
-  type: "POST",
-  url: "../ajax_files/ajax_struct_product_specification.php",
-   data:{action:action,Surface:Surface,PumpCapacity:PumpCapacity,ModuleWatt:ModuleWatt,ModuleQty:ModuleQty,Structure1:Structure1,Structure2:Structure2,Structure3:Structure3,ModuleMake:ModuleMake,StructureMake:StructureMake,AgencyId:AgencyId,SchemeId:SchemeId},  
-  success: function(data){
-      $('#custresult2').html(data);
-  }
-  });
-    }
+        function showSpecLoader(targetId, message) {
+            var text = message || 'Fetching items...';
+            $('#' + targetId).html(
+                '<div class="col-12 spec-loader-wrap">' +
+                '<div class="spinner-border text-primary" role="status"></div>' +
+                '<span>' + text + '</span>' +
+                '</div>'
+            );
+        }
+
+        function showSpecError(targetId, message) {
+            $('#' + targetId).html(
+                '<div class="col-12"><div class="alert alert-danger mb-0">' + message + '</div></div>'
+            );
+        }
+
+        function reloadBosProductSpec() {
+            var f = getBosSpecFilters();
+            showSpecLoader('custresult', 'Fetching BOS product items...');
+            $.ajax({
+                type: 'POST',
+                url: '../ajax_files/ajax_product_specification.php',
+                data: {
+                    action: 'view2',
+                    AcDc: f.AcDc,
+                    acdc: f.AcDc,
+                    Surface: f.Surface,
+                    PumpCapacity: f.PumpCapacity,
+                    WaterSource: f.WaterSource,
+                    BoreDia: f.BoreDia,
+                    PumpHead: f.PumpHead,
+                    AgencyId: f.AgencyId,
+                    PumpOutletSize: f.PumpOutletSize
+                },
+                success: function(data) {
+                    $('#custresult').html(data);
+                },
+                error: function() {
+                    showSpecError('custresult', 'Failed to load BOS product items. Please try again.');
+                }
+            });
+        }
+
+        function reloadStructProductSpec() {
+            var f = getStructSpecFilters();
+            showSpecLoader('custresult2', 'Fetching structure product items...');
+            $.ajax({
+                type: 'POST',
+                url: '../ajax_files/ajax_struct_product_specification.php',
+                data: {
+                    action: 'view2',
+                    Surface: f.Surface,
+                    PumpCapacity: f.PumpCapacity,
+                    ModuleWatt: f.ModuleWatt,
+                    ModuleQty: f.ModuleQty,
+                    Structure1: f.Structure1,
+                    Structure2: f.Structure2,
+                    Structure3: f.Structure3,
+                    ModuleMake: f.ModuleMake,
+                    StructureMake: f.StructureMake,
+                    AgencyId: f.AgencyId,
+                    SchemeId: f.SchemeId
+                },
+                success: function(data) {
+                    $('#custresult2').html(data);
+                },
+                error: function() {
+                    showSpecError('custresult2', 'Failed to load structure product items. Please try again.');
+                }
+            });
+        }
+
+        function reloadAllProductSpecs() {
+            if ($('#ProjectType').val() == 1) {
+                reloadBosProductSpec();
+                reloadStructProductSpec();
+            }
+        }
+
+        function getProdList(acdc, Surface, PumpCapacity, WaterSource, BoreDia, PumpHead, AgencyId, PumpOutletSize) {
+            reloadBosProductSpec();
+        }
+
+        function getProdList2(Surface, PumpCapacity, ModuleWatt, ModuleQty, Structure1, Structure2, Structure3, ModuleMake, StructureMake, AgencyId, SchemeId) {
+            reloadStructProductSpec();
+        }
 
     function myFunction2() {
 
@@ -1201,11 +1306,11 @@ $('.compdata').hide();
         if(userid!=''){
         showHide(ProjectType);
         if(ProjectType == 1){
-        getProdList(AcDc,Surface,PumpCapacity,WaterSource,BoreDia,PumpHead,AgencyId,PumpOutletSize);
-        getProdList2(Surface,PumpCapacity,ModuleWatt,ModuleQty,Structure1,Structure2,Structure3,ModuleMake,StructureMake);
+        reloadAllProductSpecs();
         }
         showDoc(CustType);
     }
+
         //$(document).on("click", ".btn-finish", function(event){
         $('#validation-form').on('submit', function(e) {
             e.preventDefault();
@@ -1325,7 +1430,8 @@ $('.compdata').hide();
             $('.Rooftop').hide();
             $('.Pump').show();
             $('#custresult').show();
-            getProdList(AcDc,Surface,PumpCapacity,WaterSource,BoreDia,PumpHead,AgencyId,PumpOutletSize);
+            $('#custresult2').show();
+            reloadAllProductSpecs();
         }
         else{
 $('.Rooftop').show();

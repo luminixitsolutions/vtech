@@ -49,6 +49,11 @@ $Page = "View-Customers";
         
 
 <?php
+$estimateKmCol = $conn->query("SHOW COLUMNS FROM tbl_trip_details LIKE 'EstimateKm'");
+if (!$estimateKmCol || $estimateKmCol->num_rows === 0) {
+    $conn->query("ALTER TABLE tbl_trip_details ADD COLUMN EstimateKm DECIMAL(12,2) NOT NULL DEFAULT 0.00 AFTER OpeningReading");
+}
+
 $id = isset($_GET['id']) ? (int) $_GET['id'] : 0;
 $driverId = isset($_REQUEST['driver_id']) ? (int) $_REQUEST['driver_id'] : 0;
 $row7 = array();
@@ -92,6 +97,12 @@ if (isset($_POST['submit'])) {
     $InDate = addslashes(trim($_POST['InDate']));
     $TripDetails = addslashes(trim($_POST['TripDetails']));
     $OpeningReading = addslashes(trim($_POST['OpeningReading']));
+    $EstimateKm = trim($_POST['EstimateKm'] ?? '');
+    if ($EstimateKm === '' || !is_numeric($EstimateKm) || (float) $EstimateKm < 0) {
+        echo "<script>alert('Please enter Estimate Km.');history.back();</script>";
+        exit;
+    }
+    $EstimateKm = addslashes($EstimateKm);
     $StartLattitude = addslashes(trim($_POST['StartLattitude']));
     $StartLongitude = addslashes(trim($_POST['StartLongitude']));
     $CreatedDate = date('Y-m-d');
@@ -112,7 +123,7 @@ if (isset($_POST['submit'])) {
     }
 
     if ($id <= 0) {
-        $sql = "INSERT INTO tbl_trip_details SET DriverId='$driverId',DriverName='$DriverName',VehicalNo='$VehicalNo',InDate='$InDate',TripDetails='$TripDetails',OpeningReading='$OpeningReading',StartLattitude='$StartLattitude',StartLongitude='$StartLongitude',Status=0,CreatedBy='$transportor_id',ModifiedBy=0,CalModifiedBy=0,CreatedDate='$CreatedDate',CreatedTime='$CreatedTime',StartPhoto='$StartPhoto',InTime='$CreatedTime'";
+        $sql = "INSERT INTO tbl_trip_details SET DriverId='$driverId',DriverName='$DriverName',VehicalNo='$VehicalNo',InDate='$InDate',TripDetails='$TripDetails',OpeningReading='$OpeningReading',EstimateKm='$EstimateKm',StartLattitude='$StartLattitude',StartLongitude='$StartLongitude',Status=0,CreatedBy='$transportor_id',ModifiedBy=0,CalModifiedBy=0,CreatedDate='$CreatedDate',CreatedTime='$CreatedTime',StartPhoto='$StartPhoto',InTime='$CreatedTime'";
         $conn->query($sql);
         $PostId = mysqli_insert_id($conn);
         $TripNo = rand(1000, 9999) . '' . $PostId;
@@ -122,7 +133,7 @@ if (isset($_POST['submit'])) {
         exit;
     }
 
-    $sql = "UPDATE tbl_trip_details SET InDate='$InDate',TripDetails='$TripDetails',OpeningReading='$OpeningReading',StartPhoto='$StartPhoto' WHERE id='$id'";
+    $sql = "UPDATE tbl_trip_details SET InDate='$InDate',TripDetails='$TripDetails',OpeningReading='$OpeningReading',EstimateKm='$EstimateKm',StartPhoto='$StartPhoto' WHERE id='$id'";
     $conn->query($sql);
     header('Location: running-trips.php');
     exit;
@@ -198,6 +209,12 @@ if (empty($row7['InDate'])) {
 <div class="form-group col-md-3">
 <label class="form-label">Opening Reading <span class="text-danger">*</span></label>
 <input type="number" name="OpeningReading" id="OpeningReading" class="form-control" placeholder="" value="<?php echo $row7['OpeningReading']; ?>" required min="0">
+ <div class="clearfix"></div>
+</div>
+
+<div class="form-group col-md-3">
+<label class="form-label">Estimate Km <span class="text-danger">*</span></label>
+<input type="number" name="EstimateKm" id="EstimateKm" class="form-control" placeholder="" value="<?php echo htmlspecialchars($row7['EstimateKm'] ?? ''); ?>" required min="0" step="0.01">
  <div class="clearfix"></div>
 </div>
 
