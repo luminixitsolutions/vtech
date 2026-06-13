@@ -303,9 +303,6 @@ function challanReturnEditProcess($conn, $sellId, $remarks, $userId, array $bulk
     if (!$sell) {
         return ['success' => false, 'message' => 'Challan not found.'];
     }
-    if ((int) ($sell['ReturnStatus'] ?? 0) !== 1) {
-        return ['success' => false, 'message' => 'Only returned challans can be edited from this screen.'];
-    }
 
     $returnRec = getRecord("SELECT * FROM challan_returns WHERE sell_id='$sellId' LIMIT 1");
     if (!$returnRec) {
@@ -357,6 +354,11 @@ function challanReturnEditProcess($conn, $sellId, $remarks, $userId, array $bulk
 
     $conn->begin_transaction();
     try {
+        // Re-edit: reverse stock from current challan lines before replacing items.
+        if (!empty($oldItems) && (int) ($sell['ReturnStatus'] ?? 0) === 0) {
+            challanReturnRestoreStock($conn, $sellId, $oldItems);
+        }
+
         if (!$conn->query("DELETE FROM tbl_sell_products WHERE SellId='$sellId'")) {
             throw new Exception('Failed to clear old challan items.');
         }

@@ -107,10 +107,10 @@ $Projectname = $row['Name'];
                     <th>Survey Dicrepancy</th>
                     <th>Rejected</th>
                     <th>Survey Pending</th>
-                    <th>Delivery Challan</th>
-                    <th>Material Dispatch</th>
                     <th>Work Done</th>
                     <th>Work Pending</th>
+                    <th>Delivery Challan</th>
+                    <th>Material Dispatch</th>
                     <th>Installation Done</th>
                     <th>Installation Pending</th>
                     <th>Data Upload Done</th>
@@ -192,11 +192,10 @@ $Projectname = $row['Name'];
                         <td></td>
                         <td><a href="total-beneficiary.php?roll=surveyrejected&dist=<?php echo $result['District'];?>&projid=<?php echo $_REQUEST['projid'];?>&val=2&subheadid=<?php echo $_REQUEST['SubHeadProjectId'];?>&title=Survey Rejected" target="_blank"><?php echo getDetails('surveyrejected',$result['District'],'2');?></a></td>
                         <td style="background-color:#fee2d6;"><a href="total-beneficiary.php?roll=surveypending&dist=<?php echo $result['District'];?>&projid=<?php echo $_REQUEST['projid'];?>&val=0&subheadid=<?php echo $_REQUEST['SubHeadProjectId'];?>&title=Survey Pending" target="_blank"><?php echo getDetails('surveypending',$result['District'],'0');?></a></td>
-                        
-                        <td><a href="total-beneficiary.php?roll=deliverychallan&dist=<?php echo $result['District'];?>&projid=<?php echo $_REQUEST['projid'];?>&val=&subheadid=<?php echo $_REQUEST['SubHeadProjectId'];?>&title=Delivery Challan" target="_blank"><?php echo getDetails('deliverychallan',$result['District'],'');?></a></td>
-                        <td><a href="total-beneficiary.php?roll=dispatch&dist=<?php echo $result['District'];?>&projid=<?php echo $_REQUEST['projid'];?>&val=&subheadid=<?php echo $_REQUEST['SubHeadProjectId'];?>&title=Material Dispatch" target="_blank"><?php echo getDetails('dispatch',$result['District'],'');?></a></td>
                         <td><a href="total-beneficiary.php?roll=work_order_done&dist=<?php echo $result['District'];?>&projid=<?php echo $_REQUEST['projid'];?>&val=&subheadid=<?php echo $_REQUEST['SubHeadProjectId'];?>&title=Work Done" target="_blank"><?php echo getDetails('work_order_done',$result['District'],'');?></a></td>
                         <td style="background-color:#fee2d6;"><a href="total-beneficiary.php?roll=work_order_pending&dist=<?php echo $result['District'];?>&projid=<?php echo $_REQUEST['projid'];?>&val=&subheadid=<?php echo $_REQUEST['SubHeadProjectId'];?>&title=Work Pending" target="_blank"><?php echo getDetails('work_order_pending',$result['District'],'');?></a></td>
+                        <td><a href="total-beneficiary.php?roll=deliverychallan&dist=<?php echo $result['District'];?>&projid=<?php echo $_REQUEST['projid'];?>&val=&subheadid=<?php echo $_REQUEST['SubHeadProjectId'];?>&title=Delivery Challan" target="_blank"><?php echo getDetails('deliverychallan',$result['District'],'');?></a></td>
+                        <td><a href="total-beneficiary.php?roll=dispatch&dist=<?php echo $result['District'];?>&projid=<?php echo $_REQUEST['projid'];?>&val=&subheadid=<?php echo $_REQUEST['SubHeadProjectId'];?>&title=Material Dispatch" target="_blank"><?php echo getDetails('dispatch',$result['District'],'');?></a></td>
                         <td><a href="total-beneficiary.php?roll=installation&dist=<?php echo $result['District'];?>&projid=<?php echo $_REQUEST['projid'];?>&val=Yes&subheadid=<?php echo $_REQUEST['SubHeadProjectId'];?>&title=Installation Done" target="_blank"><?php echo getDetails('installation',$result['District'],'Yes');?></a></td>
                         
                         <td style="background-color:#fee2d6;"><a href="total-beneficiary.php?roll=installationpending&dist=<?php echo $result['District'];?>&projid=<?php echo $_REQUEST['projid'];?>&val=&subheadid=<?php echo $_REQUEST['SubHeadProjectId'];?>&title=Installation Pending" target="_blank"><?php echo getDetails('installationpending',$result['District'],'');?></a></td>
@@ -223,10 +222,10 @@ $Projectname = $row['Name'];
                         <th></th>
                         <th><a href="total-beneficiary.php?roll=surveyrejected&dist=&projid=<?php echo $_REQUEST['projid'];?>&val=2&subheadid=<?php echo $_REQUEST['SubHeadProjectId'];?>" target="_blank"><?php echo $totsurveyreject;?></a></th>
                         <th><a href="total-beneficiary.php?roll=surveypending&dist=&projid=<?php echo $_REQUEST['projid'];?>&val=0&subheadid=<?php echo $_REQUEST['SubHeadProjectId'];?>" target="_blank"><?php echo $totsurveypending;?></a></th>
-                        <th><a href="total-beneficiary.php?roll=deliverychallan&dist=&projid=<?php echo $_REQUEST['projid'];?>&val=&subheadid=<?php echo $_REQUEST['SubHeadProjectId'];?>&title=Delivery Challan" target="_blank"><?php echo $totdeliverychallan;?></a></th>
-                        <th><a href="total-beneficiary.php?roll=dispatch&dist=&projid=<?php echo $_REQUEST['projid'];?>&val=&subheadid=<?php echo $_REQUEST['SubHeadProjectId'];?>" target="_blank"><?php echo $totdispatch;?></a></th>
                         <th><a href="total-beneficiary.php?roll=work_order_done&dist=&projid=<?php echo $_REQUEST['projid'];?>&val=&subheadid=<?php echo $_REQUEST['SubHeadProjectId'];?>&title=Work Done" target="_blank"><?php echo $totworkdone;?></a></th>
                         <th><a href="total-beneficiary.php?roll=work_order_pending&dist=&projid=<?php echo $_REQUEST['projid'];?>&val=&subheadid=<?php echo $_REQUEST['SubHeadProjectId'];?>&title=Work Pending" target="_blank"><?php echo $totworkpending;?></a></th>
+                        <th><a href="total-beneficiary.php?roll=deliverychallan&dist=&projid=<?php echo $_REQUEST['projid'];?>&val=&subheadid=<?php echo $_REQUEST['SubHeadProjectId'];?>&title=Delivery Challan" target="_blank"><?php echo $totdeliverychallan;?></a></th>
+                        <th><a href="total-beneficiary.php?roll=dispatch&dist=&projid=<?php echo $_REQUEST['projid'];?>&val=&subheadid=<?php echo $_REQUEST['SubHeadProjectId'];?>" target="_blank"><?php echo $totdispatch;?></a></th>
                         <th><a href="total-beneficiary.php?roll=installation&dist=&projid=<?php echo $_REQUEST['projid'];?>&val=Yes&subheadid=<?php echo $_REQUEST['SubHeadProjectId'];?>" target="_blank"><?php echo $totinstallationdone;?></a></th>
                         <th><a href="total-beneficiary.php?roll=installationpending&dist=&projid=<?php echo $_REQUEST['projid'];?>&val=&subheadid=<?php echo $_REQUEST['SubHeadProjectId'];?>" target="_blank"><?php echo $totinstallationpending;?></a></th>
                         <th><a href="total-beneficiary.php?roll=dataupload&dist=&projid=<?php echo $_REQUEST['projid'];?>&val=Yes&subheadid=<?php echo $_REQUEST['SubHeadProjectId'];?>" target="_blank"><?php echo $totdatauploadone;?></a></th>

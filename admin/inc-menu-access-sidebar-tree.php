@@ -338,6 +338,7 @@ function getMenuAccessDetailedTree()
             menuAccessTreeItem(106, 'Installation Report'),
             menuAccessTreeItem(107, 'Inspection Report'),
             menuAccessTreeItem(108, 'Site Engineer Report'),
+            menuAccessTreeItem(259, 'Payment Report'),
             menuAccessTreeItem(109, 'Dispatch Calling Report'),
             menuAccessTreeItem(110, 'Before Installation Calling Report'),
             menuAccessTreeItem(111, 'After Installation Calling Report'),

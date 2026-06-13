@@ -58,17 +58,60 @@ if($_REQUEST["action"]=="delete")
                                                 <form id="validation-form" method="post" enctype="multipart/form-data" action="">
 <div class="form-row">
 
-       
+<div class="form-group col-md-3">
+<label class="form-label">Project</label>
+<select class="form-control" id="ProjectId" name="ProjectId" onchange="getSubHead(this.value)">
+<option selected="" value="all">All Project</option>
+<?php
+$q = "SELECT * FROM tbl_common_master WHERE Status='1' AND Roll=24 ORDER BY Name ASC";
+$r = $conn->query($q);
+while ($rw = $r->fetch_assoc()) {
+?>
+<option <?php if (isset($_POST['ProjectId']) && $_POST['ProjectId'] == $rw['id']) { ?> selected <?php } ?> value="<?php echo $rw['id']; ?>"><?php echo $rw['Name']; ?></option>
+<?php } ?>
+</select>
+</div>
 
+<div class="form-group col-md-3">
+<label class="form-label">Sub Project</label>
+<select class="form-control" id="ProjectSubHeadId" name="ProjectSubHeadId">
+<option selected="" value="all">All Sub Project</option>
+<?php
+if (!empty($_POST['ProjectId']) && $_POST['ProjectId'] != 'all') {
+    $projectId = (int) $_POST['ProjectId'];
+    $q = "SELECT * FROM tbl_project_sub_head WHERE Status='1' AND UnderBy='$projectId' ORDER BY Name ASC";
+    $r = $conn->query($q);
+    while ($rw = $r->fetch_assoc()) {
+?>
+<option <?php if (isset($_POST['ProjectSubHeadId']) && $_POST['ProjectSubHeadId'] == $rw['id']) { ?> selected <?php } ?> value="<?php echo $rw['id']; ?>"><?php echo $rw['Name']; ?></option>
+<?php
+    }
+}
+?>
+</select>
+</div>
 
+<div class="form-group col-md-3">
+<label class="form-label">District</label>
+<select class="select2-demo form-control" id="District" name="District">
+<option selected="" value="all">All District</option>
+<?php
+$q = "SELECT DISTINCT(District) AS District FROM tbl_users WHERE District!='' ORDER BY District ASC";
+$r = $conn->query($q);
+while ($rw = $r->fetch_assoc()) {
+?>
+<option <?php if (isset($_POST['District']) && $_POST['District'] == $rw['District']) { ?> selected <?php } ?> value="<?php echo htmlspecialchars($rw['District']); ?>"><?php echo htmlspecialchars($rw['District']); ?></option>
+<?php } ?>
+</select>
+</div>
 
 <div class="form-group col-md-3">
 <label class="form-label">From Date </label>
-<input type="date" name="FromDate" id="FromDate" class="form-control" value="<?php echo $_POST['FromDate'] ?>" autocomplete="off">
+<input type="date" name="FromDate" id="FromDate" class="form-control" value="<?php echo isset($_POST['FromDate']) ? $_POST['FromDate'] : ''; ?>" autocomplete="off">
 </div>
 <div class="form-group col-md-3">
 <label class="form-label">To Date</label>
-<input type="date" name="ToDate" id="ToDate" class="form-control" value="<?php echo $_POST['ToDate'] ?>" autocomplete="off">
+<input type="date" name="ToDate" id="ToDate" class="form-control" value="<?php echo isset($_POST['ToDate']) ? $_POST['ToDate'] : ''; ?>" autocomplete="off">
 </div>
 <input type="hidden" name="Search" value="Search">
 <div class="form-group col-md-1" style="padding-top:20px;">
@@ -123,13 +166,28 @@ if($_REQUEST["action"]=="delete")
                 WHERE 1";
 
         if (!empty($_POST['FromDate'])) {
-            $FromDate = $_POST['FromDate'];
-            $sql .= " AND InvoiceDate >= '$FromDate'";
+            $FromDate = mysqli_real_escape_string($conn, $_POST['FromDate']);
+            $sql .= " AND ts.InvoiceDate >= '$FromDate'";
         }
 
         if (!empty($_POST['ToDate'])) {
-            $ToDate = $_POST['ToDate'];
-            $sql .= " AND InvoiceDate <= '$ToDate'";
+            $ToDate = mysqli_real_escape_string($conn, $_POST['ToDate']);
+            $sql .= " AND ts.InvoiceDate <= '$ToDate'";
+        }
+
+        if (!empty($_POST['District']) && $_POST['District'] != 'all') {
+            $District = mysqli_real_escape_string($conn, $_POST['District']);
+            $sql .= " AND tu.District='$District'";
+        }
+
+        if (!empty($_POST['ProjectId']) && $_POST['ProjectId'] != 'all') {
+            $ProjectId = (int) $_POST['ProjectId'];
+            $sql .= " AND tu.ProjectId='$ProjectId'";
+        }
+
+        if (!empty($_POST['ProjectSubHeadId']) && $_POST['ProjectSubHeadId'] != 'all') {
+            $ProjectSubHeadId = (int) $_POST['ProjectSubHeadId'];
+            $sql .= " AND tu.ProjectSubHeadId='$ProjectSubHeadId'";
         }
 
         $sql .= " GROUP BY ts.CustId ORDER BY ts.id DESC";
@@ -236,18 +294,32 @@ if($_REQUEST["action"]=="delete")
 
 <?php include_once '../footer_script.php'; ?>
 <script type="text/javascript">
- 
-    $(document).ready(function() {
+function getSubHead(id) {
+    if (!id || id === 'all') {
+        $('#ProjectSubHeadId').html('<option selected="" value="all">All Sub Project</option>');
+        return;
+    }
+    $.ajax({
+        type: "POST",
+        url: "../ajax_files/ajax_dropdown.php",
+        data: { action: 'getSubHead', id: id },
+        success: function(data) {
+            $('#ProjectSubHeadId').html('<option value="all">All Sub Project</option>' + data);
+        }
+    });
+}
+
+$(document).ready(function() {
     $('#example').DataTable({
         "scrollX": true,
-        "pageLength":10,
+        "pageLength": 10,
         dom: 'Bfrtip',
         buttons: [
             'excelHtml5'
         ]
     });
-    });
-    </script>
+});
+</script>
 
 </body>
 </html>

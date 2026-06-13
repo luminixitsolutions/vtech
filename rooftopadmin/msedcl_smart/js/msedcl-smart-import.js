@@ -97,7 +97,11 @@
         }, function (res) {
             alert((res && res.message) ? res.message : (res && res.success ? 'Deleted.' : 'Delete failed.'));
             if (res && res.success) {
-                window.location.reload();
+                if (res.redirect) {
+                    window.location.href = res.redirect;
+                } else {
+                    window.location.reload();
+                }
             } else {
                 $btn.prop('disabled', false);
             }

@@ -81,13 +81,14 @@ $filterSearchActive = isset($_POST['Search']) || isset($_GET['Search']);
                                             <th>Remarks</th>
                                             <th>Total Items</th>
                                             <th>Returned By</th>
+                                            <th>Status</th>
                                             <th>Action</th>
                                         </tr>
                                     </thead>
                                     <tbody>
                                         <?php
                                         $i = 1;
-                                        $sql = "SELECT cr.*, ts.InvoiceNo, ts.CustName, tu.Fname AS ReturnedByName
+                                        $sql = "SELECT cr.*, ts.InvoiceNo, ts.CustName, ts.ReturnStatus, tu.Fname AS ReturnedByName
                                             FROM challan_returns cr
                                             LEFT JOIN tbl_sell ts ON ts.id = cr.sell_id
                                             LEFT JOIN tbl_users tu ON tu.id = cr.created_by
@@ -121,13 +122,17 @@ $filterSearchActive = isset($_POST['Search']) || isset($_GET['Search']);
                                                 <td><?php echo $totItems; ?></td>
                                                 <td><?php echo htmlspecialchars($row['ReturnedByName'] ?? ''); ?></td>
                                                 <td>
+                                                    <?php if ((int) ($row['ReturnStatus'] ?? 0) === 1) { ?>
+                                                        <span class="badge badge-warning">Returned</span>
+                                                    <?php } else { ?>
+                                                        <span class="badge badge-success">Edited</span>
+                                                    <?php } ?>
+                                                </td>
+                                                <td>
                                                     <a href="view-return-challan.php?id=<?php echo (int) $row['sell_id']; ?>" class="btn btn-sm btn-info">View</a>
-                                                    <?php if ((int) ($row['sell_id'] ?? 0) > 0) {
-                                                        $sellRow = getRecord("SELECT ReturnStatus FROM tbl_sell WHERE id='" . (int) $row['sell_id'] . "' LIMIT 1");
-                                                        if ((int) ($sellRow['ReturnStatus'] ?? 0) === 1) { ?>
-                                                            <a href="edit-challan.php?id=<?php echo (int) $row['sell_id']; ?>" class="btn btn-sm btn-primary">Edit Challan</a>
-                                                        <?php }
-                                                    } ?>
+                                                    <?php if ((int) ($row['sell_id'] ?? 0) > 0) { ?>
+                                                        <a href="edit-challan.php?id=<?php echo (int) $row['sell_id']; ?>" class="btn btn-sm btn-primary">Edit</a>
+                                                    <?php } ?>
                                                 </td>
                                             </tr>
                                         <?php $i++; } ?>

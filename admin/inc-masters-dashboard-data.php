@@ -13,6 +13,7 @@ function mastersDashboardRegistry()
         array('option' => '5', 'label' => 'User Type', 'href' => 'user-type.php', 'icon' => 'users', 'tone' => 'usertype', 'group' => 'core', 'type' => 'table', 'table' => 'tbl_user_type'),
         array('option' => '140', 'label' => 'Project Head', 'href' => 'common-master.php?pageid=24', 'icon' => 'layers', 'tone' => 'project', 'group' => 'core', 'type' => 'roll', 'roll' => 24),
         array('option' => '141', 'label' => 'Project Sub Head', 'href' => 'project-sub-head.php', 'icon' => 'git-branch', 'tone' => 'project', 'group' => 'core', 'type' => 'table', 'table' => 'tbl_project_sub_head'),
+        array('option' => '258', 'label' => 'Project Cost', 'href' => 'project-cost.php', 'icon' => 'dollar-sign', 'tone' => 'project', 'group' => 'core', 'type' => 'table', 'table' => 'tbl_project_cost'),
         array('option' => '6', 'label' => 'Pump Head', 'href' => 'common-master.php?pageid=1', 'icon' => 'droplet', 'tone' => 'pump', 'group' => 'pump', 'type' => 'roll', 'roll' => 1),
         array('option' => '7', 'label' => 'Pump Capacity', 'href' => 'common-master.php?pageid=2', 'icon' => 'activity', 'tone' => 'pump', 'group' => 'pump', 'type' => 'roll', 'roll' => 2),
         array('option' => '72', 'label' => 'Pump Outlet Size', 'href' => 'common-master.php?pageid=12', 'icon' => 'maximize-2', 'tone' => 'pump', 'group' => 'pump', 'type' => 'roll', 'roll' => 12),

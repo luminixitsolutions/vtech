@@ -138,6 +138,7 @@ function adminPageAccessBasenameRules()
         'dispatch-officer-stock-report.php' => [103],
         'field-survey-report.php' => [104], 'dispatch-report.php' => [105],
         'installation-report.php' => [106], 'inspection-report.php' => [107],
+        'payment-report.php' => [259],
         'site-engineer-report.php' => [108], 'dispatch-calling-report.php' => [109],
         'before-installation-calling-report.php' => [110],
         'after-installation-calling-report.php' => [111],

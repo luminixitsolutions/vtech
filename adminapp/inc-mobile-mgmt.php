@@ -480,6 +480,11 @@ function mobileMsedclSmartAdminUrl($file = 'dashboard.php')
     return '../rooftopadmin/msedcl_smart/' . ltrim($file, '/');
 }
 
+function mobileMsedclSmartAbstractUrl()
+{
+    return 'msedcl-smart-abstract.php';
+}
+
 function mobileMsedclSmartListTypes()
 {
     return array(
@@ -621,3 +626,80 @@ function mobileMsedclSmartSurveyStatusLabel($done)
 {
     return (int) $done === 1 ? 'Done' : 'Pending';
 }
+
+function mobileMsedclSmartGetAbstractData($request = null)
+{
+    require_once __DIR__ . '/../rooftopadmin/inc-msedcl-smart-site.php';
+
+    msedclSmartEnsureTables();
+
+    if ($request === null) {
+        $request = $_REQUEST;
+    }
+
+    $meta = msedclSmartAbstractFiltersFromRequest($request);
+    $rows = msedclSmartAbstractByDistrict($meta['filters']);
+    $totals = msedclSmartAbstractTotals($rows);
+    $districtRows = getList("SELECT DISTINCT TRIM(District) AS District FROM tbl_rooftop_msedcl_smart_customers WHERE TRIM(District)!='' AND Status=1 ORDER BY District ASC");
+    $talukaRows = getList("SELECT DISTINCT TRIM(Taluka) AS Taluka FROM tbl_rooftop_msedcl_smart_customers WHERE TRIM(Taluka)!='' AND Status=1 ORDER BY Taluka ASC");
+
+    return array(
+        'meta' => $meta,
+        'rows' => is_array($rows) ? $rows : array(),
+        'totals' => $totals,
+        'districtRows' => is_array($districtRows) ? $districtRows : array(),
+        'talukaRows' => is_array($talukaRows) ? $talukaRows : array(),
+        'exportQuery' => msedclSmartAbstractExportQueryString($meta),
+        'isSearch' => isset($request['Search']),
+        'abstractMeta' => array(
+            'District' => $meta['District'],
+            'Taluka' => $meta['Taluka'],
+            'FromDate' => $meta['FromDate'],
+            'ToDate' => $meta['ToDate'],
+            'DateMode' => $meta['DateMode'],
+        ),
+    );
+}
+
+function mobileMsedclSmartAbstractListUrl($metric, $rowDistrict, array $meta)
+{
+    $params = array(
+        'metric' => preg_replace('/[^a-z_]/', '', (string) $metric),
+    );
+
+    if ($rowDistrict !== '') {
+        $params['RowDistrict'] = $rowDistrict;
+    }
+
+    foreach (array('District', 'Taluka', 'FromDate', 'ToDate', 'DateMode') as $key) {
+        if (!empty($meta[$key])) {
+            $params[$key] = $meta[$key];
+        }
+    }
+
+    return 'mobile-msedcl-smart-abstract-list.php?' . http_build_query($params);
+}
+
+function mobileMsedclSmartAbstractCountCell($count, $metric, $rowDistrict, array $meta)
+{
+    $count = (int) $count;
+    if ($count < 1) {
+        return '0';
+    }
+
+    $url = mobileMsedclSmartAbstractListUrl($metric, $rowDistrict, $meta);
+
+    return '<a href="' . htmlspecialchars($url, ENT_QUOTES, 'UTF-8') . '">' . number_format($count) . '</a>';
+}
+
+function mobileMsedclSmartAbstractRecords($metric, $rowDistrict, array $filters = array())
+{
+    require_once __DIR__ . '/../rooftopadmin/inc-msedcl-smart-site.php';
+
+    msedclSmartEnsureTables();
+
+    $records = msedclSmartAbstractRecords($metric, $rowDistrict, $filters);
+
+    return is_array($records) ? $records : array();
+}
+

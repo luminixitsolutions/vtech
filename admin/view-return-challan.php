@@ -16,7 +16,10 @@ if (!$returnRec) {
     exit;
 }
 
-$items = getList("SELECT * FROM challan_return_items WHERE return_id='" . (int) $returnRec['id'] . "' ORDER BY id ASC");
+$originalItems = getList("SELECT * FROM challan_return_items WHERE return_id='" . (int) $returnRec['id'] . "' ORDER BY id ASC");
+$currentItems = challanReturnGetSellItems($conn, $sellId);
+$sellRow = getRecord("SELECT ReturnStatus FROM tbl_sell WHERE id='$sellId' LIMIT 1");
+$isReturnedPendingEdit = ((int) ($sellRow['ReturnStatus'] ?? 0) === 1);
 $logs = getList("SELECT cel.*, tu.Fname AS PerformedByName FROM challan_edit_log cel LEFT JOIN tbl_users tu ON tu.id=cel.performed_by WHERE cel.sell_id='$sellId' ORDER BY cel.id DESC");
 ?>
 <!DOCTYPE html>
@@ -45,11 +48,7 @@ $logs = getList("SELECT cel.*, tu.Fname AS PerformedByName FROM challan_edit_log
                             View Return Challan — <?php echo htmlspecialchars($returnRec['InvoiceNo'] ?? ''); ?>
                             <span style="float:right;">
                                 <a href="return-challans.php" class="btn btn-secondary btn-sm">Back</a>
-                                <?php
-                                $sellRow = getRecord("SELECT ReturnStatus FROM tbl_sell WHERE id='$sellId' LIMIT 1");
-                                if ((int) ($sellRow['ReturnStatus'] ?? 0) === 1) { ?>
-                                    <a href="edit-challan.php?id=<?php echo $sellId; ?>" class="btn btn-primary btn-sm">Edit Challan</a>
-                                <?php } ?>
+                                <a href="edit-challan.php?id=<?php echo $sellId; ?>" class="btn btn-primary btn-sm">Edit</a>
                             </span>
                         </h5>
 
@@ -66,7 +65,12 @@ $logs = getList("SELECT cel.*, tu.Fname AS PerformedByName FROM challan_edit_log
                         </div>
 
                         <div class="card mb-4">
-                            <div class="card-header"><strong>Returned Items</strong></div>
+                            <div class="card-header">
+                                <strong><?php echo $isReturnedPendingEdit ? 'Returned Items' : 'Current Challan Items'; ?></strong>
+                                <?php if (!$isReturnedPendingEdit) { ?>
+                                    <span class="badge badge-success ml-2">Updated after edit</span>
+                                <?php } ?>
+                            </div>
                             <div class="card-body table-responsive">
                                 <table class="table table-bordered table-striped">
                                     <thead>
@@ -81,9 +85,53 @@ $logs = getList("SELECT cel.*, tu.Fname AS PerformedByName FROM challan_edit_log
                                         </tr>
                                     </thead>
                                     <tbody>
-                                        <?php $i = 1; foreach ($items as $item) { ?>
+                                        <?php
+                                        $displayItems = $isReturnedPendingEdit ? $originalItems : $currentItems;
+                                        $i = 1;
+                                        if (empty($displayItems)) { ?>
+                                            <tr><td colspan="7" class="text-center text-muted">No items found.</td></tr>
+                                        <?php } else {
+                                            foreach ($displayItems as $item) {
+                                                $isSerial = $isReturnedPendingEdit
+                                                    ? ((int) ($item['prod_type'] ?? 0) === 1)
+                                                    : challanReturnIsSerialItem($item);
+                                        ?>
                                             <tr>
                                                 <td><?php echo $i++; ?></td>
+                                                <td><?php echo htmlspecialchars($isReturnedPendingEdit ? ($item['product_name'] ?? '') : ($item['ProductName'] ?? '')); ?></td>
+                                                <td><?php echo htmlspecialchars($isReturnedPendingEdit ? ($item['model_no'] ?? '') : ($item['ModelNo'] ?? '')); ?></td>
+                                                <td><?php echo htmlspecialchars($isReturnedPendingEdit ? ($item['serial_no'] ?? '') : ($item['SerialNo'] ?? '')); ?></td>
+                                                <td><?php echo htmlspecialchars($isReturnedPendingEdit ? ($item['qty'] ?? '') : ($item['Qty'] ?? '')); ?></td>
+                                                <td><?php echo htmlspecialchars($isReturnedPendingEdit ? ($item['unit'] ?? '') : ($item['Purity'] ?? '')); ?></td>
+                                                <td><?php echo $isSerial ? 'Serial' : 'Bulk'; ?></td>
+                                            </tr>
+                                        <?php }
+                                        } ?>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+
+                        <?php if (!$isReturnedPendingEdit && !empty($originalItems)) { ?>
+                        <div class="card mb-4">
+                            <div class="card-header"><strong>Original Items at Return (history)</strong></div>
+                            <div class="card-body table-responsive">
+                                <table class="table table-bordered table-striped">
+                                    <thead>
+                                        <tr>
+                                            <th>#</th>
+                                            <th>Product</th>
+                                            <th>Model No</th>
+                                            <th>Serial No</th>
+                                            <th>Qty</th>
+                                            <th>Unit</th>
+                                            <th>Type</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <?php $k = 1; foreach ($originalItems as $item) { ?>
+                                            <tr>
+                                                <td><?php echo $k++; ?></td>
                                                 <td><?php echo htmlspecialchars($item['product_name'] ?? ''); ?></td>
                                                 <td><?php echo htmlspecialchars($item['model_no'] ?? ''); ?></td>
                                                 <td><?php echo htmlspecialchars($item['serial_no'] ?? ''); ?></td>
@@ -96,6 +144,7 @@ $logs = getList("SELECT cel.*, tu.Fname AS PerformedByName FROM challan_edit_log
                                 </table>
                             </div>
                         </div>
+                        <?php } ?>
 
                         <?php if (!empty($logs)) { ?>
                         <div class="card mb-4">

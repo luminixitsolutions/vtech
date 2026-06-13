@@ -70,6 +70,7 @@ $vehicleReportPages = array(
 );
 $siteReportPages = array(
 	'Field-Survey-Report', 'Installation-Report', 'Inspection-Report', 'Site-Engineer-Reports',
+	'Payment-Report',
 );
 $callingReportPages = array(
 	'Before-Installation-Calling-Report', 'After-Installation-Calling-Report',
@@ -375,6 +376,13 @@ $employeeTrackingPages = array('Employee-Tracking-Dashboard', 'Employee-Tracking
 <a href="site-engineer-report.php?FromDate=<?php echo date('Y-m-d');?>&ToDate=<?php echo date('Y-m-d');?>" class="sidenav-link">
 <div>Site Engineer Report</div>
 <?php echo reportSidebarActiveDot($Page, array('Site-Engineer-Reports')); ?>
+</a>
+</li>
+<?php } if (reportSidebarOptionAllowed($Options, 259)) { ?>
+<li class="sidenav-item">
+<a href="payment-report.php" class="sidenav-link">
+<div>Payment Report</div>
+<?php echo reportSidebarActiveDot($Page, array('Payment-Report')); ?>
 </a>
 </li>
 <?php } ?>

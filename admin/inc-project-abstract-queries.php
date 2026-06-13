@@ -185,6 +185,14 @@ function projectAbstractListSql($conn, $roll, $projectId, $subheadId, $dist = ''
     }
 
     if ($roll === 'work_order_done') {
+        if (projectAbstractHasColumn($conn, 'tbl_installations', 'WorkOrderDone')) {
+            return "SELECT tu.* FROM tbl_users tu WHERE 1=1 $scope
+                AND EXISTS (
+                    SELECT 1 FROM tbl_installations ti
+                    WHERE ti.CustId=tu.id AND ti.Type=2 AND ti.WorkOrderDone='Yes'
+                )";
+        }
+
         if (projectAbstractHasColumn($conn, 'tbl_users', 'WorkOrderDone')) {
             return "SELECT tu.* FROM tbl_users tu WHERE tu.WorkOrderDone='Yes' $scope";
         }
@@ -197,6 +205,14 @@ function projectAbstractListSql($conn, $roll, $projectId, $subheadId, $dist = ''
     }
 
     if ($roll === 'work_order_pending') {
+        if (projectAbstractHasColumn($conn, 'tbl_installations', 'WorkOrderDone')) {
+            return "SELECT tu.* FROM tbl_users tu WHERE tu.FieldSurveyDetails!=2 $scope
+                AND NOT EXISTS (
+                    SELECT 1 FROM tbl_installations ti
+                    WHERE ti.CustId=tu.id AND ti.Type=2 AND ti.WorkOrderDone='Yes'
+                )";
+        }
+
         if (projectAbstractHasColumn($conn, 'tbl_users', 'WorkOrderDone')) {
             return "SELECT tu.* FROM tbl_users tu WHERE IFNULL(tu.WorkOrderDone,'No')!='Yes' AND tu.FieldSurveyDetails!=2 $scope";
         }

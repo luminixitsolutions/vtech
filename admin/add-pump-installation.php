@@ -7,78 +7,143 @@ if (isset($_GET['debug'])) {
 session_start();
 include_once 'config.php';
 include_once 'auth.php';
+require_once __DIR__ . '/inc-work-order-customer.php';
 $user_id = $_SESSION['Admin']['id'];
 $MainPage = "Installation";
 $Page = "Pump-Installation";
 
-function pumpInstallUsersHasColumn($conn, $column)
+workOrderCustomerEnsureSchema($conn);
+
+function pumpInstallProjectCostTableExists($conn)
 {
-    static $cache = array();
-    $column = preg_replace('/[^a-zA-Z0-9_]/', '', $column);
-    if (!array_key_exists($column, $cache)) {
-        try {
-            $check = $conn->query("SHOW COLUMNS FROM tbl_users LIKE '$column'");
-            $cache[$column] = $check && $check->num_rows > 0;
-        } catch (Exception $e) {
-            $cache[$column] = false;
+    static $exists = null;
+    if ($exists === null) {
+        $check = $conn->query("SHOW TABLES LIKE 'tbl_project_cost'");
+        $exists = $check && $check->num_rows > 0;
+    }
+
+    return $exists;
+}
+
+function pumpInstallLookupProjectCostAmount($conn, $projectId, $subHeadId, $capacityId)
+{
+    $projectId = (int) $projectId;
+    $subHeadId = (int) $subHeadId;
+    $capacityId = (int) $capacityId;
+    if ($projectId <= 0 || $subHeadId <= 0 || $capacityId <= 0 || !pumpInstallProjectCostTableExists($conn)) {
+        return '';
+    }
+
+    $row = getRecord(
+        "SELECT Amount FROM tbl_project_cost
+        WHERE ProjectId='$projectId'
+          AND ProjectSubHeadId='$subHeadId'
+          AND CapacityId='$capacityId'
+          AND Status='1'
+        LIMIT 1"
+    );
+    if (!is_array($row)) {
+        return '';
+    }
+
+    return number_format((float) ($row['Amount'] ?? 0), 2, '.', '');
+}
+
+function pumpInstallResolveProjectCostAmount($conn, $custId, $projectId, $subHeadId)
+{
+    $custId = (int) $custId;
+    $projectId = (int) $projectId;
+    $subHeadId = (int) $subHeadId;
+    $capacityId = 0;
+
+    if ($custId > 0) {
+        $cust = getRecord("SELECT ProjectId, ProjectSubHeadId, PumpCapacity FROM tbl_users WHERE id='$custId' AND Roll=5 LIMIT 1");
+        if (is_array($cust)) {
+            if ($projectId <= 0) {
+                $projectId = (int) ($cust['ProjectId'] ?? 0);
+            }
+            if ($subHeadId <= 0) {
+                $subHeadId = (int) ($cust['ProjectSubHeadId'] ?? 0);
+            }
+            $capacityId = (int) ($cust['PumpCapacity'] ?? 0);
         }
     }
 
-    return $cache[$column];
+    return pumpInstallLookupProjectCostAmount($conn, $projectId, $subHeadId, $capacityId);
 }
 
-function pumpInstallLoadCustWorkOrder($conn, $custId)
+function pumpInstallLoadCustWorkOrder($conn, $custId, $installRow = null)
 {
-    $defaults = array('WorkOrderDone' => 'No', 'WorkOrderDoneDate' => '');
+    if (is_array($installRow) && !empty($installRow['id']) && workOrderInstallHasColumn($conn, 'WorkOrderDone')) {
+        $done = ((string) ($installRow['WorkOrderDone'] ?? 'No') === 'Yes') ? 'Yes' : 'No';
+        $date = '';
+        if (workOrderInstallHasColumn($conn, 'WorkOrderDoneDate')
+            && $done === 'Yes'
+            && !empty($installRow['WorkOrderDoneDate'])
+            && $installRow['WorkOrderDoneDate'] !== '0000-00-00') {
+            $date = (string) $installRow['WorkOrderDoneDate'];
+        }
+
+        return array(
+            'WorkOrderDone' => $done,
+            'WorkOrderDoneDate' => $date,
+        );
+    }
+
+    $row = workOrderCustomerLoad($conn, (int) $custId);
+
+    return array(
+        'WorkOrderDone' => ((string) ($row['WorkOrderDone'] ?? 'No') === 'Yes') ? 'Yes' : 'No',
+        'WorkOrderDoneDate' => (string) ($row['WorkOrderDoneDate'] ?? ''),
+    );
+}
+
+function pumpInstallWorkOrderSqlFragment($conn, $workOrderDone, $workOrderDoneDate)
+{
+    if (!workOrderInstallHasColumn($conn, 'WorkOrderDone')) {
+        return '';
+    }
+
+    $done = ((string) $workOrderDone === 'Yes') ? 'Yes' : 'No';
+    $doneEsc = mysqli_real_escape_string($conn, $done);
+    $sql = ",WorkOrderDone='$doneEsc'";
+
+    if (workOrderInstallHasColumn($conn, 'WorkOrderDoneDate')) {
+        $date = trim((string) $workOrderDoneDate);
+        if ($done !== 'Yes') {
+            $date = '';
+        }
+        $dateSql = ($date !== '') ? "'" . mysqli_real_escape_string($conn, $date) . "'" : 'NULL';
+        $sql .= ",WorkOrderDoneDate=$dateSql";
+    }
+
+    return $sql;
+}
+
+function pumpInstallSaveCustWorkOrder($conn, $custId, $workOrderDone, $workOrderDoneDate, $installUpdatedInMainSql = false)
+{
     $custId = (int) $custId;
     if ($custId <= 0) {
-        return $defaults;
-    }
-
-    if (pumpInstallUsersHasColumn($conn, 'WorkOrderDone')) {
-        if (pumpInstallUsersHasColumn($conn, 'WorkOrderDoneDate')) {
-            $row = getRecord("SELECT WorkOrderDone, WorkOrderDoneDate FROM tbl_users WHERE id='$custId'");
-        } else {
-            $row = getRecord("SELECT WorkOrderDone FROM tbl_users WHERE id='$custId'");
-            if (is_array($row)) {
-                $row['WorkOrderDoneDate'] = '';
-            }
-        }
-        if (is_array($row)) {
-            if ((string) (isset($row['WorkOrderDone']) ? $row['WorkOrderDone'] : 'No') !== 'Yes') {
-                $row['WorkOrderDone'] = 'No';
-                $row['WorkOrderDoneDate'] = '';
-            }
-            return $row;
-        }
-    } elseif (pumpInstallUsersHasColumn($conn, 'WoNo')) {
-        $row = getRecord("SELECT WoNo FROM tbl_users WHERE id='$custId'");
-        if (is_array($row) && trim((string) ($row['WoNo'] ?? '')) !== '') {
-            return array('WorkOrderDone' => 'Yes', 'WorkOrderDoneDate' => '');
-        }
-    }
-
-    return $defaults;
-}
-
-function pumpInstallSaveCustWorkOrder($conn, $custId, $workOrderDone, $workOrderDoneDate)
-{
-    $custId = (int) $custId;
-    if ($custId <= 0 || !pumpInstallUsersHasColumn($conn, 'WorkOrderDone')) {
         return;
     }
 
-    $workOrderDone = addslashes((string) $workOrderDone);
-    $workOrderDoneDate = addslashes(trim((string) $workOrderDoneDate));
-    if ($workOrderDone !== 'Yes') {
-        $workOrderDoneDate = '';
+    if (!$installUpdatedInMainSql && workOrderCustomerIsSupported($conn)) {
+        workOrderCustomerSave($conn, $custId, $workOrderDone, $workOrderDoneDate);
     }
 
-    if (pumpInstallUsersHasColumn($conn, 'WorkOrderDoneDate')) {
-        $workOrderDateSql = $workOrderDoneDate !== '' ? "'$workOrderDoneDate'" : 'NULL';
-        @$conn->query("UPDATE tbl_users SET WorkOrderDone='$workOrderDone', WorkOrderDoneDate=$workOrderDateSql WHERE id='$custId'");
-    } else {
-        @$conn->query("UPDATE tbl_users SET WorkOrderDone='$workOrderDone' WHERE id='$custId'");
+    if (workOrderUsersHasColumn($conn, 'WorkOrderDone')) {
+        $done = ((string) $workOrderDone === 'Yes') ? 'Yes' : 'No';
+        $date = trim((string) $workOrderDoneDate);
+        if ($done !== 'Yes') {
+            $date = '';
+        }
+        $doneEsc = mysqli_real_escape_string($conn, $done);
+        if (workOrderUsersHasColumn($conn, 'WorkOrderDoneDate')) {
+            $dateSql = $date !== '' ? "'" . mysqli_real_escape_string($conn, $date) . "'" : 'NULL';
+            @$conn->query("UPDATE tbl_users SET WorkOrderDone='$doneEsc', WorkOrderDoneDate=$dateSql WHERE id='$custId'");
+        } else {
+            @$conn->query("UPDATE tbl_users SET WorkOrderDone='$doneEsc' WHERE id='$custId'");
+        }
     }
 }
 
@@ -180,7 +245,7 @@ function pumpInstallWorkOrderFieldAttrs($workOrderDone, $workOrderDate, $isAdmin
                     $row7 = array();
                 }
 
-                $custRow = pumpInstallLoadCustWorkOrder($conn, isset($row7['CustId']) ? $row7['CustId'] : 0);
+                $custRow = pumpInstallLoadCustWorkOrder($conn, isset($row7['CustId']) ? $row7['CustId'] : 0, $row7);
                 $isPumpInstallAdmin = ((int) $user_id) === 1;
                 $installLock = pumpInstallYesFieldAttrs(isset($row7['InstallStatus']) ? $row7['InstallStatus'] : 'No', $isPumpInstallAdmin);
                 $dataUploadLock = pumpInstallYesFieldAttrs(isset($row7['DataUploadStatus']) ? $row7['DataUploadStatus'] : 'No', $isPumpInstallAdmin);
@@ -189,6 +254,12 @@ function pumpInstallWorkOrderFieldAttrs($workOrderDone, $workOrderDate, $isAdmin
                     isset($custRow['WorkOrderDone']) ? $custRow['WorkOrderDone'] : 'No',
                     isset($custRow['WorkOrderDoneDate']) ? $custRow['WorkOrderDoneDate'] : '',
                     $isPumpInstallAdmin
+                );
+                $pumpInstallTotalProjectAmount = pumpInstallResolveProjectCostAmount(
+                    $conn,
+                    isset($row7['CustId']) ? $row7['CustId'] : 0,
+                    $ProjectId,
+                    $ProjectSubHeadId
                 );
 
                 if (isset($_REQUEST['action']) && $_REQUEST['action'] == 'deletephoto') {
@@ -244,15 +315,18 @@ function pumpInstallWorkOrderFieldAttrs($workOrderDone, $workOrderDate, $isAdmin
                     }
                     if ((int) $user_id !== 1) {
                         $lockCustId = (int) ($_POST['CustId'] ?? 0);
+                        $lockInstId = (int) ($_POST['id'] ?? 0);
+                        $lockInstRow = ($lockInstId > 0)
+                            ? getRecord("SELECT * FROM tbl_installations WHERE id='$lockInstId'")
+                            : null;
                         if ($lockCustId > 0) {
-                            $existingWoRow = pumpInstallLoadCustWorkOrder($conn, $lockCustId);
+                            $existingWoRow = pumpInstallLoadCustWorkOrder($conn, $lockCustId, $lockInstRow);
                             if (($existingWoRow['WorkOrderDone'] ?? '') === 'Yes'
                                 && trim((string) ($existingWoRow['WorkOrderDoneDate'] ?? '')) !== '') {
                                 $WorkOrderDone = 'Yes';
                                 $WorkOrderDoneDate = addslashes(trim((string) ($existingWoRow['WorkOrderDoneDate'] ?? '')));
                             }
                         }
-                        $lockInstId = (int) ($_POST['id'] ?? 0);
                         if ($lockInstId > 0) {
                             $existingInstRow = getRecord("SELECT InstallStatus, InstallationDate, DataUploadStatus, DataUploadDate, PoInspection, PoInspectionDate FROM tbl_installations WHERE id='$lockInstId'");
                             if (is_array($existingInstRow)) {
@@ -621,20 +695,22 @@ function pumpInstallWorkOrderFieldAttrs($workOrderDone, $workOrderDate, $isAdmin
 
                     $CreatedDate = date('Y-m-d');
                     $InstStatus = addslashes(trim($_POST['InstStatus'] ?? ''));
+                    $workOrderSql = pumpInstallWorkOrderSqlFragment($conn, $WorkOrderDone, $WorkOrderDoneDate);
+                    $installWorkOrderInMainSql = ($workOrderSql !== '');
                     if ($id <= 0) {
-                        $sql = "INSERT INTO tbl_installations SET ImeiNo='$ImeiNo',DcrVerify='$DcrVerify',DcrVerifyDate='$DcrVerifyDate',JvInvNo='$JvInvNo',JvInvDate='$JvInvDate',DriveLink='$DriveLink',PaymentDone='$PaymentDone',PaymentDate='$PaymentDate',CustId='$CustId',CellNo='$CellNo',CustName='$CustName',Address='$Address',Lattitude='$Lattitude',Longitude='$Longitude',Photo1='$Photo',Photo2='$Photo2',Photo3='$Photo3',Photo4='$Photo4',Photo5='$Photo5',Photo6='$Photo6',Photo7='$Photo7',Photo8='$Photo8',Photo9='$Photo9',Photo10='$Photo10',Status='1',CreatedBy='$user_id',CreatedDate='$CreatedDate',Type=2,Photo11='$Photo11',Photo12='$Photo12',WaterOutflow='$WaterOutflow',FarmerNoc='$FarmerNoc',FarmerNocDate='$FarmerNocDate',FarmerVideo='$FarmerVideo',FarmerVideoDate='$FarmerVideoDate',PoInspection='$PoInspection',PoInspectionDate='$PoInspectionDate',PoApproval='$PoApproval',PoApprovalDate='$PoApprovalDate',Photo13='$Photo13',Photo14='$Photo14',Photo15='$Photo15',Photo16='$Photo16',Photo17='$Photo17',Photo18='$Photo18',InstStatus='$InstStatus',InstallStatus='$InstallStatus',InstallationDate='$InstallationDate',DgmApproval='$DgmApproval',DgmApprovalDate='$DgmApprovalDate',InsuranceApproval='$InsuranceApproval',InsuranceApprovalDate='$InsuranceApprovalDate',CircleOfficeStatus='$CircleOfficeStatus',CircleOfficeDate='$CircleOfficeDate',RmsIntegrationStatus='$RmsIntegrationStatus',RmsIntegrationDate='$RmsIntegrationDate',RmsIntegration7Days='$RmsIntegration7Days',RmsIntegration90Days='$RmsIntegration90Days',IcrSignDoOffice='$IcrSignDoOffice',IcrSignDoOfficeDate='$IcrSignDoOfficeDate',BillForward='$BillForward',BillForwardDate='$BillForwardDate',RoToRoAccts='$RoToRoAccts',RoToRoAcctsDate='$RoToRoAcctsDate',RoAcctsToZo='$RoAcctsToZo',RoAcctsToZoDate='$RoAcctsToZoDate',ZoToHo='$ZoToHo',ZoToHoDate='$ZoToHoDate',HoToHoAccts='$HoToHoAccts',HoToHoAcctsDate='$HoToHoAcctsDate',ForwardToPayment='$ForwardToPayment',ForwardToPaymentDate='$ForwardToPaymentDate',SentToHo='$SentToHo',SentToHoDate='$SentToHoDate',FileInHand='$FileInHand',FileInHandDate='$FileInHandDate',Payment90='$Payment90',Payment90Amt='$Payment90Amt',Payment10='$Payment10',Payment10Amt='$Payment10Amt',InspectionDiscrepancy='$InspectionDiscrepancy',InspectionDiscrepancyDate='$InspectionDiscrepancyDate',InspectionDiscrepancyRemark='$InspectionDiscrepancyRemark',WarrantyReg='$WarrantyReg',WarrantyRegDate='$WarrantyRegDate',DataUploadStatus='$DataUploadStatus',DataUploadDate='$DataUploadDate',Foundation='$Foundation',FoundationContractorId='$FoundationContractorId',FoundationDate='$FoundationDate',Documentation='$Documentation',DocumentationContractorId='$DocumentationContractorId',DocumentationDate='$DocumentationDate'";
+                        $sql = "INSERT INTO tbl_installations SET ImeiNo='$ImeiNo',DcrVerify='$DcrVerify',DcrVerifyDate='$DcrVerifyDate',JvInvNo='$JvInvNo',JvInvDate='$JvInvDate',DriveLink='$DriveLink',PaymentDone='$PaymentDone',PaymentDate='$PaymentDate',CustId='$CustId',CellNo='$CellNo',CustName='$CustName',Address='$Address',Lattitude='$Lattitude',Longitude='$Longitude',Photo1='$Photo',Photo2='$Photo2',Photo3='$Photo3',Photo4='$Photo4',Photo5='$Photo5',Photo6='$Photo6',Photo7='$Photo7',Photo8='$Photo8',Photo9='$Photo9',Photo10='$Photo10',Status='1',CreatedBy='$user_id',CreatedDate='$CreatedDate',Type=2,Photo11='$Photo11',Photo12='$Photo12',WaterOutflow='$WaterOutflow',FarmerNoc='$FarmerNoc',FarmerNocDate='$FarmerNocDate',FarmerVideo='$FarmerVideo',FarmerVideoDate='$FarmerVideoDate',PoInspection='$PoInspection',PoInspectionDate='$PoInspectionDate',PoApproval='$PoApproval',PoApprovalDate='$PoApprovalDate',Photo13='$Photo13',Photo14='$Photo14',Photo15='$Photo15',Photo16='$Photo16',Photo17='$Photo17',Photo18='$Photo18',InstStatus='$InstStatus',InstallStatus='$InstallStatus',InstallationDate='$InstallationDate',DgmApproval='$DgmApproval',DgmApprovalDate='$DgmApprovalDate',InsuranceApproval='$InsuranceApproval',InsuranceApprovalDate='$InsuranceApprovalDate',CircleOfficeStatus='$CircleOfficeStatus',CircleOfficeDate='$CircleOfficeDate',RmsIntegrationStatus='$RmsIntegrationStatus',RmsIntegrationDate='$RmsIntegrationDate',RmsIntegration7Days='$RmsIntegration7Days',RmsIntegration90Days='$RmsIntegration90Days',IcrSignDoOffice='$IcrSignDoOffice',IcrSignDoOfficeDate='$IcrSignDoOfficeDate',BillForward='$BillForward',BillForwardDate='$BillForwardDate',RoToRoAccts='$RoToRoAccts',RoToRoAcctsDate='$RoToRoAcctsDate',RoAcctsToZo='$RoAcctsToZo',RoAcctsToZoDate='$RoAcctsToZoDate',ZoToHo='$ZoToHo',ZoToHoDate='$ZoToHoDate',HoToHoAccts='$HoToHoAccts',HoToHoAcctsDate='$HoToHoAcctsDate',ForwardToPayment='$ForwardToPayment',ForwardToPaymentDate='$ForwardToPaymentDate',SentToHo='$SentToHo',SentToHoDate='$SentToHoDate',FileInHand='$FileInHand',FileInHandDate='$FileInHandDate',Payment90='$Payment90',Payment90Amt='$Payment90Amt',Payment10='$Payment10',Payment10Amt='$Payment10Amt',InspectionDiscrepancy='$InspectionDiscrepancy',InspectionDiscrepancyDate='$InspectionDiscrepancyDate',InspectionDiscrepancyRemark='$InspectionDiscrepancyRemark',WarrantyReg='$WarrantyReg',WarrantyRegDate='$WarrantyRegDate',DataUploadStatus='$DataUploadStatus',DataUploadDate='$DataUploadDate',Foundation='$Foundation',FoundationContractorId='$FoundationContractorId',FoundationDate='$FoundationDate',Documentation='$Documentation',DocumentationContractorId='$DocumentationContractorId',DocumentationDate='$DocumentationDate'$workOrderSql";
                         $conn->query($sql);
                         if ($CustId !== '') {
-                            pumpInstallSaveCustWorkOrder($conn, $CustId, $WorkOrderDone, $WorkOrderDoneDate);
+                            pumpInstallSaveCustWorkOrder($conn, $CustId, $WorkOrderDone, $WorkOrderDoneDate, $installWorkOrderInMainSql);
                         }
                         $redirectUrl = 'installation-project-sub-head-dashboard.php?id=' . (int) $ProjectId . '&name=' . rawurlencode($projname);
                         echo "<script>alert('Record Saved Successfully');window.location.href=" . json_encode($redirectUrl) . ";</script>";
                         exit;
                     } else {
-                        $sql = "UPDATE tbl_installations SET ImeiNo='$ImeiNo',DcrVerify='$DcrVerify',DcrVerifyDate='$DcrVerifyDate',JvInvNo='$JvInvNo',JvInvDate='$JvInvDate',DriveLink='$DriveLink',PaymentDone='$PaymentDone',PaymentDate='$PaymentDate',CustId='$CustId',CellNo='$CellNo',CustName='$CustName',Address='$Address',Lattitude='$Lattitude',Longitude='$Longitude',Photo1='$Photo',Photo2='$Photo2',Photo3='$Photo3',Photo4='$Photo4',Photo5='$Photo5',Photo6='$Photo6',Photo7='$Photo7',Photo8='$Photo8',Photo9='$Photo9',Photo10='$Photo10',Status='1',ModifiedBy='$user_id',ModifiedDate='$CreatedDate',Type=2,Photo11='$Photo11',Photo12='$Photo12',WaterOutflow='$WaterOutflow',FarmerNoc='$FarmerNoc',FarmerNocDate='$FarmerNocDate',FarmerVideo='$FarmerVideo',FarmerVideoDate='$FarmerVideoDate',PoInspection='$PoInspection',PoInspectionDate='$PoInspectionDate',PoApproval='$PoApproval',PoApprovalDate='$PoApprovalDate',Photo13='$Photo13',Photo14='$Photo14',Photo15='$Photo15',Photo16='$Photo16',Photo17='$Photo17',Photo18='$Photo18',InstStatus='$InstStatus',InstallStatus='$InstallStatus',InstallationDate='$InstallationDate',DgmApproval='$DgmApproval',DgmApprovalDate='$DgmApprovalDate',InsuranceApproval='$InsuranceApproval',InsuranceApprovalDate='$InsuranceApprovalDate',CircleOfficeStatus='$CircleOfficeStatus',CircleOfficeDate='$CircleOfficeDate',RmsIntegrationStatus='$RmsIntegrationStatus',RmsIntegrationDate='$RmsIntegrationDate',RmsIntegration7Days='$RmsIntegration7Days',RmsIntegration90Days='$RmsIntegration90Days',IcrSignDoOffice='$IcrSignDoOffice',IcrSignDoOfficeDate='$IcrSignDoOfficeDate',BillForward='$BillForward',BillForwardDate='$BillForwardDate',RoToRoAccts='$RoToRoAccts',RoToRoAcctsDate='$RoToRoAcctsDate',RoAcctsToZo='$RoAcctsToZo',RoAcctsToZoDate='$RoAcctsToZoDate',ZoToHo='$ZoToHo',ZoToHoDate='$ZoToHoDate',HoToHoAccts='$HoToHoAccts',HoToHoAcctsDate='$HoToHoAcctsDate',ForwardToPayment='$ForwardToPayment',ForwardToPaymentDate='$ForwardToPaymentDate',SentToHo='$SentToHo',SentToHoDate='$SentToHoDate',FileInHand='$FileInHand',FileInHandDate='$FileInHandDate',Payment90='$Payment90',Payment90Amt='$Payment90Amt',Payment10='$Payment10',Payment10Amt='$Payment10Amt',InspectionDiscrepancy='$InspectionDiscrepancy',InspectionDiscrepancyDate='$InspectionDiscrepancyDate',InspectionDiscrepancyRemark='$InspectionDiscrepancyRemark',WarrantyReg='$WarrantyReg',WarrantyRegDate='$WarrantyRegDate',DataUploadStatus='$DataUploadStatus',DataUploadDate='$DataUploadDate',Foundation='$Foundation',FoundationContractorId='$FoundationContractorId',FoundationDate='$FoundationDate',Documentation='$Documentation',DocumentationContractorId='$DocumentationContractorId',DocumentationDate='$DocumentationDate' WHERE id='$id'";
+                        $sql = "UPDATE tbl_installations SET ImeiNo='$ImeiNo',DcrVerify='$DcrVerify',DcrVerifyDate='$DcrVerifyDate',JvInvNo='$JvInvNo',JvInvDate='$JvInvDate',DriveLink='$DriveLink',PaymentDone='$PaymentDone',PaymentDate='$PaymentDate',CustId='$CustId',CellNo='$CellNo',CustName='$CustName',Address='$Address',Lattitude='$Lattitude',Longitude='$Longitude',Photo1='$Photo',Photo2='$Photo2',Photo3='$Photo3',Photo4='$Photo4',Photo5='$Photo5',Photo6='$Photo6',Photo7='$Photo7',Photo8='$Photo8',Photo9='$Photo9',Photo10='$Photo10',Status='1',ModifiedBy='$user_id',ModifiedDate='$CreatedDate',Type=2,Photo11='$Photo11',Photo12='$Photo12',WaterOutflow='$WaterOutflow',FarmerNoc='$FarmerNoc',FarmerNocDate='$FarmerNocDate',FarmerVideo='$FarmerVideo',FarmerVideoDate='$FarmerVideoDate',PoInspection='$PoInspection',PoInspectionDate='$PoInspectionDate',PoApproval='$PoApproval',PoApprovalDate='$PoApprovalDate',Photo13='$Photo13',Photo14='$Photo14',Photo15='$Photo15',Photo16='$Photo16',Photo17='$Photo17',Photo18='$Photo18',InstStatus='$InstStatus',InstallStatus='$InstallStatus',InstallationDate='$InstallationDate',DgmApproval='$DgmApproval',DgmApprovalDate='$DgmApprovalDate',InsuranceApproval='$InsuranceApproval',InsuranceApprovalDate='$InsuranceApprovalDate',CircleOfficeStatus='$CircleOfficeStatus',CircleOfficeDate='$CircleOfficeDate',RmsIntegrationStatus='$RmsIntegrationStatus',RmsIntegrationDate='$RmsIntegrationDate',RmsIntegration7Days='$RmsIntegration7Days',RmsIntegration90Days='$RmsIntegration90Days',IcrSignDoOffice='$IcrSignDoOffice',IcrSignDoOfficeDate='$IcrSignDoOfficeDate',BillForward='$BillForward',BillForwardDate='$BillForwardDate',RoToRoAccts='$RoToRoAccts',RoToRoAcctsDate='$RoToRoAcctsDate',RoAcctsToZo='$RoAcctsToZo',RoAcctsToZoDate='$RoAcctsToZoDate',ZoToHo='$ZoToHo',ZoToHoDate='$ZoToHoDate',HoToHoAccts='$HoToHoAccts',HoToHoAcctsDate='$HoToHoAcctsDate',ForwardToPayment='$ForwardToPayment',ForwardToPaymentDate='$ForwardToPaymentDate',SentToHo='$SentToHo',SentToHoDate='$SentToHoDate',FileInHand='$FileInHand',FileInHandDate='$FileInHandDate',Payment90='$Payment90',Payment90Amt='$Payment90Amt',Payment10='$Payment10',Payment10Amt='$Payment10Amt',InspectionDiscrepancy='$InspectionDiscrepancy',InspectionDiscrepancyDate='$InspectionDiscrepancyDate',InspectionDiscrepancyRemark='$InspectionDiscrepancyRemark',WarrantyReg='$WarrantyReg',WarrantyRegDate='$WarrantyRegDate',DataUploadStatus='$DataUploadStatus',DataUploadDate='$DataUploadDate',Foundation='$Foundation',FoundationContractorId='$FoundationContractorId',FoundationDate='$FoundationDate',Documentation='$Documentation',DocumentationContractorId='$DocumentationContractorId',DocumentationDate='$DocumentationDate'$workOrderSql WHERE id='$id'";
                         $conn->query($sql);
                         if ($CustId !== '') {
-                            pumpInstallSaveCustWorkOrder($conn, $CustId, $WorkOrderDone, $WorkOrderDoneDate);
+                            pumpInstallSaveCustWorkOrder($conn, $CustId, $WorkOrderDone, $WorkOrderDoneDate, $installWorkOrderInMainSql);
                         }
                         $redirectUrl = 'installation-project-sub-head-dashboard.php?id=' . (int) $ProjectId . '&name=' . rawurlencode($projname);
                         echo "<script>alert('Record Updated Successfully');window.location.href=" . json_encode($redirectUrl) . ";</script>";
@@ -1741,6 +1817,16 @@ function pumpInstallWorkOrderFieldAttrs($workOrderDone, $workOrderDate, $isAdmin
                                             <div class="clearfix"></div>
                                         </div>
                                         -->
+
+                                        <div class="form-group col-md-4">
+                                            <label class="form-label">Total Project Amount</label>
+                                            <input type="text" class="form-control pump-install-locked" id="TotalProjectAmount"
+                                                value="<?php echo htmlspecialchars($pumpInstallTotalProjectAmount, ENT_QUOTES, 'UTF-8'); ?>"
+                                                readonly tabindex="-1" placeholder="Not set in Project Cost master">
+                                            <div class="clearfix"></div>
+                                        </div>
+
+                                        <div class="w-100"></div>
 
                                         <div class="form-group col-md-4">
                                             <label class="form-label">Payment Released 90% <span class="text-danger">*</span></label>

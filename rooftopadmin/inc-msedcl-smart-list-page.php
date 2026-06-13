@@ -230,12 +230,19 @@ function msedclSmartRenderListPage($listType, array $config)
                             <?php } elseif ($showPaymentBtn && (int) $row['PaymentDone'] === 1) { ?>
                             <span class="text-success small">Payment Done<?php echo !empty($row['PaymentDoneDate']) ? ' ' . date('d/m/Y', strtotime($row['PaymentDoneDate'])) : ''; ?></span>
                             <?php } ?>
-                            <?php if ($canDelete) { ?>
+                            <?php if ($canDelete) {
+                                $deleteConfirm = 'Delete this customer record? This cannot be undone.';
+                                if ($listType === 'mahadiscom') {
+                                    $deleteConfirm = 'Delete this customer from Mahadiscom portal? They will move back to PMSGY portal.';
+                                } elseif ($listType === 'payment') {
+                                    $deleteConfirm = 'Delete this customer from payment done list? They will move back to Mahadiscom portal.';
+                                }
+                                ?>
                             <button type="button" class="btn btn-sm btn-danger msedcl-smart-delete-btn ml-1"
                                 data-customer-id="<?php echo (int) $row['id']; ?>"
                                 data-list-type="<?php echo htmlspecialchars($listType); ?>"
                                 data-label="<?php echo htmlspecialchars((string) $row['BeneficiaryId']); ?>"
-                                data-confirm="Delete this customer record? This cannot be undone.">Delete</button>
+                                data-confirm="<?php echo htmlspecialchars($deleteConfirm); ?>">Delete</button>
                             <?php } elseif ($showDeleteBtn && msedclSmartIsForwardedToCoordinator($row)) { ?>
                             <span class="text-muted small">Forwarded</span>
                             <?php } ?>

@@ -171,6 +171,18 @@ $Options = adminResolveMenuOptionsFromUserRow($row77);
 <?php } ?>
 </a>
 </li>
+<?php } if(in_array("141", $Options) || in_array("258", $Options)) {?>
+<li class="sidenav-item ">
+<a href="project-cost.php" class="sidenav-link">
+    <i class="sidenav-icon feather icon-activity"></i>
+<div>Project Cost</div> 
+<?php if($Page=='Project-Cost') {?>
+<div class="pl-1 ml-auto">
+<span class="badge badge-dot badge-primary"></span>
+</div>
+<?php } ?>
+</a>
+</li>
 <?php } if(in_array("6", $Options)) {?>
 <li class="sidenav-item ">
 <a href="common-master.php?pageid=1" class="sidenav-link">

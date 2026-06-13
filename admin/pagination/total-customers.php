@@ -1,81 +1,109 @@
 <?php
+session_start();
 include '../config.php';
+require_once __DIR__ . '/../inc-project-abstract-queries.php';
+require_once __DIR__ . '/../inc-work-order-customer.php';
+header('Content-Type: application/json; charset=utf-8');
 
-## Read value
-$ProjectId = $_POST['ProjectId'];
-$ProjectSubHeadId = $_POST['SubHeadId'];
-$District = $_POST['District'];
-$draw = $_POST['draw'];
-$row = $_POST['start'];
-$rowperpage = $_POST['length']; // Rows display per page
-$columnIndex = $_POST['order'][0]['column']; // Column index
-$columnName = $_POST['columns'][$columnIndex]['data']; // Column name
-$columnSortOrder = $_POST['order'][0]['dir']; // asc or desc
-$searchValue = mysqli_real_escape_string($conn,$_POST['search']['value']); // Search value
+workOrderCustomerEnsureSchema($conn);
 
-## Search 
-$searchQuery = " ";
-if($searchValue != ''){
-	$searchQuery = " and (Fname like '%".$searchValue."%' or 
-        Phone like '%".$searchValue."%' or 
-        Taluka like'%".$searchValue."%' or 
-    	Village like'%".$searchValue."%' or 
-    	District like'%".$searchValue."%' or 
-    	Address like'%".$searchValue."%') ";
+function totalCustomerOrderColumn($conn, $columnName)
+{
+    $allowed = array('ProjectType', 'BeneficiaryId', 'Fname', 'Phone', 'Taluka', 'Village', 'District', 'Address', 'CreatedDate', 'id');
+    if ($columnName === 'WorkOrderAction' || $columnName === 'WorkOrderDone') {
+        if (projectAbstractHasColumn($conn, 'tbl_installations', 'WorkOrderDone')) {
+            return 'id';
+        }
+        if (projectAbstractHasColumn($conn, 'tbl_users', 'WorkOrderDone')) {
+            return 'WorkOrderDone';
+        }
+        if (projectAbstractHasColumn($conn, 'tbl_users', 'WoNo')) {
+            return 'WoNo';
+        }
+        return 'id';
+    }
+    if (in_array($columnName, $allowed, true)) {
+        return $columnName;
+    }
+    return 'id';
+}
+
+$ProjectId = isset($_POST['ProjectId']) ? (int) $_POST['ProjectId'] : 0;
+$ProjectSubHeadId = isset($_POST['SubHeadId']) ? (int) $_POST['SubHeadId'] : 0;
+$District = isset($_POST['District']) ? $_POST['District'] : 'all';
+$draw = isset($_POST['draw']) ? (int) $_POST['draw'] : 1;
+$row = isset($_POST['start']) ? (int) $_POST['start'] : 0;
+$rowperpage = isset($_POST['length']) ? (int) $_POST['length'] : 10;
+$columnIndex = isset($_POST['order'][0]['column']) ? (int) $_POST['order'][0]['column'] : 0;
+$columnName = isset($_POST['columns'][$columnIndex]['data']) ? $_POST['columns'][$columnIndex]['data'] : 'id';
+$columnSortOrder = (isset($_POST['order'][0]['dir']) && strtolower($_POST['order'][0]['dir']) === 'desc') ? 'DESC' : 'ASC';
+$searchValue = isset($_POST['search']['value']) ? mysqli_real_escape_string($conn, $_POST['search']['value']) : '';
+$orderBy = totalCustomerOrderColumn($conn, $columnName);
+
+$searchQuery = '';
+if ($searchValue !== '') {
+    $searchQuery = " AND (Fname LIKE '%" . $searchValue . "%' OR 
+        Phone LIKE '%" . $searchValue . "%' OR 
+        Taluka LIKE '%" . $searchValue . "%' OR 
+        Village LIKE '%" . $searchValue . "%' OR 
+        District LIKE '%" . $searchValue . "%' OR 
+        Address LIKE '%" . $searchValue . "%') ";
 }
 
 $sql = "SELECT * FROM tbl_users WHERE Roll=5 AND ProjectId='$ProjectId' AND ProjectSubHeadId='$ProjectSubHeadId' AND ProjectType=1";
-if($_POST['FieldSurveyDetails']!=''){
-    $FieldSurveyDetails = $_POST['FieldSurveyDetails'];
-    $sql.=" AND FieldSurveyDetails='$FieldSurveyDetails'";
+if (isset($_POST['FieldSurveyDetails']) && $_POST['FieldSurveyDetails'] !== '') {
+    $FieldSurveyDetails = mysqli_real_escape_string($conn, $_POST['FieldSurveyDetails']);
+    $sql .= " AND FieldSurveyDetails='$FieldSurveyDetails'";
 }
- if($_POST['District']){
-            $District = $_POST['District'];
-            if($District == 'all'){
-                $sql.= " ";
-            }
-            else{
-               $sql.= " AND District='$District'";
-            }
-        }
-## Total number of records without filtering
+if ($District !== '' && $District !== 'all') {
+    $DistrictEsc = mysqli_real_escape_string($conn, $District);
+    $sql .= " AND District='$DistrictEsc'";
+}
+
 $totalRecords = getRow($sql);
+$totalRecordwithFilter = getRow($sql . $searchQuery);
 
-## Total number of records with filtering
-$totalRecordwithFilter = getRow($sql." ".$searchQuery);
-
-## Fetch records
-$empQuery = $sql." ".$searchQuery." order by ".$columnName." ".$columnSortOrder." limit ".$row.",".$rowperpage;
+$empQuery = $sql . $searchQuery . " ORDER BY " . $orderBy . " " . $columnSortOrder . " LIMIT " . $row . "," . $rowperpage;
 $empRecords = mysqli_query($conn, $empQuery);
 $data = array();
 
-while ($row = mysqli_fetch_assoc($empRecords)) {
+if ($empRecords) {
+    while ($rowData = mysqli_fetch_assoc($empRecords)) {
+        $ProjectType = ((string) ($rowData['ProjectType'] ?? '') === '1') ? 'Pump Projects' : 'Rooftop Projects';
+        $createdDate = '';
+        if (!empty($rowData['CreatedDate']) && $rowData['CreatedDate'] !== '0000-00-00') {
+            $ts = strtotime(str_replace('-', '/', $rowData['CreatedDate']));
+            if ($ts) {
+                $createdDate = date('d/m/Y', $ts);
+            }
+        }
 
-    if ($row['ProjectType'] == '1') {
-        $ProjectType = "Pump Projects";
-    } else {
-        $ProjectType = "Rooftop Projects";
+        $custId = (int) ($rowData['id'] ?? 0);
+        $workDone = workOrderCustomerDisplayLabel($conn, $rowData);
+        $workOrderAction = '<div class="text-nowrap"><strong>' . htmlspecialchars($workDone) . '</strong>';
+        if ($custId > 0 && workOrderCustomerIsSupported($conn)) {
+            $workOrderAction .= ' <button type="button" class="btn btn-sm btn-primary btn-update-work-order" data-cust-id="' . $custId . '">Update</button>';
+        }
+        $workOrderAction .= '</div>';
+
+        $data[] = array(
+            'WorkOrderAction' => $workOrderAction,
+            'ProjectType' => $ProjectType,
+            'BeneficiaryId' => $rowData['BeneficiaryId'] ?? '',
+            'Fname' => trim(($rowData['Fname'] ?? '') . ' ' . ($rowData['Lname'] ?? '')),
+            'Phone' => $rowData['Phone'] ?? '',
+            'Taluka' => $rowData['Taluka'] ?? '',
+            'Village' => $rowData['Village'] ?? '',
+            'District' => $rowData['District'] ?? '',
+            'Address' => $rowData['Address'] ?? '',
+            'CreatedDate' => $createdDate,
+        );
     }
-
-    $data[] = array(
-    		"ProjectType"=>$ProjectType,
-    		"BeneficiaryId"=>$row['BeneficiaryId'],
-    		"Fname"=>$row['Fname'] . " " . $row['Lname'],
-    		"Phone"=>$row['Phone'],
-    		"Taluka"=>$row['Taluka'],
-    		"Village"=>$row['Village'],
-    		"District"=>$row['District'],
-    		"Address"=>$row['Address'],
-    		"CreatedDate"=>date("d/m/Y", strtotime(str_replace('-', '/', $row['CreatedDate'])))
-    	);
 }
 
-## Response
-$response = array(
-    "draw" => intval($draw),
-    "iTotalRecords" => $totalRecords,
-    "iTotalDisplayRecords" => $totalRecordwithFilter,
-    "aaData" => $data
-);
-
-echo json_encode($response);
+echo json_encode(array(
+    'draw' => $draw,
+    'iTotalRecords' => (int) $totalRecords,
+    'iTotalDisplayRecords' => (int) $totalRecordwithFilter,
+    'aaData' => $data,
+));

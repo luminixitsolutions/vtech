@@ -18,8 +18,7 @@ $Page = "Installation";
     <meta name="keywords" content="">
     <meta name="author" content="" />
     <?php include_once 'header_script.php'; ?>
-       <script src="assets/js/bootstrap.min.js"></script>
-    <script src="assets/js/jquery.min.js"></script>
+    <script src="<?php echo $SiteUrl; ?>/assets/js/jquery.min.js"></script>
     <script type="text/javascript" src="assets/js/pdfmake.min.js"></script>
     <script type="text/javascript" src="assets/js/vfs_fonts.js"></script>
    <script type="text/javascript" src="assets/js/datatables.min.js"></script>
@@ -117,6 +116,7 @@ $Page = "Installation";
                                <table id='empTable' class='table table-striped table-bordered display dataTable'>
                 <thead>
                 <tr>
+                    <th>Work Done</th>
                     <th>Project Type</th>
                     <th>Beneficiary ID</th>
                     <th>Customer Name</th>
@@ -126,7 +126,6 @@ $Page = "Installation";
                     <th>District</th>
                     <th>Address</th>
                     <th>Register Date</th>
-         
                 </thead>
                 
             </table>
@@ -146,6 +145,37 @@ $Page = "Installation";
         <div class="layout-overlay layout-sidenav-toggle"></div>
     </div>
 
+<div class="modal fade" id="workOrderModal" tabindex="-1" role="dialog" aria-hidden="true">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Update Work Order Done</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+            </div>
+            <div class="modal-body">
+                <div id="workOrderModalAlert" class="alert alert-danger d-none"></div>
+                <p class="mb-2"><strong>Beneficiary:</strong> <span id="woBeneficiaryId"></span></p>
+                <p class="mb-3"><strong>Customer:</strong> <span id="woCustomerName"></span></p>
+                <input type="hidden" id="woCustId" value="">
+                <div class="form-group">
+                    <label class="form-label">Work Order Done <span class="text-danger">*</span></label>
+                    <select class="form-control" id="woWorkOrderDone" required>
+                        <option value="No">No</option>
+                        <option value="Yes">Yes</option>
+                    </select>
+                </div>
+                <div class="form-group" id="woDateGroup">
+                    <label class="form-label">Work Order Done Date <span class="text-danger">*</span></label>
+                    <input type="date" class="form-control" id="woWorkOrderDoneDate">
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-primary" id="woSaveBtn">Save</button>
+            </div>
+        </div>
+    </div>
+</div>
 
   <script src="assets/js/sidenav.js"></script>
 <script src="assets/js/layout-helpers.js"></script>
@@ -153,6 +183,8 @@ $Page = "Installation";
 <script src="assets/js/demo.js"></script>
 <script src="assets/libs/select2/select2.js"></script>
 <script src="assets/js/pages/forms_selects.js"></script>
+<script src="<?php echo $SiteUrl; ?>/assets/libs/popper/popper.js"></script>
+<script src="<?php echo $SiteUrl; ?>/assets/js/bootstrap.js"></script>
 
     <script>
 
@@ -167,14 +199,22 @@ $Page = "Installation";
                 'ajax': {
                     'url':'pagination/total-customers.php',
                     method: "POST",
-                    data: {
-                        ProjectId: ProjectId,
-                        FieldSurveyDetails:FieldSurveyDetails,
-                        District:District,
-                        SubHeadId:SubHeadId
+                    data: function(d) {
+                        d.ProjectId = ProjectId;
+                        d.FieldSurveyDetails = FieldSurveyDetails;
+                        d.District = District || 'all';
+                        d.SubHeadId = SubHeadId;
                     },
                 },
                 'columns': [
+                    {
+                        data: 'WorkOrderAction',
+                        orderable: false,
+                        searchable: false,
+                        render: function(data) {
+                            return data;
+                        }
+                    },
                     { data: 'ProjectType' },
                     { data: 'BeneficiaryId' },
                     { data: 'Fname' },
@@ -184,7 +224,9 @@ $Page = "Installation";
                     { data: 'District' },
                     { data: 'Address' },
                     { data: 'CreatedDate' },
-                   
+                ],
+                columnDefs: [
+                    { targets: 0, orderable: false, searchable: false }
                 ],
                 dom: 'Bfrtip',
                 buttons: [
@@ -192,10 +234,110 @@ $Page = "Installation";
                 ],
                "pageLength":PageLength,
                "scrollY": "500px",
-                "scrollX": true,
-                "bDestroy": true
+               "scrollX": true,
+               "bDestroy": true,
+               "order": [[2, 'asc']]
             });
     }
+
+    function toggleWorkOrderDateField() {
+        if ($('#woWorkOrderDone').val() === 'Yes') {
+            $('#woDateGroup').show();
+            $('#woWorkOrderDoneDate').prop('required', true);
+        } else {
+            $('#woDateGroup').hide();
+            $('#woWorkOrderDoneDate').prop('required', false).val('');
+        }
+    }
+
+    function showWorkOrderAlert(message) {
+        $('#workOrderModalAlert').removeClass('d-none').text(message);
+    }
+
+    function clearWorkOrderAlert() {
+        $('#workOrderModalAlert').addClass('d-none').text('');
+    }
+
+    $(document).on('click', '.btn-update-work-order', function() {
+        var custId = $(this).data('cust-id');
+        clearWorkOrderAlert();
+        $('#woCustId').val(custId);
+        $.ajax({
+            url: 'ajax_files/ajax_work_order_customer.php',
+            type: 'POST',
+            dataType: 'json',
+            data: { action: 'get', cust_id: custId },
+            success: function(res) {
+                if (!res.success) {
+                    alert(res.message || 'Unable to load work order details.');
+                    return;
+                }
+                if (!res.can_edit) {
+                    alert(res.message || 'Work Order Done update is not available. Please run migration add_work_order_done_to_tbl_installations.php');
+                    return;
+                }
+                $('#woBeneficiaryId').text(res.data.BeneficiaryId || '');
+                $('#woCustomerName').text(res.data.Fname || '');
+                $('#woWorkOrderDone').val(res.data.WorkOrderDone === 'Yes' ? 'Yes' : 'No');
+                $('#woWorkOrderDoneDate').val(res.data.WorkOrderDoneDate || '');
+                if (res.has_date) {
+                    $('#woDateGroup').show();
+                } else {
+                    $('#woDateGroup').hide();
+                }
+                toggleWorkOrderDateField();
+                if (typeof $.fn.modal === 'function') {
+                    $('#workOrderModal').modal('show');
+                } else {
+                    $('#workOrderModal').addClass('show').css('display', 'block');
+                }
+            },
+            error: function() {
+                alert('Unable to load work order details.');
+            }
+        });
+    });
+
+    $('#woWorkOrderDone').on('change', toggleWorkOrderDateField);
+
+    $('#woSaveBtn').on('click', function() {
+        clearWorkOrderAlert();
+        var custId = $('#woCustId').val();
+        var workOrderDone = $('#woWorkOrderDone').val();
+        var workOrderDoneDate = $('#woWorkOrderDoneDate').val();
+        if (workOrderDone === 'Yes' && $('#woDateGroup').is(':visible') && !workOrderDoneDate) {
+            showWorkOrderAlert('Please select work order done date.');
+            return;
+        }
+        $.ajax({
+            url: 'ajax_files/ajax_work_order_customer.php',
+            type: 'POST',
+            dataType: 'json',
+            data: {
+                action: 'save',
+                cust_id: custId,
+                WorkOrderDone: workOrderDone,
+                WorkOrderDoneDate: workOrderDoneDate
+            },
+            success: function(res) {
+                if (!res.success) {
+                    showWorkOrderAlert(res.message || 'Save failed.');
+                    return;
+                }
+                if (typeof $.fn.modal === 'function') {
+                    $('#workOrderModal').modal('hide');
+                } else {
+                    $('#workOrderModal').removeClass('show').css('display', 'none');
+                }
+                if ($.fn.DataTable.isDataTable('#empTable')) {
+                    $('#empTable').DataTable().ajax.reload(null, false);
+                }
+            },
+            error: function() {
+                showWorkOrderAlert('Save failed. Please try again.');
+            }
+        });
+    });
     
     var ProjectId = $('#ProjectId').val();
     var SubHeadId = $('#SubHeadId').val();

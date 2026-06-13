@@ -19,14 +19,20 @@ if($searchValue != ''){
         ProductName like '%".$searchValue."%') ";
 }
 
+$editSellId = (int) ($_POST['sell_id'] ?? 0);
+$sellStatusClause = "SellStatus=0";
+if ($editSellId > 0) {
+    $sellStatusClause = "(SellStatus=0 OR (SellStatus=1 AND SellId='$editSellId'))";
+}
+
    if($Roll==1 || $Roll==7){ 
-        $sql = "SELECT * FROM tbl_distibute_item_details2 WHERE ProdType='1' AND SerialNo!='' AND SellStatus=0";
+        $sql = "SELECT * FROM tbl_distibute_item_details2 WHERE ProdType='1' AND SerialNo!='' AND $sellStatusClause";
     }
     else if($Roll==27){
-        $sql = "SELECT * FROM tbl_distibute_item_details2 WHERE ProdType='1' AND StoreInchId='$user_id' AND SerialNo!='' AND SellStatus=0";
+        $sql = "SELECT * FROM tbl_distibute_item_details2 WHERE ProdType='1' AND StoreInchId='$user_id' AND SerialNo!='' AND $sellStatusClause";
     }
     else{
-        $sql = "SELECT * FROM tbl_distibute_item_details2 WHERE ProdType='1' AND StoreExeId='$user_id' AND SerialNo!='' AND SellStatus=0";
+        $sql = "SELECT * FROM tbl_distibute_item_details2 WHERE ProdType='1' AND StoreExeId='$user_id' AND SerialNo!='' AND $sellStatusClause";
     }
                                        
 ## Total number of records without filtering

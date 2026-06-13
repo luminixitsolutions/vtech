@@ -15,12 +15,11 @@ if (!$sell) {
     echo "<script>alert('Challan not found.');window.location.href='return-challans.php';</script>";
     exit;
 }
-if ((int) ($sell['ReturnStatus'] ?? 0) !== 1) {
+$returnRec = challanReturnGetRecord($conn, $sellId);
+if (!$returnRec) {
     echo "<script>alert('Only returned challans can be edited.');window.location.href='return-challans.php';</script>";
     exit;
 }
-
-$returnRec = challanReturnGetRecord($conn, $sellId);
 $existingItems = challanReturnGetSellItems($conn, $sellId);
 $existingBulk = [];
 $existingSerialIds = [];
@@ -29,26 +28,6 @@ foreach ($existingItems as $item) {
         $existingSerialIds[] = (int) $item['ProductId'];
     } else {
         $existingBulk[(int) $item['ProductId']] = $item;
-    }
-}
-
-unset($_SESSION['cart_item']);
-if (!empty($existingSerialIds)) {
-    require_once 'dbcontroller.php';
-    $db_handle = new DBController();
-    foreach ($existingSerialIds as $distId) {
-        $productByCode = $db_handle->runQuery("SELECT * FROM tbl_distibute_item_details2 WHERE id='" . (int) $distId . "'");
-        if (!empty($productByCode[0])) {
-            $code = $productByCode[0]['code'];
-            $_SESSION['cart_item'][$code] = [
-                'code' => $code,
-                'id' => $distId,
-                'ProductName' => $productByCode[0]['ProductName'],
-                'Unit' => $productByCode[0]['Unit'],
-                'SerialNo' => $productByCode[0]['SerialNo'],
-                'ModelNo' => $productByCode[0]['ModelNo'],
-            ];
-        }
     }
 }
 
@@ -92,10 +71,30 @@ if (isset($_POST['submit'])) {
 
     if ($result['success']) {
         unset($_SESSION['cart_item']);
-        echo "<script>alert('" . addslashes($result['message']) . "');window.location.href='view-sells.php';</script>";
+        echo "<script>alert('" . addslashes($result['message']) . "');window.location.href='view-return-challan.php?id=$sellId';</script>";
         exit;
     }
     $editError = $result['message'];
+} else {
+    unset($_SESSION['cart_item']);
+    if (!empty($existingSerialIds)) {
+        require_once 'dbcontroller.php';
+        $db_handle = new DBController();
+        foreach ($existingSerialIds as $distId) {
+            $productByCode = $db_handle->runQuery("SELECT * FROM tbl_distibute_item_details2 WHERE id='" . (int) $distId . "'");
+            if (!empty($productByCode[0])) {
+                $code = $productByCode[0]['code'];
+                $_SESSION['cart_item'][$code] = [
+                    'code' => $code,
+                    'id' => $distId,
+                    'ProductName' => $productByCode[0]['ProductName'],
+                    'Unit' => $productByCode[0]['Unit'],
+                    'SerialNo' => $productByCode[0]['SerialNo'],
+                    'ModelNo' => $productByCode[0]['ModelNo'],
+                ];
+            }
+        }
+    }
 }
 
 $row7 = getRecord("SELECT tu.*, tcm.Name AS PumpCapacityName FROM tbl_users tu
@@ -271,6 +270,7 @@ $row7 = getRecord("SELECT tu.*, tcm.Name AS PumpCapacityName FROM tbl_users tu
             $.ajax({
                 url: "assign-serial-no-challan-session.php",
                 type: "POST",
+                async: false,
                 data: { action: "saveCart", quantity: 1, id: id }
             });
         }
@@ -279,6 +279,7 @@ $row7 = getRecord("SELECT tu.*, tcm.Name AS PumpCapacityName FROM tbl_users tu
             $.ajax({
                 url: "assign-serial-no-challan-session.php",
                 type: "POST",
+                async: false,
                 data: { action: "delete_shop_prod", id: id }
             });
         }
@@ -302,7 +303,7 @@ $row7 = getRecord("SELECT tu.*, tcm.Name AS PumpCapacityName FROM tbl_users tu
                 ajax: {
                     url: 'pagination/serial-no-products.php',
                     method: 'POST',
-                    data: { Roll: Roll }
+                    data: { Roll: Roll, sell_id: <?php echo (int) $sellId; ?> }
                 },
                 columns: [
                     { data: 'id' },
@@ -317,7 +318,7 @@ $row7 = getRecord("SELECT tu.*, tcm.Name AS PumpCapacityName FROM tbl_users tu
             $(document).on('click', '#viewCartBtn', function(e) {
                 e.preventDefault();
                 $('#cartContent').html('<div class="text-center py-3">Loading...</div>');
-                $.get('view_cart.php', function(response) {
+                $.get('view_cart.php?edit=1', function(response) {
                     $('#cartContent').html(response);
                 });
             });

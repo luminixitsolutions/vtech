@@ -935,8 +935,131 @@ function msedclSmartCanDeleteCustomer(array $row)
     return true;
 }
 
-function msedclSmartDeleteCustomer($customerId, $userId, $remarks = '')
+function msedclSmartListPageUrl($listType)
 {
+    $map = [
+        'pmsgy' => 'pmsgy.php',
+        'mahadiscom' => 'mahadiscom.php',
+        'payment' => 'payment.php',
+    ];
+
+    return isset($map[$listType]) ? $map[$listType] : '';
+}
+
+function msedclSmartRevertFromMahadiscom($customerId, $userId, $remarks = '')
+{
+    msedclSmartEnsureTables();
+    global $conn;
+
+    $customerId = (int) $customerId;
+    $userId = (int) $userId;
+    $row = getRecord("SELECT * FROM tbl_rooftop_msedcl_smart_customers WHERE id='$customerId' AND Status=1 LIMIT 1");
+    if (!is_array($row)) {
+        return ['ok' => false, 'message' => 'Customer not found.'];
+    }
+    if (!msedclSmartCanDeleteCustomer($row)) {
+        return ['ok' => false, 'message' => 'Cannot revert. Customer is already forwarded to Co-ordinator assign.'];
+    }
+    if ((int) ($row['MahadiscomApplied'] ?? 0) !== 1) {
+        return ['ok' => false, 'message' => 'Customer is not on Mahadiscom portal.'];
+    }
+
+    $now = date('Y-m-d H:i:s');
+    $oldStage = (string) ($row['CurrentStage'] ?? '');
+    $label = trim((string) ($row['BeneficiaryId'] ?? ''));
+    $sql = "UPDATE tbl_rooftop_msedcl_smart_customers SET
+        MahadiscomApplied=0,
+        MahadiscomAppliedDate=NULL,
+        PaymentDone=0,
+        PaymentDoneDate=NULL,
+        CurrentStage='" . MSEDCL_SMART_STAGE_PMSGY . "',
+        UpdatedDateTime='$now',
+        UpdatedBy='$userId'
+        WHERE id='$customerId' LIMIT 1";
+    if (!$conn->query($sql)) {
+        return ['ok' => false, 'message' => 'Revert failed.'];
+    }
+
+    msedclSmartLogHistory(
+        $customerId,
+        $row['BeneficiaryId'],
+        'mahadiscom_revert',
+        $oldStage,
+        MSEDCL_SMART_STAGE_PMSGY,
+        $userId,
+        msedclSmartPerformerName($userId),
+        '',
+        $remarks !== '' ? $remarks : 'Reverted from Mahadiscom portal to PMSGY portal'
+    );
+
+    return [
+        'ok' => true,
+        'message' => ($label !== '' ? $label : 'Customer') . ' moved back to PMSGY portal.',
+        'redirect' => msedclSmartListPageUrl('pmsgy'),
+    ];
+}
+
+function msedclSmartRevertFromPayment($customerId, $userId, $remarks = '')
+{
+    msedclSmartEnsureTables();
+    global $conn;
+
+    $customerId = (int) $customerId;
+    $userId = (int) $userId;
+    $row = getRecord("SELECT * FROM tbl_rooftop_msedcl_smart_customers WHERE id='$customerId' AND Status=1 LIMIT 1");
+    if (!is_array($row)) {
+        return ['ok' => false, 'message' => 'Customer not found.'];
+    }
+    if (!msedclSmartCanDeleteCustomer($row)) {
+        return ['ok' => false, 'message' => 'Cannot revert. Customer is already forwarded to Co-ordinator assign.'];
+    }
+    if ((int) ($row['PaymentDone'] ?? 0) !== 1) {
+        return ['ok' => false, 'message' => 'Payment is not marked done for this customer.'];
+    }
+
+    $now = date('Y-m-d H:i:s');
+    $oldStage = (string) ($row['CurrentStage'] ?? '');
+    $label = trim((string) ($row['BeneficiaryId'] ?? ''));
+    $sql = "UPDATE tbl_rooftop_msedcl_smart_customers SET
+        PaymentDone=0,
+        PaymentDoneDate=NULL,
+        CurrentStage='" . MSEDCL_SMART_STAGE_MAHADISCOM . "',
+        UpdatedDateTime='$now',
+        UpdatedBy='$userId'
+        WHERE id='$customerId' LIMIT 1";
+    if (!$conn->query($sql)) {
+        return ['ok' => false, 'message' => 'Revert failed.'];
+    }
+
+    msedclSmartLogHistory(
+        $customerId,
+        $row['BeneficiaryId'],
+        'payment_revert',
+        $oldStage,
+        MSEDCL_SMART_STAGE_MAHADISCOM,
+        $userId,
+        msedclSmartPerformerName($userId),
+        '',
+        $remarks !== '' ? $remarks : 'Reverted from payment done to Mahadiscom portal'
+    );
+
+    return [
+        'ok' => true,
+        'message' => ($label !== '' ? $label : 'Customer') . ' moved back to Mahadiscom portal.',
+        'redirect' => msedclSmartListPageUrl('mahadiscom'),
+    ];
+}
+
+function msedclSmartDeleteCustomer($customerId, $userId, $listType = '', $remarks = '')
+{
+    $listType = trim((string) $listType);
+    if ($listType === 'mahadiscom') {
+        return msedclSmartRevertFromMahadiscom($customerId, $userId, $remarks);
+    }
+    if ($listType === 'payment') {
+        return msedclSmartRevertFromPayment($customerId, $userId, $remarks);
+    }
+
     msedclSmartEnsureTables();
     global $conn;
 

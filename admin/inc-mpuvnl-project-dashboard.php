@@ -1,3 +1,9 @@
+<?php
+require_once __DIR__ . '/inc-project-abstract-queries.php';
+$mpuvnlSubHeadId = (int) ($_GET['id'] ?? 0);
+$mpuvnlWorkDone = projectAbstractCount($conn, 'work_order_done', 106, $mpuvnlSubHeadId);
+$mpuvnlWorkPending = projectAbstractCount($conn, 'work_order_pending', 106, $mpuvnlSubHeadId);
+?>
  <div class="row">
                              
                             
@@ -123,6 +129,34 @@
                                                         ?></div>
                                         
                                      </div>
+                                        </div>
+                                     </div>
+                                </div></a>
+                            </div>
+
+                            <div class="col-sm-6 col-xl-2">
+                               <a href="total-beneficiary.php?roll=work_order_done&projid=106&val=&subheadid=<?php echo $_GET['id'];?>&title=Work Order Done">
+                               <div class="card mb-4 bg-pattern-3-dark">
+                                    <div class="card-body" style="padding-top: 15px; padding-bottom: 15px; padding-right: 5px; padding-left: 10px;">
+                                        <div class="d-flex align-items-center">
+                                            <div class="ml-3">
+                                                <h6 class="mb-0" style="color: black;">Work Order Done</h6>
+                                                <div class="text-large"><?php echo (int) $mpuvnlWorkDone; ?></div>
+                                            </div>
+                                        </div>
+                                     </div>
+                                </div></a>
+                            </div>
+
+                            <div class="col-sm-6 col-xl-2">
+                               <a href="total-beneficiary.php?roll=work_order_pending&projid=106&val=&subheadid=<?php echo $_GET['id'];?>&title=Work Order Pending">
+                               <div class="card mb-4 bg-pattern-3-dark">
+                                    <div class="card-body" style="padding-top: 15px; padding-bottom: 15px; padding-right: 5px; padding-left: 10px;">
+                                        <div class="d-flex align-items-center">
+                                            <div class="ml-3">
+                                                <h6 class="mb-0" style="color: black;">Work Order Pending</h6>
+                                                <div class="text-large"><?php echo (int) $mpuvnlWorkPending; ?></div>
+                                            </div>
                                         </div>
                                      </div>
                                 </div></a>

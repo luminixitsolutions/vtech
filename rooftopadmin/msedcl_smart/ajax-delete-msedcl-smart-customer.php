@@ -36,11 +36,15 @@ if ($customerId < 1) {
 }
 
 try {
-    $res = msedclSmartDeleteCustomer($customerId, $user_id);
-    msedcl_smart_delete_response([
+    $res = msedclSmartDeleteCustomer($customerId, $user_id, $listType);
+    $payload = [
         'success' => !empty($res['ok']),
         'message' => $res['message'] ?? (!empty($res['ok']) ? 'Deleted.' : 'Delete failed.'),
-    ]);
+    ];
+    if (!empty($res['redirect'])) {
+        $payload['redirect'] = $res['redirect'];
+    }
+    msedcl_smart_delete_response($payload);
 } catch (Throwable $e) {
     msedcl_smart_delete_response(['success' => false, 'message' => 'Delete failed: ' . $e->getMessage()]);
 }

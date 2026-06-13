@@ -52,6 +52,7 @@ $dash = mobileMsedclSmartGetDashboardData();
         mobileMgmtStatCard('Payment Done', (int) $dash['payment_done'], mobileMsedclSmartListUrl('payment'), 'green');
         mobileMgmtStatCard('Survey Pending', (int) $dash['survey_pending'], mobileMsedclSmartListUrl('survey_pending'), 'orange');
         mobileMgmtStatCard('Survey Done', (int) $dash['survey_done'], mobileMsedclSmartListUrl('survey_done'), 'teal');
+        mobileMgmtStatCard('MSEDCL SMART PROJECT ABSTRACT', 0, mobileMsedclSmartAbstractUrl(), 'purple', false);
         ?>
     </div>
 </div>
