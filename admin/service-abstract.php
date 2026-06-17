@@ -166,7 +166,7 @@ $abstractType = $filters['abstract_type'];
                         </div>
                         <p class="text-muted small mt-3 mb-0">
                             <strong>Abstract type</strong> controls the first column grouping.
-                            Optional filters narrow the complaint set. <strong>Close</strong> = closed;
+                            Optional filters narrow the complaint set. <strong>Closed</strong> = Close or Issue Solved;
                             <strong>In Process</strong> = material hold; total pending = not closed.
                         </p>
                     </div>

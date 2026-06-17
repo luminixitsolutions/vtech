@@ -5,6 +5,8 @@
 	$Roll = $row77['Roll'];
 	$UserCat = $row77['CatId'];
 	$Options = adminResolveMenuOptionsFromUserRow($row77);
+	require_once __DIR__ . '/../inc-menu-access-granular-options.php';
+	$MenuOptions = adminUserRawMenuOptions($row77);
 	$BranchId = $row77['BranchId'];
 	$MulBranchId = $row77['MulBranchId'];
  ?>
@@ -47,14 +49,14 @@
         </li>
         <?php } ?>
          
-           <?php if(in_array("18", $Options)) {?>
+           <?php if(menuAccessShowGranularGroup($MenuOptions, 18)) {?>
 <li class="sidenav-item <?php if($MainPage=='Customers') {?> open active <?php } ?>">
 <a href="javascript:" class="sidenav-link sidenav-toggle">
 <i class="sidenav-icon feather icon-user"></i>
 <div>Customers</div>
 </a>
 <ul class="sidenav-menu">
-   <?php if(in_array("14", $Options)) {?>   
+   <?php if(menuAccessShowGranularLink($MenuOptions, 201)) {?>   
 <li class="sidenav-item">
 <a href="add-customer.php" class="sidenav-link">
 <div> Add Pump Customer</div>
@@ -66,6 +68,7 @@
 </a>
 </li>
 <?php } ?>
+<?php if(menuAccessShowGranularLink($MenuOptions, 202)) { ?>
 <li class="sidenav-item">
 <a href="pump-customers.php" class="sidenav-link">
 <div> Pump Customers</div>
@@ -76,6 +79,7 @@
 <?php } ?>
 </a>
 </li>
+<?php } ?>
 
    <?php if(in_array("14", $Options)) {?>   
 <!-- <li class="sidenav-item">
@@ -128,7 +132,7 @@
 
 
 
-<?php } if(in_array("19", $Options)) {?>
+<?php } if(menuAccessShowGranularGroup($MenuOptions, 19)) {?>
 
 <li class="sidenav-item <?php if($MainPage=='Manufacture') {?> open active <?php } ?>">
 <a href="javascript:" class="sidenav-link sidenav-toggle">
@@ -136,7 +140,7 @@
 <div>Manufacture</div>
 </a>
 <ul class="sidenav-menu">
-   <?php if(in_array("14", $Options)) {?>   
+   <?php if(menuAccessShowGranularLink($MenuOptions, 203)) {?>   
 <li class="sidenav-item">
 <a href="add-manufacture.php" class="sidenav-link">
 <div> Add Manufacture</div>
@@ -148,6 +152,7 @@
 </a>
 </li>
 <?php } ?>
+<?php if(menuAccessShowGranularLink($MenuOptions, 204)) { ?>
 <li class="sidenav-item">
 <a href="view-manufacture.php" class="sidenav-link">
 <div> View Manufactures</div>
@@ -158,18 +163,19 @@
 <?php } ?>
 </a>
 </li>
+<?php } ?>
 
 </ul>
 </li>
 
-<?php } if(in_array("20", $Options)) {?>
+<?php } if(menuAccessShowGranularGroup($MenuOptions, 20)) {?>
 <li class="sidenav-item <?php if($MainPage=='Company') {?> open active <?php } ?>">
 <a href="javascript:" class="sidenav-link sidenav-toggle">
 <i class="sidenav-icon feather icon-user"></i>
 <div>Company</div>
 </a>
 <ul class="sidenav-menu">
-   <?php if(in_array("14", $Options)) {?>   
+   <?php if(menuAccessShowGranularLink($MenuOptions, 205)) {?>   
 <li class="sidenav-item">
 <a href="add-company.php" class="sidenav-link">
 <div> Add Company</div>
@@ -181,6 +187,7 @@
 </a>
 </li>
 <?php } ?>
+<?php if(menuAccessShowGranularLink($MenuOptions, 206)) { ?>
 <li class="sidenav-item">
 <a href="view-company.php" class="sidenav-link">
 <div> View Company</div>
@@ -191,17 +198,18 @@
 <?php } ?>
 </a>
 </li>
+<?php } ?>
 
 </ul>
 </li>
-<?php } if(in_array("21", $Options)) {?>
+<?php } if(menuAccessShowGranularGroup($MenuOptions, 21)) {?>
 <li class="sidenav-item <?php if($MainPage=='Employee') {?> open active <?php } ?>">
 <a href="javascript:" class="sidenav-link sidenav-toggle">
 <i class="sidenav-icon feather icon-user"></i>
 <div>Employee</div>
 </a>
 <ul class="sidenav-menu">
-   <?php if(in_array("14", $Options)) {?>  
+   <?php if(menuAccessShowGranularLink($MenuOptions, 207)) {?>  
 <li class="sidenav-item">
 <a href="add-employee.php" class="sidenav-link">
 <div> Add Employee</div>
@@ -213,6 +221,7 @@
 </a>
 </li>
 <?php } ?>
+<?php if(menuAccessShowGranularLink($MenuOptions, 208)) { ?>
 <li class="sidenav-item">
 <a href="view-employee.php" class="sidenav-link">
 <div> View Employee</div>
@@ -223,17 +232,18 @@
 <?php } ?>
 </a>
 </li>
+<?php } ?>
 
 </ul>
 </li>
-<?php } if(in_array("125", $Options)) {?>
+<?php } if(menuAccessShowGranularGroup($MenuOptions, 125)) {?>
 <li class="sidenav-item <?php if($MainPage=='Store-Incharge') {?> open active <?php } ?>">
 <a href="javascript:" class="sidenav-link sidenav-toggle">
 <i class="sidenav-icon feather icon-user"></i>
 <div>Store Incharge Account</div>
 </a>
 <ul class="sidenav-menu">
-   <?php if(in_array("14", $Options)) {?>  
+   <?php if(menuAccessShowGranularLink($MenuOptions, 209)) {?>  
 <li class="sidenav-item">
 <a href="add-store-incharge.php" class="sidenav-link">
 <div> Create Store Incharge</div>
@@ -245,6 +255,7 @@
 </a>
 </li>
 <?php } ?>
+<?php if(menuAccessShowGranularLink($MenuOptions, 210)) { ?>
 <li class="sidenav-item">
 <a href="view-store-incharge.php" class="sidenav-link">
 <div> View Store Incharge</div>
@@ -255,16 +266,17 @@
 <?php } ?>
 </a>
 </li>
+<?php } ?>
 </ul>
 </li>
-<?php } if(in_array("126", $Options)) {?>
+<?php } if(menuAccessShowGranularGroup($MenuOptions, 126)) {?>
 <li class="sidenav-item <?php if($MainPage=='Dispatch-Officer') {?> open active <?php } ?>">
 <a href="javascript:" class="sidenav-link sidenav-toggle">
 <i class="sidenav-icon feather icon-user"></i>
 <div>Dispatch Officer Account</div>
 </a>
 <ul class="sidenav-menu">
-   <?php if(in_array("14", $Options)) {?>  
+   <?php if(menuAccessShowGranularLink($MenuOptions, 211)) {?>  
 <li class="sidenav-item">
 <a href="add-dispatch-officer.php" class="sidenav-link">
 <div> Add Dispatch Officer</div>
@@ -276,6 +288,7 @@
 </a>
 </li>
 <?php } ?>
+<?php if(menuAccessShowGranularLink($MenuOptions, 212)) { ?>
 <li class="sidenav-item">
 <a href="view-dispatch-officer.php" class="sidenav-link">
 <div> View Dispatch Officer</div>
@@ -286,16 +299,17 @@
 <?php } ?>
 </a>
 </li>
+<?php } ?>
 </ul>
 </li>
-<?php } if(in_array("127", $Options)) {?>
+<?php } if(menuAccessShowGranularGroup($MenuOptions, 127)) {?>
 <li class="sidenav-item <?php if($MainPage=='Installer') {?> open active <?php } ?>">
 <a href="javascript:" class="sidenav-link sidenav-toggle">
 <i class="sidenav-icon feather icon-user"></i>
 <div>Contractor</div>
 </a>
 <ul class="sidenav-menu">
-   <?php if(in_array("14", $Options)) {?>  
+   <?php if(menuAccessShowGranularLink($MenuOptions, 213)) {?>  
 <li class="sidenav-item">
 <a href="add-installer.php" class="sidenav-link">
 <div> Add Contractor</div>
@@ -307,6 +321,7 @@
 </a>
 </li>
 <?php } ?>
+<?php if(menuAccessShowGranularLink($MenuOptions, 214)) { ?>
 <li class="sidenav-item">
 <a href="view-installer.php" class="sidenav-link">
 <div> View Contractor</div>
@@ -317,6 +332,8 @@
 <?php } ?>
 </a>
 </li>
+<?php } ?>
+<?php if(menuAccessShowGranularLink($MenuOptions, 215)) { ?>
 <li class="sidenav-item">
 <a href="view-contractor-commision.php" class="sidenav-link">
 <div> Set Contractor Commission</div>
@@ -327,6 +344,7 @@
 <?php } ?>
 </a>
 </li>
+<?php } ?>
 <?php if(in_array("142", $Options)) { ?>
 <li class="sidenav-item">
 <a href="../report_management/contractor-commision-report.php" class="sidenav-link">
@@ -341,14 +359,14 @@
 <?php } ?>
 </ul>
 </li>
-<?php } if(in_array("128", $Options)) {?>
+<?php } if(menuAccessShowGranularGroup($MenuOptions, 128)) {?>
 <li class="sidenav-item <?php if($MainPage=='Installer-Employee') {?> open active <?php } ?>">
 <a href="javascript:" class="sidenav-link sidenav-toggle">
 <i class="sidenav-icon feather icon-user"></i>
 <div>Installer</div>
 </a>
 <ul class="sidenav-menu">
-   <?php if(in_array("14", $Options)) {?>  
+   <?php if(menuAccessShowGranularLink($MenuOptions, 216)) {?>  
 <li class="sidenav-item">
 <a href="add-installer-employee.php" class="sidenav-link">
 <div> Add Installer</div>
@@ -360,6 +378,7 @@
 </a>
 </li>
 <?php } ?>
+<?php if(menuAccessShowGranularLink($MenuOptions, 217)) { ?>
 <li class="sidenav-item">
 <a href="view-installer-employee.php" class="sidenav-link">
 <div> View Installer</div>
@@ -370,17 +389,18 @@
 <?php } ?>
 </a>
 </li>
+<?php } ?>
 
 </ul>
 </li>
-<?php } if(in_array("255", $Options)) {?>
+<?php } if(menuAccessShowGranularGroup($MenuOptions, 255)) {?>
 <li class="sidenav-item <?php if($MainPage=='Transportor') {?> open active <?php } ?>">
 <a href="javascript:" class="sidenav-link sidenav-toggle">
 <i class="sidenav-icon feather icon-package"></i>
 <div>Transportor Account</div>
 </a>
 <ul class="sidenav-menu">
-   <?php if(in_array("14", $Options)) {?>  
+   <?php if(menuAccessShowGranularLink($MenuOptions, 256)) {?>  
 <li class="sidenav-item">
 <a href="add-transportor.php" class="sidenav-link">
 <div> Add Transportor Account</div>
@@ -392,6 +412,7 @@
 </a>
 </li>
 <?php } ?>
+<?php if(menuAccessShowGranularLink($MenuOptions, 257)) { ?>
 <li class="sidenav-item">
 <a href="view-transportor.php" class="sidenav-link">
 <div> View Transportor Account</div>
@@ -402,16 +423,17 @@
 <?php } ?>
 </a>
 </li>
+<?php } ?>
 </ul>
 </li>
-<?php } if(in_array("116", $Options)) {?>
+<?php } if(menuAccessShowGranularGroup($MenuOptions, 116)) {?>
 <li class="sidenav-item <?php if($MainPage=='Drivers') {?> open active <?php } ?>">
 <a href="javascript:" class="sidenav-link sidenav-toggle">
 <i class="sidenav-icon feather icon-navigation"></i>
 <div>Driver Account</div>
 </a>
 <ul class="sidenav-menu">
-   <?php if(in_array("14", $Options)) {?>  
+   <?php if(menuAccessShowGranularLink($MenuOptions, 218)) {?>  
 <li class="sidenav-item">
 <a href="add-driver.php" class="sidenav-link">
 <div> Add Driver Account</div>
@@ -423,6 +445,7 @@
 </a>
 </li>
 <?php } ?>
+<?php if(menuAccessShowGranularLink($MenuOptions, 219)) { ?>
 <li class="sidenav-item">
 <a href="view-drivers.php" class="sidenav-link">
 <div> View Driver Account</div>
@@ -433,16 +456,17 @@
 <?php } ?>
 </a>
 </li>
+<?php } ?>
 </ul>
 </li>
-<?php } if(in_array("22", $Options)) {?>
+<?php } if(menuAccessShowGranularGroup($MenuOptions, 22)) {?>
 <li class="sidenav-item <?php if($MainPage=='Dealer') {?> open active <?php } ?>">
 <a href="javascript:" class="sidenav-link sidenav-toggle">
 <i class="sidenav-icon feather icon-user"></i>
 <div>Dealer</div>
 </a>
 <ul class="sidenav-menu">
-<?php if(in_array("14", $Options)) {?>  
+<?php if(menuAccessShowGranularLink($MenuOptions, 220)) {?>  
 <li class="sidenav-item">
 <a href="add-dealer.php" class="sidenav-link">
 <div> Add Dealer</div>
@@ -454,6 +478,7 @@
 </a>
 </li>
 <?php } ?>
+<?php if(menuAccessShowGranularLink($MenuOptions, 221)) { ?>
 <li class="sidenav-item">
 <a href="view-dealer.php" class="sidenav-link">
 <div> View Dealer</div>
@@ -464,17 +489,18 @@
 <?php } ?>
 </a>
 </li>
+<?php } ?>
 
 </ul>
 </li>
-<?php } if(in_array("23", $Options)) {?>
+<?php } if(menuAccessShowGranularGroup($MenuOptions, 23)) {?>
 <li class="sidenav-item <?php if($MainPage=='Agency') {?> open active <?php } ?>">
 <a href="javascript:" class="sidenav-link sidenav-toggle">
 <i class="sidenav-icon feather icon-user"></i>
 <div>Agency</div>
 </a>
 <ul class="sidenav-menu">
-<?php if(in_array("14", $Options)) {?>  
+<?php if(menuAccessShowGranularLink($MenuOptions, 222)) {?>  
 <li class="sidenav-item">
 <a href="add-agency.php" class="sidenav-link">
 <div> Add Agency</div>
@@ -486,6 +512,7 @@
 </a>
 </li>
 <?php } ?>
+<?php if(menuAccessShowGranularLink($MenuOptions, 223)) { ?>
 <li class="sidenav-item">
 <a href="view-agency.php" class="sidenav-link">
 <div> View Agency</div>
@@ -496,6 +523,7 @@
 <?php } ?>
 </a>
 </li>
+<?php } ?>
 
 </ul>
 </li>

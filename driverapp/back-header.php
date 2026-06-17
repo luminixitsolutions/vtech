@@ -129,7 +129,28 @@ $mybalance = $row11x['credit'] - $row11x['debit'];
                 </div>
             </div>
         </div>
-    </div> 
+    </div>
+<script>
+(function () {
+    function hideAppLoader() {
+        var loaders = document.querySelectorAll('.loader-display');
+        for (var i = 0; i < loaders.length; i++) {
+            loaders[i].style.display = 'none';
+            loaders[i].style.opacity = '0';
+            loaders[i].style.visibility = 'hidden';
+        }
+    }
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', function () {
+            setTimeout(hideAppLoader, 400);
+        });
+    } else {
+        setTimeout(hideAppLoader, 400);
+    }
+    window.addEventListener('load', hideAppLoader);
+    setTimeout(hideAppLoader, 2000);
+})();
+</script>
   <header class="header">
             <div class="row">
                 <div class="col-auto px-0">

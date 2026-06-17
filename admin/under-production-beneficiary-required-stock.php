@@ -29,6 +29,7 @@ $cust = null;
 $customers = [];
 $hasDeliveryChallan = 0;
 $lines = [];
+$storeColumns = upb_fetch_customer_store_columns($conn, $custIds);
 
 if (count($custIds) === 1) {
     $uid = (int) $custIds[0];
@@ -118,6 +119,10 @@ if (count($custIds) === 1) {
             overflow-y: auto;
             font-size: 0.9rem;
         }
+        .upb-store-short {
+            background-color: #fff3cd !important;
+            font-weight: 600;
+        }
     </style>
 </head>
 <body>
@@ -146,8 +151,18 @@ if (count($custIds) === 1) {
     <h4 class="font-weight-bold py-3 mb-0">Combined required stock — <?php echo count($customers); ?> customer(s)</h4>
     <p class="mb-2"><strong>Total required qty (all items):</strong> <?php echo (int) $totalReq; ?></p>
     <div class="upb-customer-list mb-2 text-muted">
-        <?php foreach ($customers as $c) { ?>
-            <div><?php echo htmlspecialchars((string) $c['Fname']); ?> (<?php echo htmlspecialchars((string) $c['BeneficiaryId']); ?>)</div>
+        <?php
+        $branchNames = [];
+        foreach ($storeColumns as $sc) {
+            $branchNames[(int) $sc['branch_id']] = (string) $sc['store_name'];
+        }
+        foreach ($customers as $c) {
+            $bid = (int) ($c['BranchId'] ?? 0);
+            $storeLabel = $bid > 0 && isset($branchNames[$bid])
+                ? $branchNames[$bid]
+                : ($bid > 0 ? ('Store #' . $bid) : 'No store assigned');
+            ?>
+            <div><?php echo htmlspecialchars((string) $c['Fname']); ?> (<?php echo htmlspecialchars((string) $c['BeneficiaryId']); ?>) — <strong><?php echo htmlspecialchars($storeLabel); ?></strong></div>
         <?php } ?>
     </div>
     <p class="mb-3"><a href="under-production-beneficiary-stock-report.php" class="btn btn-sm btn-secondary">Back to done list</a></p>
@@ -173,6 +188,14 @@ if (count($custIds) === 1) {
     <p class="mb-2">
         <strong>Beneficiary Id:</strong> <?php echo htmlspecialchars((string) $cust['BeneficiaryId']); ?>
         &nbsp;|&nbsp; <strong>Contact:</strong> <?php echo htmlspecialchars((string) $cust['Phone']); ?>
+        <?php
+        $custBranchId = (int) ($cust['BranchId'] ?? 0);
+        if ($custBranchId > 0 && count($storeColumns) > 0) {
+            echo ' &nbsp;|&nbsp; <strong>Store:</strong> ' . htmlspecialchars((string) $storeColumns[0]['store_name']);
+        } elseif ($custBranchId <= 0) {
+            echo ' &nbsp;|&nbsp; <strong>Store:</strong> <span class="text-warning">Not assigned</span>';
+        }
+        ?>
     </p>
     <p class="mb-3"><a href="under-production-beneficiary-stock-report.php" class="btn btn-sm btn-secondary">Back to done list</a></p>
 
@@ -282,7 +305,7 @@ $(document).on('show.bs.modal', '#modalAvlByStore', function (e) {
             dom: "<'d-flex flex-wrap justify-content-between align-items-end gap-3 mb-3'lf>rtip",
             columnDefs: [
                 { targets: 0, className: 'text-center text-nowrap', width: '56px' },
-                { targets: 4, orderable: false, searchable: false }
+                { targets: -1, orderable: false, searchable: false }
             ],
             language: {
                 emptyTable: 'No materials',

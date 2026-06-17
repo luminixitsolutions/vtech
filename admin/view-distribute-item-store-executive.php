@@ -49,7 +49,7 @@ if($_REQUEST["action"]=="delete")
 
 <div class="container-fluid flex-grow-1 container-p-y">
 <h4 class="font-weight-bold py-3 mb-0">Assign Item To Dispatch Officer List
-    <?php if(in_array("14", $Options)) {?>   
+    <?php if(function_exists('menuAccessShowDispatchAssignItemsLink') && menuAccessShowDispatchAssignItemsLink($MenuOptions)) {?>
 <span style="float: right;">
 <a href="distribute-item-store-executive-2.php" class="btn btn-secondary btn-round"><i class="ion ion-md-add mr-2"></i> Add New</a></span>
 <?php } ?>

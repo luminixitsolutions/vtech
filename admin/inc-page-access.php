@@ -84,29 +84,34 @@ function adminPageAccessBasenameRules()
         'bos-final-production-plan.php' => [132],
         'stucture-final-production-plan.php' => [133],
         'under-production-beneficiary.php' => [134],
-        'under-production-beneficiary-stock-report.php' => [134],
-        'upload-pdi-excel.php' => [145], 'view-uploaded-pdi.php' => [145],
-        'match-pdi-verification.php' => [145],
-        'add-purchase-order.php' => [25], 'view-purchase-order.php' => [25],
-        'delete-bill-no-stock.php' => [25],
-        'upload-dcr-excel.php' => [146], 'view-uploaded-dcr.php' => [146],
+        'under-production-beneficiary-stock-report.php' => [224],
+        'upload-pdi-excel.php' => [225], 'view-uploaded-pdi.php' => [226],
+        'match-pdi-verification.php' => [227],
+        'add-purchase-order.php' => [228], 'view-purchase-order.php' => [229],
+        'delete-bill-no-stock.php' => [230],
+        'upload-dcr-excel.php' => [231], 'view-uploaded-dcr.php' => [232],
         'assign-to-store-incharge.php' => [58], 'approve-store-incharge.php' => [59],
-        'distribute-item-store-2.php' => [70], 'view-distribute-item-store.php' => [70],
+        'distribute-item-store-2.php' => [233],
+        'view-distribute-item-store.php' => [234],
         'assign-to-dispatch-officer.php' => [60],
-        'distribute-item-store-executive-2.php' => [71],
-        'view-distribute-item-store-executive.php' => [71],
-        'add-sell.php' => [26], 'view-sells.php' => [26],
-        'return-challans.php' => [26], 'view-return-challan.php' => [26], 'edit-challan.php' => [26],
+        'distribute-item-store-executive-2.php' => [235],
+        'view-distribute-item-store-executive.php' => [236],
+        'add-sell.php' => [243], 'view-sells.php' => [244],
+        'return-challans.php' => [244], 'view-return-challan.php' => [244], 'edit-challan.php' => [244],
         'assign-challan-to-dispatcher.php' => [82],
         'assign-site-to-installation.php' => [83],
         'installation-project-dashboard.php' => [68],
+        'installation-project-dashboard-2.php' => [68],
+        'installation-project-sub-head-dashboard.php' => [68],
         'assign-site-to-inspection.php' => [84],
         'service-dashboard.php' => [164],
         'beneficiary-service-lists.php' => [137],
         'allocate-complaints-to-engineer.php' => [135],
         'allocate-not-solved-complaints-to-engineer.php' => [136],
-        'choose-service-type2.php' => [28], 'view-service-module.php' => [28],
-        'service-abstract.php' => [28],
+        'choose-service-type2.php' => [245], 'view-service-module.php' => [246],
+        'service-abstract.php' => [247],
+        'view-service-challans.php' => [260],
+        'view-partial-material-challans.php' => [262],
         'update-dispatch-calling-status.php' => [93],
         'before-installation.php' => [94], 'after-installation.php' => [95],
         'before-inspection.php' => [96], 'beneficiary-selection.php' => [118],
@@ -155,12 +160,6 @@ function adminPageAccessBasenameRules()
         'view-commision-details.php' => [142],
         'dispatch-customer-csv-report.php' => [160],
         'dispatch-material-report.php' => [120],
-        'dispatch-to-store-transfer.php' => [165],
-        'view-dispatch-to-store-transfers.php' => [165],
-        'store-to-store-transfer.php' => [166],
-        'view-store-to-store-transfers.php' => [166],
-        'stock-location-report.php' => [165, 166, 183, 101, 103],
-        'revert-dispatch-to-store-transfer.php' => [165],
         'add-employee.php' => [21], 'view-employee.php' => [21],
         'add-store-incharge.php' => [125], 'add-dispatch-officer.php' => [126],
         'add-dealer.php' => [22], 'add-agency.php' => [23],
@@ -181,7 +180,7 @@ function adminPageAccessBasenameRules()
         'view-assigning-items.php' => [58, 59, 60, 70, 71],
         'view-assigning-items-to-store.php' => [58, 59, 60, 70, 71],
         'view-assigning-items-to-dispatch-officer.php' => [60, 71],
-        'view-assigning-store-items.php' => [58, 70],
+        'view-assigning-store-items.php' => [58, 70, 71],
         'view-bill-amount-status.php' => [25],
         'view-quotation.php' => [117, 140], 'view-quotation-products.php' => [117, 140],
         'add-quotation.php' => [117, 140], 'add-quotation-product.php' => [117, 140],
@@ -189,11 +188,11 @@ function adminPageAccessBasenameRules()
         'receive-amount.php' => [26], 'add-receive-amount.php' => [26],
         'coordinator-action.php' => [176, 55, 80],
         'serial-no-list.php' => [145], 'pdi-serial-no-list.php' => [145],
-        'project-abstract.php' => [106], 'project-abstract-of-abstract.php' => [106],
-        'contractor-abstract.php' => [106], 'print-contractor-abstract.php' => [106],
-        'total-contractor-beneficiary.php' => [106],
-        'print-project-abstract.php' => [106], 'print-project-abstract-old.php' => [106],
-        'print-project-abstract-of-abstract.php' => [106],
+        'project-abstract.php' => [68, 106], 'project-abstract-of-abstract.php' => [68, 106],
+        'contractor-abstract.php' => [68, 106], 'print-contractor-abstract.php' => [68, 106],
+        'total-contractor-beneficiary.php' => [68, 106],
+        'print-project-abstract.php' => [68, 106], 'print-project-abstract-old.php' => [68, 106],
+        'print-project-abstract-of-abstract.php' => [68, 106],
         'dealer-show-balance-amount.php' => [22, 69],
         'dealer-commission.php' => [69, 142],
         'edit-commission-amount.php' => [142],
@@ -208,7 +207,17 @@ function adminPageAccessBasenameRules()
         'employee-tracking-log-detail.php' => [187],
         'field-service-report.php' => [28, 164],
         'installation-history.php' => [68, 106],
-        'match-pdi.php' => [145],
+        'dispatch-to-store-transfer.php' => [237, 165],
+        'view-dispatch-to-store-transfers.php' => [238, 165],
+        'revert-dispatch-to-store-transfer.php' => [238, 165],
+        'save-dispatch-to-store-transfer.php' => [237, 165],
+        'ajax-dispatch-transfer-lines.php' => [238, 165],
+        'stock-location-report.php' => [239, 242, 165, 166, 183, 101, 103],
+        'store-to-store-transfer.php' => [240, 166],
+        'view-store-to-store-transfers.php' => [241, 166],
+        'save-store-to-store-transfer.php' => [240, 166],
+        'ajax-store-to-store-transfer-lines.php' => [241, 166],
+        'match-pdi.php' => [227],
         'dispatch-header.php' => [60], 'dispatch-store-header.php' => [70],
         'view-diesel.php' => [100],
         'view-total-selections.php' => [],
@@ -223,8 +232,11 @@ function adminPageAccessFolderRules()
         'master_management/' => $g['Master Management'],
         'product_management/' => $g['Product Management'],
         'report_management/' => $g['Reports'],
-        'item_transfer_workflow/' => [165, 166],
         'mpuvnl_management/' => menuAccessMpuvnlOptionIds(),
+        'item_transfer_workflow/' => array_values(array_unique(array_merge(
+            $g['Transfer Item Dispatch to Store'],
+            $g['Transfer Item Store to Store']
+        ))),
     ];
 }
 
@@ -270,7 +282,7 @@ function adminPageAccessRelativePath()
 
 function adminPageAccessShouldSkip($relativePath, $basename)
 {
-    if (strpos($relativePath, 'ajax_files/') === 0) {
+    if (strpos($relativePath, 'ajax_files/') === 0 || strpos($relativePath, '/ajax_files/') !== false) {
         return true;
     }
     if (strpos($basename, 'inc-') === 0) {
@@ -289,7 +301,7 @@ function adminPageAccessShouldSkip($relativePath, $basename)
         return true;
     }
     foreach (adminPageAccessSkipRelativePaths() as $prefix) {
-        if (strpos($relativePath, $prefix) === 0) {
+        if ($prefix !== '' && (strpos($relativePath, $prefix) === 0 || strpos($relativePath, '/' . $prefix) !== false)) {
             return true;
         }
     }

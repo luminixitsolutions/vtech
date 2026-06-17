@@ -194,7 +194,7 @@ if(isset($_POST['submit'])){
         }
         else{
             $sql = "SELECT tl.* FROM tbl_mp_pump_applications tl
-                         WHERE ts.ClainStatus='Completed' AND tl.CoordinatorId='$user_id'";
+                         WHERE tl.ClainStatus='Completed' AND tl.CoordinatorId='$user_id'";
         }
              
             if($_POST['ClainReason']){

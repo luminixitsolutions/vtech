@@ -6,6 +6,7 @@ $Roll = $row77['Roll'];
 $UserCat = $row77['CatId'];
 include_once __DIR__ . '/inc-menu-option-groups.php';
 $Options = adminResolveMenuOptionsFromUserRow($row77);
+$MenuOptions = adminUserRawMenuOptions($row77);
 $BranchId = $row77['BranchId'];
 $ImmediateBoss = $row77['ImmediateBoss'];
 $MulBranchId = $row77['MulBranchId'];
@@ -282,7 +283,7 @@ $fileSubmissionReminderAlert = $fileSubmissionReminderCount > 0;
 <?php } ?>
 </ul>
 </li>
- <?php } if(in_array("134", $Options)) {?>
+ <?php } if(menuAccessShowLegacyModuleScreen($MenuOptions, 134) || menuAccessShowGranularLink($MenuOptions, 224)) {?>
 <li class="sidenav-item">
             <a href="under-production-beneficiary.php?UnderProdStatus=0" class="sidenav-link">
                 <i class="sidenav-icon feather icon-check-circle"></i>
@@ -294,6 +295,7 @@ $fileSubmissionReminderAlert = $fileSubmissionReminderCount > 0;
                 <?php } ?>
             </a>
         </li>
+        <?php } if(menuAccessShowGranularLink($MenuOptions, 224)) {?>
         <li class="sidenav-item">
             <a href="under-production-beneficiary-stock-report.php" class="sidenav-link">
                 <i class="sidenav-icon feather icon-layers"></i>
@@ -306,14 +308,14 @@ $fileSubmissionReminderAlert = $fileSubmissionReminderCount > 0;
             </a>
         </li>
     
-    <?php } if(in_array("145", $Options)) {?>    
+    <?php } if(menuAccessShowGranularGroup($MenuOptions, 145)) {?>    
          <li class="sidenav-item <?php if($MainPage=='PDI-Verification') {?> open active <?php } ?>">
 <a href="javascript:" class="sidenav-link sidenav-toggle">
    <i class="sidenav-icon feather icon-activity"></i>
 <div>PDI Verification</div>
 </a>
 <ul class="sidenav-menu">
-<?php if(in_array("14", $Options)) {?>
+<?php if(menuAccessShowGranularLink($MenuOptions, 225)) {?>
 <li class="sidenav-item">
 <a href="upload-pdi-excel.php" class="sidenav-link">
 <div> Upload PDI Excel</div>
@@ -325,6 +327,7 @@ $fileSubmissionReminderAlert = $fileSubmissionReminderCount > 0;
 </a>
 </li>
 <?php } ?>
+<?php if(menuAccessShowGranularLink($MenuOptions, 226)) {?>
 <li class="sidenav-item">
 <a href="view-uploaded-pdi.php" class="sidenav-link">
 <div> View Uploaded PDI</div>
@@ -335,10 +338,11 @@ $fileSubmissionReminderAlert = $fileSubmissionReminderCount > 0;
 <?php } ?>
 </a>
 </li>
+<?php } ?>
 </ul>
 </li>
 
-<?php } if(in_array("25", $Options)) {?>
+<?php } if(menuAccessShowGranularGroup($MenuOptions, 25)) {?>
 
 <li class="sidenav-item <?php if($MainPage=='Purchase-Order') {?> open active <?php } ?>">
 <a href="javascript:" class="sidenav-link sidenav-toggle">
@@ -346,7 +350,7 @@ $fileSubmissionReminderAlert = $fileSubmissionReminderCount > 0;
 <div>Purchase Order</div>
 </a>
 <ul class="sidenav-menu">
-<?php if(in_array("14", $Options)) {?>
+<?php if(menuAccessShowGranularLink($MenuOptions, 228)) {?>
 <li class="sidenav-item">
 <a href="add-purchase-order.php" class="sidenav-link">
 <div> Add Purchase Order</div>
@@ -358,6 +362,7 @@ $fileSubmissionReminderAlert = $fileSubmissionReminderCount > 0;
 </a>
 </li>
 <?php } ?>
+<?php if(menuAccessShowGranularLink($MenuOptions, 229)) {?>
 <li class="sidenav-item">
 <a href="view-purchase-order.php" class="sidenav-link">
 <div> View Purchase Order</div>
@@ -368,6 +373,8 @@ $fileSubmissionReminderAlert = $fileSubmissionReminderCount > 0;
 <?php } ?>
 </a>
 </li>
+<?php } ?>
+<?php if(menuAccessShowGranularLink($MenuOptions, 230)) {?>
 <li class="sidenav-item">
 <a href="delete-bill-no-stock.php" class="sidenav-link">
 <div> Delete Bill No Stock</div>
@@ -378,6 +385,7 @@ $fileSubmissionReminderAlert = $fileSubmissionReminderCount > 0;
 <?php } ?>
 </a>
 </li>
+<?php } ?>
 </ul>
 </li>
 
@@ -414,7 +422,7 @@ $fileSubmissionReminderAlert = $fileSubmissionReminderCount > 0;
 </ul>
 </li>-->
 
- <?php } if(in_array("145", $Options)) {?>  
+ <?php } if(menuAccessShowGranularLink($MenuOptions, 227)) {?>  
 <li class="sidenav-item">
             <a href="match-pdi-verification.php" class="sidenav-link">
                 <i class="sidenav-icon feather icon-share-2"></i>
@@ -427,14 +435,14 @@ $fileSubmissionReminderAlert = $fileSubmissionReminderCount > 0;
             </a>
         </li>
 
- <?php } if(in_array("146", $Options)) {?>  
+ <?php } if(menuAccessShowGranularGroup($MenuOptions, 146)) {?>  
 <li class="sidenav-item <?php if($MainPage=='DCR-Verification') {?> open active <?php } ?>">
 <a href="javascript:" class="sidenav-link sidenav-toggle">
    <i class="sidenav-icon feather icon-activity"></i>
 <div>DCR Verification</div>
 </a>
 <ul class="sidenav-menu">
-<?php if(in_array("14", $Options)) {?>
+<?php if(menuAccessShowGranularLink($MenuOptions, 231)) {?>
 <li class="sidenav-item">
 <a href="upload-dcr-excel.php" class="sidenav-link">
 <div> Upload DCR Excel</div>
@@ -446,6 +454,7 @@ $fileSubmissionReminderAlert = $fileSubmissionReminderCount > 0;
 </a>
 </li>
 <?php } ?>
+<?php if(menuAccessShowGranularLink($MenuOptions, 232)) {?>
 <li class="sidenav-item">
 <a href="view-uploaded-dcr.php" class="sidenav-link">
 <div> View Uploaded DCR</div>
@@ -456,6 +465,7 @@ $fileSubmissionReminderAlert = $fileSubmissionReminderCount > 0;
 <?php } ?>
 </a>
 </li>
+<?php } ?>
 </ul>
 </li>
 
@@ -484,7 +494,7 @@ $fileSubmissionReminderAlert = $fileSubmissionReminderCount > 0;
                 <?php } ?>
             </a>
         </li>
-        <?php } if(in_array("70", $Options)) {?>
+        <?php } if(menuAccessShowStoreAssignParent($MenuOptions)) {?>
 
             <li class="sidenav-item <?php if($MainPage=='Assign-Order-Store') {?> open active <?php } ?>">
 <a href="javascript:" class="sidenav-link sidenav-toggle">
@@ -492,7 +502,7 @@ $fileSubmissionReminderAlert = $fileSubmissionReminderCount > 0;
 <div>Assign Items To Store</div>
 </a>
 <ul class="sidenav-menu">
-<?php if(in_array("14", $Options)) {?>
+<?php if(menuAccessShowStoreAssignItemsLink($MenuOptions)) {?>
 <!-- <li class="sidenav-item">
 <a href="distribute-item-store.php" class="sidenav-link">
 <div> Assign Items</div>
@@ -514,6 +524,7 @@ $fileSubmissionReminderAlert = $fileSubmissionReminderCount > 0;
 </a>
 </li>
 <?php } ?>
+<?php if(menuAccessShowStoreViewAssignItemsLink($MenuOptions)) {?>
 <li class="sidenav-item">
 <a href="view-distribute-item-store.php" class="sidenav-link">
 <div> View Assign Items</div>
@@ -524,6 +535,7 @@ $fileSubmissionReminderAlert = $fileSubmissionReminderCount > 0;
 <?php } ?>
 </a>
 </li>
+<?php } ?>
 </ul>
 </li>
 <?php } if(in_array("60", $Options)) {?>
@@ -539,7 +551,7 @@ $fileSubmissionReminderAlert = $fileSubmissionReminderCount > 0;
             </a>
         </li>
 
- <?php } if(in_array("71", $Options)) {?>
+ <?php } if(menuAccessShowDispatchAssignParent($MenuOptions)) {?>
 
             <li class="sidenav-item <?php if($MainPage=='Assign-Items-Store-Executive') {?> open active <?php } ?>">
 <a href="javascript:" class="sidenav-link sidenav-toggle">
@@ -547,7 +559,7 @@ $fileSubmissionReminderAlert = $fileSubmissionReminderCount > 0;
 <div>Assign Items To Dispatch Officier</div>
 </a>
 <ul class="sidenav-menu">
-<?php if(in_array("14", $Options)) {?>
+<?php if(menuAccessShowDispatchAssignItemsLink($MenuOptions)) {?>
 <!-- <li class="sidenav-item">
 <a href="distribute-item-store-executive.php" class="sidenav-link">
 <div> Assign Items</div>
@@ -569,6 +581,7 @@ $fileSubmissionReminderAlert = $fileSubmissionReminderCount > 0;
 </a>
 </li>
 <?php } ?>
+<?php if(menuAccessShowDispatchViewAssignItemsLink($MenuOptions)) {?>
 <li class="sidenav-item">
 <a href="view-distribute-item-store-executive.php" class="sidenav-link">
 <div> View Assign Items</div>
@@ -579,6 +592,7 @@ $fileSubmissionReminderAlert = $fileSubmissionReminderCount > 0;
 <?php } ?>
 </a>
 </li>
+<?php } ?>
 </ul>
 </li>
 
@@ -597,13 +611,14 @@ $fileSubmissionReminderAlert = $fileSubmissionReminderCount > 0;
         </li>
  -->
  
- <?php } if(in_array("165", $Options)) { ?>
+ <?php } if(menuAccessShowGranularGroup($MenuOptions, 165)) { ?>
 <li class="sidenav-item <?php if($MainPage=='Item-Transfer-Workflow' && ($Page=='Dispatch-To-Store-Transfer' || $Page=='View-Dispatch-To-Store-Transfers' || $Page=='Stock-Location-Report')) {?> open active <?php } ?>">
 <a href="javascript:" class="sidenav-link sidenav-toggle">
  <i class="sidenav-icon feather icon-activity"></i>
 <div>Transfer Item Dispatch to Store</div>
 </a>
 <ul class="sidenav-menu">
+<?php if(menuAccessShowGranularLink($MenuOptions, 237)) { ?>
 <li class="sidenav-item">
 <a href="<?php echo isset($SiteUrl) ? $SiteUrl : ''; ?>/item_transfer_workflow/dispatch-to-store-transfer.php" class="sidenav-link">
 <div>Transfer to Store</div>
@@ -612,6 +627,7 @@ $fileSubmissionReminderAlert = $fileSubmissionReminderCount > 0;
 <?php } ?>
 </a>
 </li>
+<?php } if(menuAccessShowGranularLink($MenuOptions, 238)) { ?>
 <li class="sidenav-item">
 <a href="<?php echo isset($SiteUrl) ? $SiteUrl : ''; ?>/item_transfer_workflow/view-dispatch-to-store-transfers.php" class="sidenav-link">
 <div>View Dispatch to Store Transfers</div>
@@ -620,6 +636,7 @@ $fileSubmissionReminderAlert = $fileSubmissionReminderCount > 0;
 <?php } ?>
 </a>
 </li>
+<?php } if(menuAccessShowGranularLink($MenuOptions, 239)) { ?>
 <li class="sidenav-item">
 <a href="<?php echo isset($SiteUrl) ? $SiteUrl : ''; ?>/item_transfer_workflow/stock-location-report.php" class="sidenav-link">
 <div>Stock Location Report</div>
@@ -628,15 +645,17 @@ $fileSubmissionReminderAlert = $fileSubmissionReminderCount > 0;
 <?php } ?>
 </a>
 </li>
+<?php } ?>
 </ul>
 </li>
- <?php } if(in_array("166", $Options)) { ?>
+ <?php } if(menuAccessShowGranularGroup($MenuOptions, 166)) { ?>
 <li class="sidenav-item <?php if($MainPage=='Item-Transfer-Workflow' && ($Page=='Store-To-Store-Transfer' || $Page=='View-Store-To-Store-Transfers' || $Page=='Stock-Location-Report')) {?> open active <?php } ?>">
 <a href="javascript:" class="sidenav-link sidenav-toggle">
  <i class="sidenav-icon feather icon-activity"></i>
 <div>Transfer Item Store to Store</div>
 </a>
 <ul class="sidenav-menu">
+<?php if(menuAccessShowGranularLink($MenuOptions, 240)) { ?>
 <li class="sidenav-item">
 <a href="<?php echo isset($SiteUrl) ? $SiteUrl : ''; ?>/item_transfer_workflow/store-to-store-transfer.php" class="sidenav-link">
 <div>Transfer to Another Store</div>
@@ -645,6 +664,7 @@ $fileSubmissionReminderAlert = $fileSubmissionReminderCount > 0;
 <?php } ?>
 </a>
 </li>
+<?php } if(menuAccessShowGranularLink($MenuOptions, 241)) { ?>
 <li class="sidenav-item">
 <a href="<?php echo isset($SiteUrl) ? $SiteUrl : ''; ?>/item_transfer_workflow/view-store-to-store-transfers.php" class="sidenav-link">
 <div>View Store to Store Transfers</div>
@@ -653,6 +673,7 @@ $fileSubmissionReminderAlert = $fileSubmissionReminderCount > 0;
 <?php } ?>
 </a>
 </li>
+<?php } if(menuAccessShowGranularLink($MenuOptions, 242)) { ?>
 <li class="sidenav-item">
 <a href="<?php echo isset($SiteUrl) ? $SiteUrl : ''; ?>/item_transfer_workflow/stock-location-report.php" class="sidenav-link">
 <div>Stock Location Report</div>
@@ -661,10 +682,11 @@ $fileSubmissionReminderAlert = $fileSubmissionReminderCount > 0;
 <?php } ?>
 </a>
 </li>
+<?php } ?>
 </ul>
 </li>
 
-<?php } if(in_array("26", $Options)) {?>
+<?php } if(menuAccessShowGranularGroup($MenuOptions, 26)) {?>
 
 <li class="sidenav-item <?php if($MainPage=='Sell') {?> open active <?php } ?>">
 <a href="javascript:" class="sidenav-link sidenav-toggle">
@@ -672,7 +694,7 @@ $fileSubmissionReminderAlert = $fileSubmissionReminderCount > 0;
 <div>Delivery Challan</div>
 </a>
 <ul class="sidenav-menu">
-<?php if(in_array("14", $Options)) {?>
+<?php if(menuAccessShowGranularLink($MenuOptions, 243)) {?>
 <!-- <li class="sidenav-item">
 <a href="add-sell.php" class="sidenav-link">
 <div> Add Delivery Challan</div>
@@ -694,6 +716,7 @@ $fileSubmissionReminderAlert = $fileSubmissionReminderCount > 0;
 </a>
 </li>
 <?php } ?>
+<?php if(menuAccessShowGranularLink($MenuOptions, 244)) {?>
 <li class="sidenav-item">
 <a href="view-sells.php" class="sidenav-link">
 <div> View Delivery Challan</div>
@@ -714,6 +737,29 @@ $fileSubmissionReminderAlert = $fileSubmissionReminderCount > 0;
 <?php } ?>
 </a>
 </li>
+<?php } if(menuAccessShowGranularLink($MenuOptions, 260)) {?>
+<li class="sidenav-item <?php if($Page=='View-Service-Challan') {?> active <?php } ?>">
+<a href="view-service-challans.php" class="sidenav-link">
+<div> Service Challan</div>
+<?php if($Page=='View-Service-Challan') {?>
+<div class="pl-1 ml-auto">
+<span class="badge badge-dot badge-primary"></span>
+</div>
+<?php } ?>
+</a>
+</li>
+<?php } if(menuAccessShowGranularLink($MenuOptions, 262)) {?>
+<li class="sidenav-item <?php if($Page=='View-Partial-Material-Challan') {?> active <?php } ?>">
+<a href="view-partial-material-challans.php" class="sidenav-link">
+<div> Partial Material Challan</div>
+<?php if($Page=='View-Partial-Material-Challan') {?>
+<div class="pl-1 ml-auto">
+<span class="badge badge-dot badge-primary"></span>
+</div>
+<?php } ?>
+</a>
+</li>
+<?php } ?>
 </ul>
 </li>
 <?php } if(in_array("82", $Options)) {?>
@@ -770,7 +816,7 @@ $fileSubmissionReminderAlert = $fileSubmissionReminderCount > 0;
             </a>
         </li>
 
-<?php } if(in_array("28", $Options) || in_array("135", $Options) || in_array("136", $Options) || in_array("137", $Options) || in_array("164", $Options)) {?>
+<?php } if(in_array("28", $Options) || in_array("135", $Options) || in_array("136", $Options) || in_array("137", $Options) || in_array("164", $Options) || menuAccessShowGranularGroup($MenuOptions, 28)) {?>
 
 <li class="sidenav-item <?php if($MainPage=='Service') {?> open active <?php } ?>">
 <a href="javascript:" class="sidenav-link sidenav-toggle">
@@ -826,7 +872,7 @@ $fileSubmissionReminderAlert = $fileSubmissionReminderCount > 0;
                 <?php } ?>
             </a>
         </li>
-<?php } if(in_array("14", $Options)) {?>
+<?php } if(menuAccessShowGranularLink($MenuOptions, 245)) {?>
 <li class="sidenav-item">
 <a href="choose-service-type2.php" class="sidenav-link">
 <div> Add Service Complaint</div>
@@ -837,7 +883,7 @@ $fileSubmissionReminderAlert = $fileSubmissionReminderCount > 0;
 <?php } ?>
 </a>
 </li>
-<?php } if(in_array("28", $Options)) {?>
+<?php } if(menuAccessShowGranularLink($MenuOptions, 246)) {?>
 <li class="sidenav-item">
 <a href="view-service-module.php" class="sidenav-link">
 <div> View Service Complaint</div>
@@ -848,10 +894,22 @@ $fileSubmissionReminderAlert = $fileSubmissionReminderCount > 0;
 <?php } ?>
 </a>
 </li>
+<?php } if(menuAccessShowGranularLink($MenuOptions, 247)) {?>
 <li class="sidenav-item <?php if($Page=='Service-Abstract') {?> active <?php } ?>">
 <a href="service-abstract.php" class="sidenav-link">
 <div> Service Abstract</div>
 <?php if($Page=='Service-Abstract') {?>
+<div class="pl-1 ml-auto">
+<span class="badge badge-dot badge-primary"></span>
+</div>
+<?php } ?>
+</a>
+</li>
+<?php } if(menuAccessShowGranularLink($MenuOptions, 260)) {?>
+<li class="sidenav-item <?php if($Page=='View-Service-Challan') {?> active <?php } ?>">
+<a href="view-service-challans.php" class="sidenav-link">
+<div> Service Challan</div>
+<?php if($Page=='View-Service-Challan') {?>
 <div class="pl-1 ml-auto">
 <span class="badge badge-dot badge-primary"></span>
 </div>

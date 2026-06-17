@@ -218,7 +218,7 @@ if(isset($_POST['submit'])){
         }
         else{
             $sql = "SELECT tl.*,tu.Fname FROM tbl_leads tl
-                         LEFT JOIN tbl_users tu ON tl.CustId=tu.id WHERE ts.ClainStatus='Completed' AND tl.AllocateId='$user_id'";
+                         LEFT JOIN tbl_users tu ON tl.CustId=tu.id WHERE tl.ClainStatus='Completed' AND tl.AllocateId='$user_id'";
         }
              if($_POST['CustId']){
                 $CustId = $_POST['CustId'];

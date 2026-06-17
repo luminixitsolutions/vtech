@@ -39,12 +39,12 @@ function getMenuOptionGroups()
         'Assign Items To Dispatch Officer' => [235, 236, 71],
         'Transfer Item Dispatch to Store' => [237, 238, 239, 165],
         'Transfer Item Store to Store' => [240, 241, 242, 166],
-        'Delivery / Sell' => [243, 244, 26],
+        'Delivery / Sell' => [243, 244, 260, 262, 26],
         'Assign Challan to Dispatcher' => [82],
         'Assign Site To Installation' => [83],
         'Installation Project' => [68],
         'Assign Site To Inspection' => [84],
-        'Service Complaint' => [164, 137, 135, 136, 245, 246, 247, 28],
+        'Service Complaint' => [164, 137, 135, 136, 245, 246, 247, 260, 28],
         'Insurance Site' => [121, 168, 169, 170, 171, 172, 173],
         'Trip Details' => [138, 139],
         'File submission reminder' => [254],
@@ -217,6 +217,21 @@ function adminUserEffectiveOptions($roll, $options)
     return array_values(array_filter($parts, function ($v) {
         return $v !== '' && $v !== null && $v !== '0';
     }));
+}
+
+/**
+ * Menu ids stored on tbl_users.Options only (no legacy/granular expansion).
+ * Use for sidebar sub-menu visibility checks.
+ *
+ * @param array<string,mixed> $row77
+ * @return string[]
+ */
+function adminUserRawMenuOptions(array $row77)
+{
+    return adminUserEffectiveOptions(
+        (int) ($row77['Roll'] ?? 0),
+        $row77['Options'] ?? ''
+    );
 }
 
 /**

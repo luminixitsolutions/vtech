@@ -2,10 +2,24 @@
 if (!isset($reqQtyLabel)) {
     $reqQtyLabel = 'Required qty';
 }
+if (!isset($storeColumns) || !is_array($storeColumns)) {
+    $storeColumns = [];
+}
 $showTotalRow = !empty($isCombined);
 $tableTotalReq = 0;
+$storeColCount = count($storeColumns);
 ?>
 <div class="card" style="padding: 10px;">
+    <?php if ($storeColCount > 0) { ?>
+    <p class="text-muted small mb-2 mb-md-3">
+        Store columns are from each customer&apos;s assigned store (Add Pump Customer &rarr; Store).
+        <?php if ($storeColCount > 1) { ?>
+            <?php echo (int) $storeColCount; ?> different store(s) across selected customer(s).
+        <?php } ?>
+    </p>
+    <?php } else { ?>
+    <p class="text-muted small mb-2 mb-md-3">No store is assigned on the selected customer account(s). Assign a store on the customer profile to show store-wise balance.</p>
+    <?php } ?>
     <div class="upb-stock-card-inner">
         <table id="tblRequiredStock" class="table table-striped table-bordered table-sm nowrap" style="width:100%" cellspacing="0">
             <thead class="thead-light">
@@ -13,6 +27,12 @@ $tableTotalReq = 0;
                     <th>#</th>
                     <th style="min-width:220px">Item</th>
                     <th class="text-right" style="min-width:110px"><?php echo htmlspecialchars($reqQtyLabel); ?></th>
+                    <?php foreach ($storeColumns as $storeCol) { ?>
+                    <th class="text-right" style="min-width:130px" title="Balance stock at this store">
+                        <?php echo htmlspecialchars((string) $storeCol['store_name']); ?>
+                        <br><small class="font-weight-normal text-muted">Balance qty</small>
+                    </th>
+                    <?php } ?>
                     <th class="text-right" style="min-width:140px">Total available (all stores)</th>
                     <th style="min-width:120px">Available by store</th>
                 </tr>
@@ -35,6 +55,15 @@ $tableTotalReq = 0;
                             echo ' <span class="text-muted">(no product id)</span>';
                         } ?></td>
                         <td class="text-right"><?php echo $req; ?></td>
+                        <?php foreach ($storeColumns as $storeCol) {
+                            $bid = (int) $storeCol['branch_id'];
+                            $storeQty = ($pid > 0 && $bid > 0) ? upb_store_balance_qty($conn, $pid, $bid) : 0;
+                            $cellShort = ($pid > 0 && $req > 0 && $storeQty < $req);
+                            ?>
+                        <td class="text-right<?php echo $cellShort ? ' upb-store-short' : ''; ?>">
+                            <?php echo $pid > 0 ? (int) $storeQty : '—'; ?>
+                        </td>
+                        <?php } ?>
                         <td class="text-right"><?php echo $pid > 0 ? $totalAvail : '—'; ?></td>
                         <td>
                             <?php
@@ -79,7 +108,11 @@ $tableTotalReq = 0;
                 <tr class="font-weight-bold">
                     <td colspan="2" class="text-right">Total</td>
                     <td class="text-right"><?php echo (int) $tableTotalReq; ?></td>
-                    <td colspan="2"></td>
+                    <?php for ($i = 0; $i < $storeColCount; $i++) { ?>
+                    <td></td>
+                    <?php } ?>
+                    <td></td>
+                    <td></td>
                 </tr>
             </tfoot>
             <?php } ?>

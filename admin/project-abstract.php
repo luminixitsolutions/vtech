@@ -5,6 +5,11 @@ include_once 'auth.php';
 $user_id = $_SESSION['Admin']['id'];
 $MainPage = "Installation";
 $Page = "Installation";
+
+$projid = isset($_GET['projid']) ? (int) $_GET['projid'] : 0;
+$subheadid = isset($_GET['subheadid']) ? (int) $_GET['subheadid'] : 0;
+$title = isset($_GET['title']) ? $_GET['title'] : '';
+$dashboardBackUrl = 'installation-project-dashboard-2.php?prjid=' . $projid . '&id=' . $subheadid . '&name=' . urlencode($title);
 ?>
 <!DOCTYPE html>
 <html lang="en" class="default-style layout-fixed layout-navbar-fixed">
@@ -60,9 +65,10 @@ $Page = "Installation";
                 <div class="layout-content">
 
                     <div class="container-fluid flex-grow-1 container-p-y">
-                        <h4 class="font-weight-bold py-3 mb-0"><?php echo $_GET['title'];?> Project Abstract
-                           
-                        </h4>
+                        <div class="d-flex justify-content-between align-items-center flex-wrap mb-3">
+                            <h4 class="font-weight-bold py-3 mb-0"><?php echo htmlspecialchars($title); ?> Project Abstract</h4>
+                            <a href="<?php echo htmlspecialchars($dashboardBackUrl); ?>" class="btn btn-outline-secondary btn-sm">Back to Dashboard</a>
+                        </div>
 
                         <div class="card" style="padding: 10px;">
 
@@ -84,7 +90,7 @@ $Page = "Installation";
 <option selected="" value="all">All District</option>
  <?php 
         $CountryId = $row7['CountryId'];
-        $q = "select DISTINCT(District) As District from tbl_users WHERE District!='' AND ProjectId='".$_GET['projid']."' ORDER BY District ASC";
+        $q = "select DISTINCT(District) As District from tbl_users WHERE District!='' AND ProjectId='".$projid."' ORDER BY District ASC";
         $r = $conn->query($q);
         while($rw = $r->fetch_assoc())
     {
@@ -98,8 +104,8 @@ $Page = "Installation";
 
 
                                                    
-                                                  <input type="hidden" id="ProjectId" name="projid" value="<?php echo $_GET['projid'];?>">
-                                                  <input type="hidden" id="SubHeadProjectId" name="SubHeadProjectId" value="<?php echo $_GET['subheadid'];?>">
+                                                  <input type="hidden" id="ProjectId" name="projid" value="<?php echo $projid; ?>">
+                                                  <input type="hidden" id="SubHeadProjectId" name="SubHeadProjectId" value="<?php echo $subheadid; ?>">
                                                     
                                                     <input type="hidden" name="Search" value="Search">
                                                     <div class="form-group col-md-1" style="padding-top:25px;">

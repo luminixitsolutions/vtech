@@ -2,18 +2,17 @@
 session_start();
 include_once '../config.php';
 include_once '../auth.php';
+require_once __DIR__ . '/../inc-item-transfer-workflow-access.php';
 $user_id = $_SESSION['Admin']['id'];
 $MainPage = "Item-Transfer-Workflow";
 $Page = "Dispatch-To-Store-Transfer";
-$row77 = getRecord("SELECT Roll, BranchId, MulBranchId, Options FROM tbl_users WHERE id='$user_id'");
-$Roll = $row77['Roll'] ?? 0;
-$BranchId = $row77['BranchId'] ?? 0;
-$MulBranchId = $row77['MulBranchId'] ?? '0';
-$Options = isset($row77['Options']) ? explode(',', $row77['Options']) : array();
-$is_dispatch = ($Roll == 26 || $Roll == 1 || $Roll == 7 || in_array('72', $Options));
-if (!$is_dispatch) {
-    echo "<script>alert('Access denied. Only Dispatch Officer, Admin, or users with Transfer menu (Option 72) can access this page.'); window.location.href='../dashboard.php';</script>";
-    exit;
+$workflowUser = itemTransferWorkflowUserContext($user_id);
+$Roll = $workflowUser['roll'];
+$BranchId = $workflowUser['branch_id'];
+$MulBranchId = $workflowUser['mul_branch_id'];
+$Options = $workflowUser['options'];
+if (!itemTransferWorkflowCanAccessDispatch($Roll, $Options)) {
+    itemTransferWorkflowDeny('Access denied.');
 }
 $hasDetail2IdTd = false;
 $chkTd = $conn->query("SHOW COLUMNS FROM tbl_dispatch_to_store_transfer_details LIKE 'Detail2Id'");

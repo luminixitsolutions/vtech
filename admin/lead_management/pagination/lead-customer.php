@@ -30,7 +30,7 @@ $sql = "SELECT tp.*,tb.Name As BranchName,tu.Fname FROM tbl_leads tp
 else{
     $sql = "SELECT tp.*,tb.Name As BranchName,tu.Fname FROM tbl_leads tp 
                     LEFT JOIN tbl_branch tb ON tp.BranchId=tb.id 
-                    LEFT JOIN tbl_users tu ON tp.CustId=tu.id WHERE tp.CreatedBy='$user_id'"; 
+                    LEFT JOIN tbl_users tu ON tp.CustId=tu.id WHERE tp.AllocateId='$user_id'"; 
 }
 
 if($_POST['ClaimReason']!=''){

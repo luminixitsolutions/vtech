@@ -6,6 +6,8 @@ $Roll = $row77['Roll'];
 $UserCat = $row77['CatId'];
 require_once __DIR__ . '/../inc-menu-option-groups.php';
 $Options = adminResolveMenuOptionsFromUserRow($row77);
+require_once __DIR__ . '/../inc-menu-access-granular-options.php';
+$MenuOptions = adminUserRawMenuOptions($row77);
 ?>
 
             <!-- [ Layout navbar ( Header ) ] End -->
@@ -44,6 +46,7 @@ $Options = adminResolveMenuOptionsFromUserRow($row77);
                 
             </a>
         </li> 
+         <?php if(menuAccessShowGranularLink($MenuOptions, 252)) { ?>
          <li class="sidenav-item">
             <a href="department.php" class="sidenav-link">
                  <i class="sidenav-icon feather icon-activity"></i>
@@ -51,7 +54,7 @@ $Options = adminResolveMenuOptionsFromUserRow($row77);
                 
             </a>
         </li>
-      <?php if(in_array("47", $Options) || in_array("151", $Options)) {?>
+      <?php if(menuAccessShowGranularLink($MenuOptions, 249)) {?>
         <li class="sidenav-item">
             <a href="create-task.php" class="sidenav-link">
                  <i class="sidenav-icon feather icon-activity"></i>
@@ -61,6 +64,7 @@ $Options = adminResolveMenuOptionsFromUserRow($row77);
         </li>
         <?php } ?>
        
+        <?php if(menuAccessShowGranularLink($MenuOptions, 250)) { ?>
         <li class="sidenav-item">
             <a href="view-tasks.php" class="sidenav-link">
                  <i class="sidenav-icon feather icon-activity"></i>
@@ -68,6 +72,8 @@ $Options = adminResolveMenuOptionsFromUserRow($row77);
                 
             </a>
         </li>
+        <?php } ?>
+         <?php if(menuAccessShowGranularLink($MenuOptions, 251)) { ?>
          <li class="sidenav-item">
             <a href="to-do-tasks.php" class="sidenav-link">
                  <i class="sidenav-icon feather icon-activity"></i>
@@ -75,6 +81,7 @@ $Options = adminResolveMenuOptionsFromUserRow($row77);
                 
             </a>
         </li>
+        <?php } ?>
         <?php } ?>
 
         

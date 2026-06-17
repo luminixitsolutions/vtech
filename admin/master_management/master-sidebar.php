@@ -5,6 +5,8 @@ $row77 = getRecord($sql77);
 $Roll = $row77['Roll'];
 $UserCat = $row77['CatId'];
 $Options = adminResolveMenuOptionsFromUserRow($row77);
+require_once __DIR__ . '/../inc-menu-access-granular-options.php';
+$MenuOptions = adminUserRawMenuOptions($row77);
 ?>
 
             <!-- [ Layout navbar ( Header ) ] End -->
@@ -45,13 +47,14 @@ $Options = adminResolveMenuOptionsFromUserRow($row77);
         </li> 
         <?php } ?>
         
-        <?php if(in_array("1", $Options)) {?>
+        <?php if(menuAccessShowGranularGroup($MenuOptions, 1)) {?>
     <li class="sidenav-item <?php if($Page=='Location') {?> open active <?php } ?>">
     <a href="javascript:" class="sidenav-link sidenav-toggle">
         <i class="sidenav-icon feather icon-activity"></i>
     <div>Locations</div>
     </a>
     <ul class="sidenav-menu">
+    <?php if(menuAccessShowGranularLink($MenuOptions, 196)) { ?>
     <li class="sidenav-item">
     <a href="country.php" class="sidenav-link">
     <div>Country</div>
@@ -62,6 +65,7 @@ $Options = adminResolveMenuOptionsFromUserRow($row77);
     <?php } ?>  
     </a>
     </li>
+    <?php } if(menuAccessShowGranularLink($MenuOptions, 197)) { ?>
     <li class="sidenav-item">
     <a href="state.php" class="sidenav-link">
     <div>State</div>
@@ -72,6 +76,7 @@ $Options = adminResolveMenuOptionsFromUserRow($row77);
     <?php } ?>  
     </a>
     </li>
+    <?php } if(menuAccessShowGranularLink($MenuOptions, 198)) { ?>
     <li class="sidenav-item">
     <a href="city.php" class="sidenav-link">
     <div>City</div>
@@ -82,7 +87,7 @@ $Options = adminResolveMenuOptionsFromUserRow($row77);
     <?php } ?>  
     </a>
     </li>
-
+    <?php } ?>
     </ul>
     </li> 
  <?php } if(in_array("56", $Options)) {?>

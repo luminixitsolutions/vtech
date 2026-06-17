@@ -5,6 +5,72 @@ include_once 'auth.php';
 $user_id = $_SESSION['Admin']['id'];
 $MainPage = "Customers";
 $Page = "View-Customers";
+
+$id = $_GET['id'] ?? 0;
+
+if (isset($_POST['submit'])) {
+    $SurveyDetails = addslashes(trim($_POST['FieldSurveyDetails']));
+    $Details = addslashes(trim($_POST['Details']));
+    $FieldLattitude = addslashes(trim($_POST['FieldLattitude']));
+    $FieldLongitude = addslashes(trim($_POST['FieldLongitude']));
+    $FieldWaterSource = addslashes(trim($_POST['FieldWaterSource']));
+    $FieldBoreDia = addslashes(trim($_POST['FieldBoreDia']));
+    $FieldTotalDepth = addslashes(trim($_POST['FieldTotalDepth']));
+    $FieldSummerWaterLevel = addslashes(trim($_POST['FieldSummerWaterLevel']));
+    $FieldWinterWaterLevel = addslashes(trim($_POST['FieldWinterWaterLevel']));
+    $FieldPumpHead = addslashes(trim($_POST['FieldPumpHead']));
+    $CreatedDate = date('Y-m-d');
+    $CreatedTime = date('h:i a');
+
+    $SurveyFile = $_POST['OldPhoto2'] ?? '';
+    if (!empty($_FILES['Photo2']['name'])) {
+        $randno2 = rand(1, 100);
+        $src2 = $_FILES['Photo2']['tmp_name'];
+        $fnm2 = substr($_FILES['Photo2']['name'], 0, strrpos($_FILES['Photo2']['name'], '.'));
+        $fnm2 = str_replace(' ', '_', $fnm2);
+        $ext2 = substr($_FILES['Photo2']['name'], strpos($_FILES['Photo2']['name'], '.'));
+        $dest2 = '../uploads/' . $randno2 . '_' . $fnm2 . $ext2;
+        $imagepath2 = $randno2 . '_' . $fnm2 . $ext2;
+        if (move_uploaded_file($src2, $dest2)) {
+            $SurveyFile = $imagepath2;
+        }
+    }
+
+    $query2 = "UPDATE tbl_users SET FieldSurveyDetails='$SurveyDetails',FieldSurveyFile='$SurveyFile',FieldLattitude='$FieldLattitude',FieldLongitude='$FieldLongitude',FieldWaterSource='$FieldWaterSource',FieldBoreDia='$FieldBoreDia',FieldTotalDepth='$FieldTotalDepth',FieldSummerWaterLevel='$FieldSummerWaterLevel',FieldWinterWaterLevel='$FieldWinterWaterLevel',FieldPumpHead='$FieldPumpHead',FieldSurveyBy='$user_id',FieldSurveyDate='$CreatedDate' WHERE id = '$id'";
+    $conn->query($query2);
+
+    $Steps = ($SurveyDetails == '1') ? 'Field Survey Done' : 'Field Survey Not Done';
+    $sql = "SELECT * FROM tbl_steps WHERE CustId='$id' AND SrNo='1'";
+    $rncnt = getRow($sql);
+    if ($rncnt > 0) {
+        $sql = "UPDATE tbl_steps SET Steps='$Steps' WHERE CustId='$id' AND SrNo='1'";
+        $conn->query($sql);
+    } else {
+        $sql = "INSERT INTO tbl_steps SET SrNo=1,CustId='$id',Steps='$Steps',CreatedDate='$CreatedDate',CreatedTime='$CreatedTime',CustName='$CustName',Address='$Address',Phone='$CellNo',LeadId='0',LeadActId='0'";
+        $conn->query($sql);
+    }
+
+    appFlashSet('success', 'Field Survey Status Updated Successfully!');
+    header('Location: survey.php?val=' . urlencode($SurveyDetails));
+    exit;
+}
+
+$sql7 = "SELECT * FROM tbl_users WHERE id='$id'";
+$res7 = $conn->query($sql7);
+$row7 = $res7->fetch_assoc();
+$userCoords = getRecord("SELECT Lattitude, Longitude FROM tbl_users WHERE id='" . (int) ($_SESSION['User']['id'] ?? 0) . "' LIMIT 1") ?: [];
+$Latitude = $userCoords['Lattitude'] ?? '';
+$Longitude = $userCoords['Longitude'] ?? '';
+if ($row7['FieldLattitude'] == '') {
+    $Fieldlat = $Latitude;
+} else {
+    $Fieldlat = $row7['FieldLattitude'];
+}
+if ($row7['FieldLongitude'] == '') {
+    $FieldLong = $Longitude;
+} else {
+    $FieldLong = $row7['FieldLongitude'];
+}
 ?>
 <!DOCTYPE html>
 <html lang="en" class="default-style layout-fixed layout-navbar-fixed">
@@ -45,84 +111,6 @@ $Page = "View-Customers";
         <!-- Fixed navbar -->
         <?php include_once 'back-header.php'; ?> 
         
-
-        <?php 
-$id = $_GET['id'];
-$sql7 = "SELECT * FROM tbl_users WHERE id='$id'";
-$res7 = $conn->query($sql7);
-$row7 = $res7->fetch_assoc();
-if($row7["FieldLattitude"] == ''){
-    $Fieldlat = $Latitude;
-}
-else{
-    $Fieldlat = $row7["FieldLattitude"];
-}
-
-if($row7["FieldLongitude"] == ''){
-    $FieldLong = $Longitude;
-}
-else{
-    $FieldLong = $row7["FieldLongitude"];
-}
-?>
-
-<?php 
-  if(isset($_POST['submit'])){
-$SurveyDetails = addslashes(trim($_POST["FieldSurveyDetails"]));
-$Details = addslashes(trim($_POST["Details"]));
-$FieldLattitude = addslashes(trim($_POST["FieldLattitude"]));
-$FieldLongitude = addslashes(trim($_POST["FieldLongitude"]));
-$FieldWaterSource = addslashes(trim($_POST["FieldWaterSource"]));
-$FieldBoreDia = addslashes(trim($_POST["FieldBoreDia"]));
-$FieldTotalDepth = addslashes(trim($_POST["FieldTotalDepth"]));
-$FieldSummerWaterLevel = addslashes(trim($_POST["FieldSummerWaterLevel"]));
-$FieldWinterWaterLevel = addslashes(trim($_POST["FieldWinterWaterLevel"]));
-$FieldPumpHead = addslashes(trim($_POST["FieldPumpHead"]));
-$CreatedDate = date('Y-m-d');
-$ModifiedDate = date('Y-m-d');
-$CreatedTime = date('h:i a');
-
-$randno2 = rand(1,100);
-$src2 = $_FILES['Photo2']['tmp_name'];
-$fnm2 = substr($_FILES["Photo2"]["name"], 0,strrpos($_FILES["Photo2"]["name"],'.')); 
-$fnm2 = str_replace(" ","_",$fnm2);
-$ext2 = substr($_FILES["Photo2"]["name"],strpos($_FILES["Photo2"]["name"],"."));
-$dest2 = '../uploads/'. $randno2 . "_".$fnm2 . $ext2;
-$imagepath2 =  $randno2 . "_".$fnm2 . $ext2;
-if(move_uploaded_file($src2, $dest2))
-{
-$SurveyFile = $imagepath2 ;
-} 
-else{
-  $SurveyFile = $_POST['OldPhoto2'];
-}
-
-
-    $query2 = "UPDATE tbl_users SET FieldSurveyDetails='$SurveyDetails',FieldSurveyFile='$SurveyFile',FieldLattitude='$FieldLattitude',FieldLongitude='$FieldLongitude',FieldWaterSource='$FieldWaterSource',FieldBoreDia='$FieldBoreDia',FieldTotalDepth='$FieldTotalDepth',FieldSummerWaterLevel='$FieldSummerWaterLevel',FieldWinterWaterLevel='$FieldWinterWaterLevel',FieldPumpHead='$FieldPumpHead',FieldSurveyBy='$user_id',FieldSurveyDate='$CreatedDate' WHERE id = '$id'";
-  $conn->query($query2);
-  
-  if($SurveyDetails=='1') {
-  $Steps = "Field Survey Done";
-  }
-  else{
-    $Steps = "Field Survey Not Done";  
-  }
-  $sql = "SELECT * FROM tbl_steps WHERE CustId='$id' AND SrNo='1'";
-  $rncnt = getRow($sql);
-  if($rncnt > 0){
-      $sql = "UPDATE tbl_steps SET Steps='$Steps' WHERE CustId='$id' AND SrNo='1'";
-      $conn->query($sql);
-  }
-  else{
-  $sql = "INSERT INTO tbl_steps SET SrNo=1,CustId='$id',Steps='$Steps',CreatedDate='$CreatedDate',CreatedTime='$CreatedTime',CustName='$CustName',Address='$Address',Phone='$CellNo',LeadId='0',LeadActId='0'";
-  $conn->query($sql);
-  }
-  echo "<script>alert('Field Survey Status Updated Successfully!');window.location.href='survey.php?val=$SurveyDetails';</script>";
-
-    //header('Location:courses.php'); 
-
-  }
- ?>
 
         <div class="main-container">
 

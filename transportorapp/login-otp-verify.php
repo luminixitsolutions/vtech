@@ -141,6 +141,8 @@ if(!isset($_SESSION['otp'])){
                      }
                      else{
                         $('#success_message').css('display','block').html("OTP Verified!");
+                         Android.loginUser(Username,uid,0);
+                                 Android.startDriverTracking(Username,uid);
                         setTimeout(function(){  
                         $('#success_message').fadeOut("Slow");
                         window.location.href="home.php";

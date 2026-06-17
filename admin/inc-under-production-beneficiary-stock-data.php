@@ -1,6 +1,144 @@
 <?php
 
 /**
+ * Merge required stock lines by product id (saved customer spec wins over master template).
+ *
+ * @param list<array{ProductId:int,ProductName:string,ReqQty:float}> $base
+ * @param list<array{ProductId:int,ProductName:string,ReqQty:float}> $extra
+ * @return list<array{ProductId:int,ProductName:string,ReqQty:float}>
+ */
+function upb_merge_required_lines_by_product(array $base, array $extra)
+{
+    $byProduct = [];
+    foreach ($base as $ln) {
+        $pid = (int) ($ln['ProductId'] ?? 0);
+        $qty = (float) ($ln['ReqQty'] ?? 0);
+        if ($pid <= 0 || $qty <= 0) {
+            continue;
+        }
+        $byProduct[$pid] = [
+            'ProductId' => $pid,
+            'ProductName' => (string) ($ln['ProductName'] ?? ''),
+            'ReqQty' => $qty,
+        ];
+    }
+    foreach ($extra as $ln) {
+        $pid = (int) ($ln['ProductId'] ?? 0);
+        $qty = (float) ($ln['ReqQty'] ?? 0);
+        if ($pid <= 0 || $qty <= 0 || isset($byProduct[$pid])) {
+            continue;
+        }
+        $byProduct[$pid] = [
+            'ProductId' => $pid,
+            'ProductName' => (string) ($ln['ProductName'] ?? ''),
+            'ReqQty' => $qty,
+        ];
+    }
+
+    $out = array_values($byProduct);
+    usort($out, function ($a, $b) {
+        return strcasecmp((string) $a['ProductName'], (string) $b['ProductName']);
+    });
+
+    return $out;
+}
+
+/**
+ * Structure BOM from master spec (Add Pump Customer → Structure Product Specification / view2).
+ *
+ * @return list<array{ProductId:int,ProductName:string,ReqQty:float}>
+ */
+function upb_fetch_structure_master_lines_for_customer($conn, $custId)
+{
+    $custId = (int) $custId;
+    if ($custId <= 0) {
+        return [];
+    }
+
+    $cust = getRecord(
+        "SELECT Surface, PumpCapacity, ModuleWatt, ModuleQty, Structure1, Structure2, Structure3,
+                ModuleMake, StructureMake, AgencyId, SchemeId
+         FROM tbl_users
+         WHERE id='" . $custId . "' LIMIT 1"
+    );
+    if (!$cust || !is_array($cust)) {
+        return [];
+    }
+
+    $esc = function ($value) use ($conn) {
+        return $conn->real_escape_string(trim((string) $value));
+    };
+
+    $filters = [
+        'Surface' => $esc($cust['Surface'] ?? ''),
+        'PumpCapacity' => $esc($cust['PumpCapacity'] ?? ''),
+        'ModuleWatt' => $esc($cust['ModuleWatt'] ?? ''),
+        'ModuleQty' => $esc($cust['ModuleQty'] ?? ''),
+        'ModuleMake' => $esc($cust['ModuleMake'] ?? ''),
+        'StructureMake' => $esc($cust['StructureMake'] ?? ''),
+        'AgencyId' => $esc($cust['AgencyId'] ?? ''),
+        'SchemeId' => $esc($cust['SchemeId'] ?? ''),
+    ];
+
+    $structureIds = [];
+    foreach (['Structure1', 'Structure2', 'Structure3'] as $field) {
+        $sid = trim((string) ($cust[$field] ?? ''));
+        if ($sid !== '') {
+            $structureIds[] = $esc($sid);
+        }
+    }
+    if (count($structureIds) === 0) {
+        return [];
+    }
+
+    $byProduct = [];
+    foreach ($structureIds as $structureId) {
+        $sql = "SELECT tp.id AS ProductId,
+                       tp.ProductName,
+                       SUM(COALESCE(tps.Qty, 0)) AS ReqQty
+                FROM tbl_struct_product_specification tps
+                INNER JOIN tbl_products tp ON tps.ProdId = tp.id
+                WHERE tps.Qty > 0 AND tp.ProdSpec = 2 AND tps.Structure = '" . $structureId . "'";
+        foreach ($filters as $column => $value) {
+            if ($value !== '') {
+                $sql .= " AND tps." . $column . " = '" . $value . "'";
+            }
+        }
+        $sql .= " GROUP BY tp.id, tp.ProductName ORDER BY tp.ProductName ASC";
+
+        $rows = getList($sql);
+        if (!is_array($rows)) {
+            continue;
+        }
+        foreach ($rows as $row) {
+            $pid = (int) ($row['ProductId'] ?? 0);
+            $qty = (float) ($row['ReqQty'] ?? 0);
+            if ($pid <= 0 || $qty <= 0) {
+                continue;
+            }
+            if (!isset($byProduct[$pid])) {
+                $byProduct[$pid] = [
+                    'ProductId' => $pid,
+                    'ProductName' => (string) ($row['ProductName'] ?? ''),
+                    'ReqQty' => 0.0,
+                ];
+            }
+            $byProduct[$pid]['ReqQty'] += $qty;
+            if ($byProduct[$pid]['ProductName'] === '' && !empty($row['ProductName'])) {
+                $byProduct[$pid]['ProductName'] = (string) $row['ProductName'];
+            }
+        }
+    }
+
+    $out = array_values($byProduct);
+    usort($out, function ($a, $b) {
+        return strcasecmp((string) $a['ProductName'], (string) $b['ProductName']);
+    });
+
+    return $out;
+}
+
+/**
  * Required stock lines for one done beneficiary (BOM / quotation), same rules as required-stock page.
  *
  * @return list<array{ProductId:int,ProductName:string,ReqQty:float}>
@@ -47,6 +185,11 @@ function upb_fetch_required_lines_for_customer($conn, $custId)
         }
     }
 
+    $structureLines = upb_fetch_structure_master_lines_for_customer($conn, $custId);
+    if (count($structureLines) > 0) {
+        $lines = upb_merge_required_lines_by_product($lines, $structureLines);
+    }
+
     return $lines;
 }
 
@@ -91,6 +234,75 @@ function upb_fetch_combined_required_lines($conn, array $custIds)
     });
 
     return $out;
+}
+
+/**
+ * Unique store columns from customer account BranchId (Add Pump Customer → Store).
+ *
+ * @param int[] $custIds
+ * @return list<array{branch_id:int,store_name:string}>
+ */
+function upb_fetch_customer_store_columns($conn, array $custIds)
+{
+    $custIds = array_values(array_filter(array_map('intval', $custIds)));
+    if (count($custIds) === 0) {
+        return [];
+    }
+    $in = implode(',', $custIds);
+    $list = getList(
+        "SELECT DISTINCT u.BranchId AS branch_id,
+                COALESCE(NULLIF(TRIM(b.Name), ''), CONCAT('Store #', u.BranchId)) AS store_name
+         FROM tbl_users u
+         LEFT JOIN tbl_branch b ON b.id = u.BranchId
+         WHERE u.id IN (" . $in . ") AND u.BranchId > 0
+         ORDER BY store_name ASC, u.BranchId ASC"
+    );
+    if (!is_array($list)) {
+        return [];
+    }
+    $out = [];
+    $seen = [];
+    foreach ($list as $row) {
+        $bid = (int) ($row['branch_id'] ?? 0);
+        if ($bid <= 0 || isset($seen[$bid])) {
+            continue;
+        }
+        $seen[$bid] = true;
+        $out[] = [
+            'branch_id' => $bid,
+            'store_name' => (string) ($row['store_name'] ?? ('Store #' . $bid)),
+        ];
+    }
+
+    return $out;
+}
+
+/**
+ * Item balance qty at a single store (distribute balance, then stock ledger fallback).
+ */
+function upb_store_balance_qty($conn, $productId, $branchId)
+{
+    $productId = (int) $productId;
+    $branchId = (int) $branchId;
+    if ($productId <= 0 || $branchId <= 0) {
+        return 0;
+    }
+
+    $sqlStore = "SELECT
+        (COALESCE(SUM(d.Qty), 0) - COALESCE((
+            SELECT SUM(x.Qty) FROM tbl_distibute_item_details2 x
+            WHERE x.BranchId = d.BranchId AND x.ProductId = d.ProductId AND x.ProdType = 0
+        ), 0)) AS AvailQty
+        FROM tbl_distibute_item_details d
+        INNER JOIN tbl_distibute_items h ON h.id = d.DistId AND h.Status = 1
+        WHERE d.ProdType = 0 AND d.ProductId='" . $productId . "' AND d.BranchId='" . $branchId . "'";
+    $row = getRecord($sqlStore);
+    $avail = isset($row['AvailQty']) ? (float) $row['AvailQty'] : 0;
+    if ($avail > 0.0001) {
+        return (int) max(0, round($avail));
+    }
+
+    return upb_stock_net($conn, $productId, $branchId);
 }
 
 /**
@@ -295,7 +507,7 @@ function upb_fetch_stock_report_customers($conn, array $custIds)
     }
     $in = implode(',', array_map('intval', $custIds));
     $list = getList(
-        "SELECT id, BeneficiaryId, Fname, Phone, Address
+        "SELECT id, BeneficiaryId, Fname, Phone, Address, BranchId
          FROM tbl_users
          WHERE id IN (" . $in . ")
          ORDER BY Fname ASC"

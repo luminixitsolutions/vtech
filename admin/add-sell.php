@@ -2,6 +2,7 @@
 session_start();
 include_once 'config.php';
 include_once 'auth.php';
+require_once __DIR__ . '/report_management/inc-dispatch-officer-stock.php';
 $user_id = $_SESSION['Admin']['id'];
 $MainPage = "Sell";
 $Page = "Add-Sell-2";
@@ -478,6 +479,13 @@ foreach ($row as $result) {
                                                             <tbody id="dynamic_field">
                                                                 <?php
                                                                 $nostock = 0;
+                                                                $stockBranchId = (int) ($_REQUEST['BranchId'] ?? 0);
+                                                                $stockStoreExeId = 0;
+                                                                if ((int) $Roll === 26) {
+                                                                    $stockStoreExeId = (int) $user_id;
+                                                                } elseif (!empty($_GET['CustId'])) {
+                                                                    $stockStoreExeId = (int) ($row7['DispatchOfficerId'] ?? 0);
+                                                                }
                                                                 /*$sql12 = "SELECT tcp.*,tp.ProductName AS Product_Name,tp.ModelNo AS Model_No,tp.Unit FROM tbl_cust_product_specification tcp 
                   INNER JOIN tbl_products tp ON tcp.ProdId=tp.id 
                   WHERE tcp.CustId='".$_GET['CustId']."' AND tp.Roll=0";*/
@@ -487,15 +495,24 @@ foreach ($row as $result) {
                                                                 $row12 = getList($sql12);
                                                                 foreach ($row12 as $result) {
 
-                                                                    $sql11 = "SELECT SUM(Qty) AS CrQty FROM tbl_distibute_item_details2 WHERE ProductId='" . $result['ProdId'] . "' AND BranchId='" . $_REQUEST["BranchId"] . "'";
-                                                                    $row11 = getRecord($sql11);
-                                                                    $CrQty = $row11['CrQty'];
+                                                                    if ($stockStoreExeId > 0 && $stockBranchId > 0) {
+                                                                        $BalQty = dispatch_officer_product_balance(
+                                                                            $conn,
+                                                                            $stockBranchId,
+                                                                            $stockStoreExeId,
+                                                                            (int) $result['ProdId']
+                                                                        );
+                                                                    } else {
+                                                                        $sql11 = "SELECT SUM(Qty) AS CrQty FROM tbl_distibute_item_details2 WHERE ProductId='" . $result['ProdId'] . "' AND BranchId='" . $_REQUEST["BranchId"] . "'";
+                                                                        $row11 = getRecord($sql11);
+                                                                        $CrQty = (float) ($row11['CrQty'] ?? 0);
 
-                                                                    $sql12 = "SELECT SUM(Qty) AS DrQty FROM tbl_stocks WHERE CrDr='dr' AND ProductId='" . $result['ProdId'] . "' AND BranchId='" . $_REQUEST["BranchId"] . "'";
-                                                                    $row12 = getRecord($sql12);
-                                                                    $DrQty = $row12['DrQty'];
+                                                                        $sqlDr = "SELECT SUM(Qty) AS DrQty FROM tbl_stocks WHERE CrDr='dr' AND ProductId='" . $result['ProdId'] . "' AND BranchId='" . $_REQUEST["BranchId"] . "'";
+                                                                        $rowDr = getRecord($sqlDr);
+                                                                        $DrQty = (float) ($rowDr['DrQty'] ?? 0);
 
-                                                                    $BalQty = $CrQty - $DrQty;
+                                                                        $BalQty = max(0, (int) round($CrQty - $DrQty));
+                                                                    }
                                                                     $Qty = $result['Qty'];
                                                                     if ($BalQty >= $Qty) {
                                                                         $bgcolor = "";

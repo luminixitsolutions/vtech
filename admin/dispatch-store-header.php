@@ -61,6 +61,26 @@ $MulBranchId = $row77['MulBranchId'];
 <?php } ?>
 </a>
 </li>
+<li class="sidenav-item <?php if($Page=='View-Service-Challan') {?> active <?php } ?>">
+<a href="view-service-challans.php" class="sidenav-link">
+<div> Service Challan</div>
+<?php if($Page=='View-Service-Challan') {?>
+<div class="pl-1 ml-auto">
+<span class="badge badge-dot badge-primary"></span>
+</div>
+<?php } ?>
+</a>
+</li>
+<li class="sidenav-item <?php if($Page=='View-Partial-Material-Challan') {?> active <?php } ?>">
+<a href="view-partial-material-challans.php" class="sidenav-link">
+<div> Partial Material Challan</div>
+<?php if($Page=='View-Partial-Material-Challan') {?>
+<div class="pl-1 ml-auto">
+<span class="badge badge-dot badge-primary"></span>
+</div>
+<?php } ?>
+</a>
+</li>
 </ul>
 </li>
 <?php } if(in_array("82", $Options)) {?>

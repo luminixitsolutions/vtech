@@ -3,6 +3,7 @@ session_start();
 include_once 'config.php';
 include_once 'auth.php';
 include_once 'inc-store-dist-dispatch-status.php';
+require_once __DIR__ . '/inc-po-assignment-activity-log.php';
 $user_id = $_SESSION['Admin']['id'];
 $MainPage = "Assign-Order-Store";
 $Page = "View-Assign-Order";
@@ -135,7 +136,7 @@ if($_REQUEST["action"]=="delete")
 
 <div class="container-fluid flex-grow-1 container-p-y">
 <h4 class="font-weight-bold py-3 mb-0">Assign Item To Store List
-    <?php if(in_array("14", $Options)) {?>   
+    <?php if(function_exists('menuAccessShowStoreAssignItemsLink') && menuAccessShowStoreAssignItemsLink($MenuOptions)) {?>
 <span style="float: right;">
 <a href="distribute-item-store-2.php" class="btn btn-secondary btn-round"><i class="ion ion-md-add mr-2"></i> Add New</a></span>
 <?php } ?>
@@ -315,6 +316,7 @@ $numColIdx = $colOff;
                 <td class="align-middle col-assign-dispatch">
                     <?php
                     $dispatchOfficerName = isset($dispatchOfficerMap[$distId]) ? $dispatchOfficerMap[$distId] : '';
+                    $poIdFromNarration = parsePoIdFromStoreDistNarration($row['Narration'] ?? '');
                     if ($dispatchOfficerName !== '') { ?>
                     <span class="badge badge-success d-block mb-1">Assigned: <?php echo htmlspecialchars($dispatchOfficerName); ?></span>
                     <form method="post" action="save-revert-dispatch-from-distribute-store.php" class="d-inline form-revert-dispatch" onsubmit="return confirm('Revert this assignment back to store? Items will be removed from the dispatch officer.');">
@@ -325,7 +327,18 @@ $numColIdx = $colOff;
                     <?php } else { ?>
                     <button type="button" class="btn btn-sm btn-outline-primary btn-assign-dispatch-row" data-dist-id="<?php echo (int)$row['id']; ?>" data-toggle="modal" data-target="#modalAssignDispatch">Assign to dispatch</button>
                     <button type="button" class="btn btn-sm btn-link btn-dispatch-history p-0 ml-1" data-dist-id="<?php echo (int)$row['id']; ?>" data-toggle="modal" data-target="#modalDispatchHistory">History</button>
-                    <?php } ?>
+                    <?php }
+                    if ($poIdFromNarration > 0) {
+                        $poRevertBlocked = ($dispatchOfficerName !== '');
+                    ?>
+                    <form method="post" action="save-revert-po-from-distribute-store.php" class="d-block mt-1" onsubmit="return confirm('Revert all items back to purchase order? You can assign to store again from the PO screen.');">
+                        <input type="hidden" name="store_dist_id" value="<?php echo (int) $row['id']; ?>">
+                        <button type="submit" class="btn btn-sm btn-outline-danger"<?php if ($poRevertBlocked) { ?> disabled title="First use Revert to store to remove dispatch assignment"<?php } ?>>Revert to PO</button>
+                    </form>
+                    <?php if ($poRevertBlocked) { ?>
+                    <small class="text-muted d-block mt-1">Revert to store first</small>
+                    <?php }
+                    } ?>
                 </td>
                 <?php } ?>
                <td><?php echo $i; ?></td>

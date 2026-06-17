@@ -6,6 +6,76 @@ include_once 'inc-transportor.php';
 $user_id = $_SESSION['User']['id'];
 $MainPage = "Customers";
 $Page = "View-Customers";
+
+$challanPaidByCol = $conn->query("SHOW COLUMNS FROM tbl_trip_details LIKE 'ChallanPaidBy'");
+if (!$challanPaidByCol || $challanPaidByCol->num_rows === 0) {
+    $conn->query("ALTER TABLE tbl_trip_details ADD COLUMN ChallanPaidBy VARCHAR(50) NOT NULL DEFAULT '' AFTER Challan");
+}
+
+$id = (int) ($_GET['id'] ?? 0);
+if ($id <= 0 || !transportorOwnsTrip($user_id, $id)) {
+    header('Location: running-trips.php');
+    exit;
+}
+
+if (isset($_POST['submit'])) {
+    $OutDate = addslashes(trim($_POST['OutDate']));
+    $ClosingReading = addslashes(trim($_POST['ClosingReading']));
+    $Fastag = addslashes(trim($_POST['Fastag']));
+    $Challan = addslashes(trim($_POST['Challan']));
+    $ChallanPaidBy = addslashes(trim($_POST['ChallanPaidBy'] ?? ''));
+    $EndLattitude = addslashes(trim($_POST['EndLattitude']));
+    $EndLongitude = addslashes(trim($_POST['EndLongitude']));
+    $CreatedDate = date('Y-m-d');
+    $CreatedTime = date('H:i:s');
+
+    $Photo = isset($_POST['OldPhoto']) ? $_POST['OldPhoto'] : '';
+    if (!empty($_FILES['Photo']['name'])) {
+        $randno = rand(1, 100);
+        $src = $_FILES['Photo']['tmp_name'];
+        $fnm = substr($_FILES['Photo']['name'], 0, strrpos($_FILES['Photo']['name'], '.'));
+        $fnm = str_replace(' ', '_', $fnm);
+        $ext = substr($_FILES['Photo']['name'], strpos($_FILES['Photo']['name'], '.'));
+        $dest = '../uploads/' . $randno . '_' . $fnm . $ext;
+        $imagepath = $randno . '_' . $fnm . $ext;
+        if (move_uploaded_file($src, $dest)) {
+            $Photo = $imagepath;
+        }
+    }
+
+    $EndPhoto = isset($_POST['OldEndPhoto']) ? $_POST['OldEndPhoto'] : '';
+    if (!empty($_FILES['EndPhoto']['name'])) {
+        $randno = rand(1, 100);
+        $src = $_FILES['EndPhoto']['tmp_name'];
+        $fnm = substr($_FILES['EndPhoto']['name'], 0, strrpos($_FILES['EndPhoto']['name'], '.'));
+        $fnm = str_replace(' ', '_', $fnm);
+        $ext = substr($_FILES['EndPhoto']['name'], strpos($_FILES['EndPhoto']['name'], '.'));
+        $dest = '../uploads/' . $randno . '_' . $fnm . $ext;
+        $imagepath = $randno . '_' . $fnm . $ext;
+        if (move_uploaded_file($src, $dest)) {
+            $EndPhoto = $imagepath;
+        }
+    }
+
+    $sql = "UPDATE tbl_trip_details SET OutDate='$OutDate',ClosingReading='$ClosingReading',Fastag='$Fastag',Challan='$Challan',ChallanPaidBy='$ChallanPaidBy',ChallanPhoto='$Photo',EndLattitude='$EndLattitude',EndLongitude='$EndLongitude',Status=1,ModifiedBy='$user_id',ModifiedDate='$CreatedDate',ModifiedTime='$CreatedTime',EndPhoto='$EndPhoto',OutTime='$CreatedTime' WHERE id='$id'";
+    $conn->query($sql);
+    transportorFlash('success', 'Trip ended successfully!');
+    header('Location: view-trips.php');
+    exit;
+}
+
+$sql = "SELECT * FROM tbl_trip_details WHERE id='$id'";
+$row7 = getRecord($sql);
+$driver = transportorGetDriver($user_id, (int) ($row7['DriverId'] ?? 0));
+$transportorUserRow = getRecord("SELECT Lattitude, Longitude FROM tbl_users WHERE id='$user_id' LIMIT 1") ?: [];
+$tripCoords = transportorResolveTripLatLong(
+    $row7['EndLattitude'] ?? '',
+    $row7['EndLongitude'] ?? '',
+    $driver,
+    $transportorUserRow
+);
+$Latitude = $tripCoords['lat'];
+$Longitude = $tripCoords['lng'];
 ?>
 <!DOCTYPE html>
 <html lang="en" class="default-style layout-fixed layout-navbar-fixed">
@@ -46,69 +116,6 @@ $Page = "View-Customers";
         <!-- Fixed navbar -->
         <?php include_once 'back-header.php'; ?> 
         
-
-<?php
-$challanPaidByCol = $conn->query("SHOW COLUMNS FROM tbl_trip_details LIKE 'ChallanPaidBy'");
-if (!$challanPaidByCol || $challanPaidByCol->num_rows === 0) {
-    $conn->query("ALTER TABLE tbl_trip_details ADD COLUMN ChallanPaidBy VARCHAR(50) NOT NULL DEFAULT '' AFTER Challan");
-}
-$id = (int) ($_GET['id'] ?? 0);
-if ($id <= 0 || !transportorOwnsTrip($user_id, $id)) {
-    header('Location: running-trips.php');
-    exit;
-}
-$sql = "SELECT * FROM tbl_trip_details WHERE id='$id'";
-$row7 = getRecord($sql);
-$Latitude = '';
-$Longitude = '';
-if(isset($_POST['submit'])){
-  $OutDate = addslashes(trim($_POST['OutDate']));
-$ClosingReading = addslashes(trim($_POST['ClosingReading']));
-$Fastag = addslashes(trim($_POST['Fastag']));
-$Challan = addslashes(trim($_POST['Challan']));
-$ChallanPaidBy = addslashes(trim($_POST['ChallanPaidBy'] ?? ''));
-$EndLattitude = addslashes(trim($_POST['EndLattitude']));
-$EndLongitude = addslashes(trim($_POST['EndLongitude']));
-$CreatedDate = date('Y-m-d');
-$CreatedTime = date('H:i:s');
-
-$Photo = isset($_POST['OldPhoto']) ? $_POST['OldPhoto'] : '';
-if(!empty($_FILES['Photo']['name'])){
-$randno = rand(1,100);
-$src = $_FILES['Photo']['tmp_name'];
-$fnm = substr($_FILES["Photo"]["name"], 0,strrpos($_FILES["Photo"]["name"],'.')); 
-$fnm = str_replace(" ","_",$fnm);
-$ext = substr($_FILES["Photo"]["name"],strpos($_FILES["Photo"]["name"],"."));
-$dest = '../uploads/'. $randno . "_".$fnm . $ext;
-$imagepath =  $randno . "_".$fnm . $ext;
-if(move_uploaded_file($src, $dest))
-{
-$Photo = $imagepath ;
-}
-}
-
-$EndPhoto = isset($_POST['OldEndPhoto']) ? $_POST['OldEndPhoto'] : '';
-if(!empty($_FILES['EndPhoto']['name'])){
-$randno = rand(1,100);
-$src = $_FILES['EndPhoto']['tmp_name'];
-$fnm = substr($_FILES["EndPhoto"]["name"], 0,strrpos($_FILES["EndPhoto"]["name"],'.')); 
-$fnm = str_replace(" ","_",$fnm);
-$ext = substr($_FILES["EndPhoto"]["name"],strpos($_FILES["EndPhoto"]["name"],"."));
-$dest = '../uploads/'. $randno . "_".$fnm . $ext;
-$imagepath =  $randno . "_".$fnm . $ext;
-if(move_uploaded_file($src, $dest))
-{
-$EndPhoto = $imagepath ;
-}
-}
-
-$sql = "UPDATE tbl_trip_details SET OutDate='$OutDate',ClosingReading='$ClosingReading',Fastag='$Fastag',Challan='$Challan',ChallanPaidBy='$ChallanPaidBy',ChallanPhoto='$Photo',EndLattitude='$EndLattitude',EndLongitude='$EndLongitude',Status=1,ModifiedBy='$user_id',ModifiedDate='$CreatedDate',ModifiedTime='$CreatedTime',EndPhoto='$EndPhoto',OutTime='$CreatedTime' WHERE id='$id'";
-$conn->query($sql);
-header('Location: view-trips.php');
-exit;
-}
-?>
-
 
         <div class="main-container">
 

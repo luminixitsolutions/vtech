@@ -6,6 +6,8 @@ $Roll = $row77['Roll'];
 $UserCat = $row77['CatId'];
 require_once __DIR__ . '/../inc-menu-option-groups.php';
 $Options = adminResolveMenuOptionsFromUserRow($row77);
+require_once __DIR__ . '/../inc-menu-access-granular-options.php';
+$MenuOptions = adminUserRawMenuOptions($row77);
 ?>
 
             <!-- [ Layout navbar ( Header ) ] End -->
@@ -40,19 +42,22 @@ $Options = adminResolveMenuOptionsFromUserRow($row77);
                 <div>Product Dashboard</div>
             </a>
         </li> 
-        <?php if(in_array("24", $Options)) {?>
+        <?php if(menuAccessShowGranularGroup($MenuOptions, 24)) {?>
+        <?php if(menuAccessShowGranularLink($MenuOptions, 199)) { ?>
         <li class="sidenav-item">
             <a href="add-product.php" class="sidenav-link">
                  <i class="sidenav-icon feather icon-activity"></i>
                 <div>Add Product</div>
             </a>
         </li>
+        <?php } if(menuAccessShowGranularLink($MenuOptions, 200)) { ?>
         <li class="sidenav-item">
             <a href="view-products.php" class="sidenav-link">
                  <i class="sidenav-icon feather icon-activity"></i>
                 <div>View Product</div>
             </a>
         </li>
+        <?php } ?>
         <?php } if(in_array("17", $Options)) {?>
         <li class="sidenav-item">
             <a href="product-specification.php" class="sidenav-link">

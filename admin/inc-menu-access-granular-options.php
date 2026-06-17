@@ -68,6 +68,8 @@ function menuAccessGranularDefinitions()
         245 => ['label' => 'Add Service Complaint', 'legacy' => [28]],
         246 => ['label' => 'View Service Complaint', 'legacy' => [28]],
         247 => ['label' => 'Service Abstract', 'legacy' => [28]],
+        260 => ['label' => 'Service Challan', 'legacy' => [28, 26]],
+        262 => ['label' => 'Partial Material Challan', 'legacy' => [26]],
         248 => ['label' => 'Employee Tracking Report', 'legacy' => [187]],
         249 => ['label' => 'Task — Create Task', 'legacy' => [47]],
         250 => ['label' => 'Task — View Tasks', 'legacy' => [47]],
@@ -137,11 +139,18 @@ function menuAccessGranularPagePrimaryIds()
         'view-distribute-item-store.php' => 234,
         'distribute-item-store-executive-2.php' => 235,
         'view-distribute-item-store-executive.php' => 236,
+        'dispatch-to-store-transfer.php' => 237,
+        'view-dispatch-to-store-transfers.php' => 238,
+        'stock-location-report.php' => 239,
+        'store-to-store-transfer.php' => 240,
+        'view-store-to-store-transfers.php' => 241,
         'add-sell.php' => 243,
         'view-sells.php' => 244,
         'choose-service-type2.php' => 245,
         'view-service-module.php' => 246,
         'service-abstract.php' => 247,
+        'view-service-challans.php' => 260,
+        'view-partial-material-challans.php' => 262,
         'employee-tracking-report.php' => 248,
         'create-task.php' => 249,
         'view-tasks.php' => 250,
@@ -194,6 +203,155 @@ function menuAccessUserHasScreen(array $options, $screenId)
 function menuAccessUserHasFamily(array $options, $legacyParentId)
 {
     return menuAccessUserHasScreen($options, $legacyParentId);
+}
+
+/** @return int[] */
+function menuAccessGranularIdsForLegacy($legacyParentId)
+{
+    static $cache = [];
+    $legacyParentId = (int) $legacyParentId;
+    if (isset($cache[$legacyParentId])) {
+        return $cache[$legacyParentId];
+    }
+    $ids = [];
+    foreach (menuAccessGranularDefinitions() as $gid => $def) {
+        foreach ($def['legacy'] ?? [] as $legacyId) {
+            if ((int) $legacyId === $legacyParentId) {
+                $ids[] = (int) $gid;
+            }
+        }
+    }
+    $cache[$legacyParentId] = $ids;
+
+    return $ids;
+}
+
+function menuAccessGranularLegacyParent($granularId)
+{
+    $granularId = (int) $granularId;
+    $defs = menuAccessGranularDefinitions();
+    if (isset($defs[$granularId]['legacy'][0])) {
+        return (int) $defs[$granularId]['legacy'][0];
+    }
+
+    return $granularId;
+}
+
+/**
+ * Sidebar sub-link: show granular screen, or all siblings when only legacy parent is assigned.
+ *
+ * @param string[] $rawOptions tbl_users.Options only (use adminUserRawMenuOptions)
+ */
+function menuAccessShowGranularMenuLink(array $rawOptions, $granularId, $legacyParentId = null, array $siblingGranularIds = null)
+{
+    $granularId = (int) $granularId;
+    if ($legacyParentId === null) {
+        $legacyParentId = menuAccessGranularLegacyParent($granularId);
+    } else {
+        $legacyParentId = (int) $legacyParentId;
+    }
+    if ($siblingGranularIds === null) {
+        $siblingGranularIds = menuAccessGranularIdsForLegacy($legacyParentId);
+    }
+    if (userHasAnyMenuOption($rawOptions, [$granularId])) {
+        return true;
+    }
+    $hasAnySibling = !empty($siblingGranularIds) && userHasAnyMenuOption($rawOptions, $siblingGranularIds);
+
+    return userHasAnyMenuOption($rawOptions, [$legacyParentId]) && !$hasAnySibling;
+}
+
+/** @param string[] $rawOptions */
+function menuAccessShowGranularGroupParent(array $rawOptions, array $granularIds, $legacyParentId)
+{
+    $legacyParentId = (int) $legacyParentId;
+    if (empty($granularIds)) {
+        return userHasAnyMenuOption($rawOptions, [$legacyParentId]);
+    }
+    foreach ($granularIds as $gid) {
+        if (menuAccessShowGranularMenuLink($rawOptions, (int) $gid, $legacyParentId, $granularIds)) {
+            return true;
+        }
+    }
+
+    return false;
+}
+
+/** @param string[] $rawOptions */
+function menuAccessShowGranularLink(array $rawOptions, $granularId)
+{
+    return menuAccessShowGranularMenuLink($rawOptions, (int) $granularId);
+}
+
+/** @param string[] $rawOptions */
+function menuAccessShowGranularGroup(array $rawOptions, $legacyParentId)
+{
+    $legacyParentId = (int) $legacyParentId;
+
+    return menuAccessShowGranularGroupParent(
+        $rawOptions,
+        menuAccessGranularIdsForLegacy($legacyParentId),
+        $legacyParentId
+    );
+}
+
+/**
+ * Legacy top-level screen when module also has granular children (e.g. 134 vs 224).
+ *
+ * @param string[] $rawOptions
+ */
+function menuAccessShowLegacyModuleScreen(array $rawOptions, $legacyId)
+{
+    $legacyId = (int) $legacyId;
+
+    return in_array((string) $legacyId, array_map('strval', $rawOptions), true);
+}
+
+/**
+ * Granular sub-menu visibility (legacy parent-only users still see both links).
+ * @deprecated use menuAccessShowGranularMenuLink with raw options
+ */
+function menuAccessShowGranularSubLink(array $options, $assignId, $viewId, $legacyParentId, $mode)
+{
+    $assignId = (int) $assignId;
+    $viewId = (int) $viewId;
+    $legacyParentId = (int) $legacyParentId;
+    $siblings = [$assignId, $viewId];
+    if ($mode === 'assign') {
+        return menuAccessShowGranularMenuLink($options, $assignId, $legacyParentId, $siblings);
+    }
+
+    return menuAccessShowGranularMenuLink($options, $viewId, $legacyParentId, $siblings);
+}
+
+function menuAccessShowStoreAssignItemsLink(array $options)
+{
+    return menuAccessShowGranularLink($options, 233);
+}
+
+function menuAccessShowStoreViewAssignItemsLink(array $options)
+{
+    return menuAccessShowGranularLink($options, 234);
+}
+
+function menuAccessShowStoreAssignParent(array $options)
+{
+    return menuAccessShowGranularGroup($options, 70);
+}
+
+function menuAccessShowDispatchAssignItemsLink(array $options)
+{
+    return menuAccessShowGranularLink($options, 235);
+}
+
+function menuAccessShowDispatchViewAssignItemsLink(array $options)
+{
+    return menuAccessShowGranularLink($options, 236);
+}
+
+function menuAccessShowDispatchAssignParent(array $options)
+{
+    return menuAccessShowGranularGroup($options, 71);
 }
 
 /** @return int[] */

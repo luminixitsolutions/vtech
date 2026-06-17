@@ -78,4 +78,80 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.1.53/vfs_fonts.js"></script>
 <script src="https://cdn.datatables.net/buttons/1.6.2/js/buttons.html5.min.js"></script>
 
+<script>
+(function () {
+    function hideAppLoader() {
+        var loaders = document.querySelectorAll('.loader-display');
+        for (var i = 0; i < loaders.length; i++) {
+            loaders[i].style.display = 'none';
+            loaders[i].style.opacity = '0';
+            loaders[i].style.visibility = 'hidden';
+        }
+        if (window.Pace && typeof window.Pace.stop === 'function') {
+            window.Pace.stop();
+        }
+    }
+
+    if (document.readyState === 'complete') {
+        hideAppLoader();
+    } else {
+        document.addEventListener('DOMContentLoaded', hideAppLoader);
+        window.addEventListener('load', hideAppLoader);
+    }
+
+    setTimeout(hideAppLoader, 2000);
+
+    if (window.jQuery) {
+        jQuery(document).ajaxComplete(function () {
+            hideAppLoader();
+        });
+    }
+})();
+</script>
+<?php
+if (function_exists('appFlashTake')) {
+    $appFlash = appFlashTake();
+    if ($appFlash) {
+        $flashType = $appFlash['type'] === 'error' ? 'error' : 'success';
+        $flashTitle = $appFlash['type'] === 'error' ? 'Error' : 'Success';
+        echo '<script>(function(){var msg=' . json_encode($appFlash['message']) . ';var fn=' . json_encode($flashType) . ';function showFlash(){if(typeof toastr!=="undefined"&&typeof toastr[fn]==="function"){toastr[fn](msg,' . json_encode($flashTitle) . ',{timeOut:5000});return true;}return false;}if(!showFlash()){document.addEventListener("DOMContentLoaded",showFlash);}})();</script>';
+    }
+}
+?>
+
+<script>
+(function () {
+    function hideAppLoader() {
+        var loaders = document.querySelectorAll('.loader-display');
+        for (var i = 0; i < loaders.length; i++) {
+            loaders[i].style.display = 'none';
+            loaders[i].style.opacity = '0';
+            loaders[i].style.visibility = 'hidden';
+        }
+        if (window.Pace && typeof window.Pace.stop === 'function') {
+            window.Pace.stop();
+        }
+    }
+
+    if (document.readyState === 'complete') {
+        hideAppLoader();
+    } else {
+        document.addEventListener('DOMContentLoaded', hideAppLoader);
+        window.addEventListener('load', hideAppLoader);
+    }
+
+    setTimeout(hideAppLoader, 2000);
+})();
+</script>
+<?php
+if (function_exists('appFlashTake')) {
+    $appFlash = appFlashTake();
+    if ($appFlash) {
+        $flashType = $appFlash['type'] === 'error' ? 'error' : 'success';
+        $flashTitle = $appFlash['type'] === 'error' ? 'Error' : 'Success';
+        echo '<script>(function(){var msg=' . json_encode($appFlash['message']) . ';var fn=' . json_encode($flashType) . ';function showFlash(){if(typeof toastr!=="undefined"&&typeof toastr[fn]==="function"){toastr[fn](msg,' . json_encode($flashTitle) . ',{timeOut:5000});return true;}return false;}if(!showFlash()){document.addEventListener("DOMContentLoaded",showFlash);}})();</script>';
+    }
+}
+?>
+
 

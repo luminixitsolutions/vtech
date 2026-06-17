@@ -6,6 +6,8 @@ $Roll = $row77['Roll'];
 $UserCat = $row77['CatId'];
 require_once __DIR__ . '/../inc-menu-option-groups.php';
 $Options = adminResolveMenuOptionsFromUserRow($row77);
+require_once __DIR__ . '/../inc-menu-access-granular-options.php';
+$MenuOptions = adminUserRawMenuOptions($row77);
 ?>
 
             <!-- [ Layout navbar ( Header ) ] End -->
@@ -53,7 +55,7 @@ $Options = adminResolveMenuOptionsFromUserRow($row77);
                
             </a>
         </li>
-        <?php } if(menuAccessUserHasScreen($Options, 188) || menuAccessUserHasScreen($Options, 44)) {?>
+        <?php } if(menuAccessShowGranularLink($MenuOptions, 188) || menuAccessShowGranularLink($MenuOptions, 44)) {?>
         <li class="sidenav-item">
             <a href="add-irrigation-leads.php" class="sidenav-link">
                 <i class="sidenav-icon feather icon-activity"></i>
@@ -61,7 +63,7 @@ $Options = adminResolveMenuOptionsFromUserRow($row77);
                 
             </a>
         </li>
-        <?php } if(menuAccessUserHasScreen($Options, 44)) {?>
+        <?php } if(menuAccessShowGranularLink($MenuOptions, 44)) {?>
         <li class="sidenav-item">
             <a href="add-lead.php" class="sidenav-link">
                 <i class="sidenav-icon feather icon-activity"></i>
@@ -147,14 +149,14 @@ $Options = adminResolveMenuOptionsFromUserRow($row77);
         
 
          
-          <?php } if(menuAccessUserHasFamily($Options, 149)) {?>
+          <?php } if(menuAccessShowGranularGroup($MenuOptions, 149)) {?>
          <li class="sidenav-item <?php if($MainPage=='Assign-Pump-Customers') {?> open active <?php } ?>">
 <a href="javascript:" class="sidenav-link sidenav-toggle">
  <i class="sidenav-icon feather icon-activity"></i>
 <div>Pump Application Form</div>
 </a>
 <ul class="sidenav-menu">
-  <?php if(menuAccessUserHasScreen($Options, 189)) {?>
+  <?php if(menuAccessShowGranularLink($MenuOptions, 189)) {?>
   <li class="sidenav-item">
 <a href="upload-application-excel.php" class="sidenav-link">
 <div> Upload Excel</div>
@@ -165,7 +167,7 @@ $Options = adminResolveMenuOptionsFromUserRow($row77);
 <?php } ?>
 </a>
 </li>
-<?php } if(menuAccessUserHasScreen($Options, 190)) {?>
+<?php } if(menuAccessShowGranularLink($MenuOptions, 190)) {?>
   <li class="sidenav-item">
 <a href="view-application-form.php" class="sidenav-link">
 <div> All Application Form</div>
@@ -176,7 +178,7 @@ $Options = adminResolveMenuOptionsFromUserRow($row77);
 <?php } ?>
 </a>
 </li>
-<?php } if(menuAccessUserHasScreen($Options, 191)) {?>
+<?php } if(menuAccessShowGranularLink($MenuOptions, 191)) {?>
 <li class="sidenav-item">
 <a href="pending-application-form.php" class="sidenav-link">
 <div> Pending Application Form</div>
@@ -187,7 +189,7 @@ $Options = adminResolveMenuOptionsFromUserRow($row77);
 <?php } ?>
 </a>
 </li>
-<?php } if(menuAccessUserHasScreen($Options, 192)) {?>
+<?php } if(menuAccessShowGranularLink($MenuOptions, 192)) {?>
         <li class="sidenav-item">
 <a href="approve-application-form.php" class="sidenav-link">
 <div> Approve Application Form</div>
@@ -198,7 +200,7 @@ $Options = adminResolveMenuOptionsFromUserRow($row77);
 <?php } ?>
 </a>
 </li>  
-<?php } if(menuAccessUserHasScreen($Options, 193)) {?>
+<?php } if(menuAccessShowGranularLink($MenuOptions, 193)) {?>
 <li class="sidenav-item">
 <a href="reject-application-form.php" class="sidenav-link">
 <div> Reject Application Form</div>
@@ -212,14 +214,14 @@ $Options = adminResolveMenuOptionsFromUserRow($row77);
 <?php } ?>
 </ul>
 </li>
- <?php } if(menuAccessUserHasFamily($Options, 150)) {?>
+ <?php } if(menuAccessShowGranularGroup($MenuOptions, 150)) {?>
 <li class="sidenav-item <?php if($MainPage=='Assign-Pump-Customers') {?> open active <?php } ?>">
 <a href="javascript:" class="sidenav-link sidenav-toggle">
  <i class="sidenav-icon feather icon-activity"></i>
 <div>Assign Application Form</div>
 </a>
 <ul class="sidenav-menu">
-  <?php if(menuAccessUserHasScreen($Options, 194)) {?>
+  <?php if(menuAccessShowGranularLink($MenuOptions, 194)) {?>
   <li class="sidenav-item">
 <a href="assign-applications.php" class="sidenav-link">
 <div> Assign Application Form</div>
@@ -230,7 +232,7 @@ $Options = adminResolveMenuOptionsFromUserRow($row77);
 <?php } ?>
 </a>
 </li>
-<?php } if(menuAccessUserHasScreen($Options, 195)) {?>
+<?php } if(menuAccessShowGranularLink($MenuOptions, 195)) {?>
 <li class="sidenav-item">
 <a href="assigned-applications.php" class="sidenav-link">
 <div> Assigned Application Form</div>
@@ -244,7 +246,7 @@ $Options = adminResolveMenuOptionsFromUserRow($row77);
 <?php } ?>
 </ul>
 </li>
- <?php } if(menuAccessUserHasScreen($Options, 151) || menuAccessUserHasScreen($Options, 152) || menuAccessUserHasScreen($Options, 153)) {?>
+ <?php } if(menuAccessShowGranularLink($MenuOptions, 151) || menuAccessShowGranularLink($MenuOptions, 152) || menuAccessShowGranularLink($MenuOptions, 153)) {?>
 <li class="sidenav-item <?php if($MainPage=='Assign-Pump-Customers') {?> open active <?php } ?>">
 <a href="javascript:" class="sidenav-link sidenav-toggle">
  <i class="sidenav-icon feather icon-activity"></i>

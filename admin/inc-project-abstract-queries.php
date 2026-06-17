@@ -38,12 +38,23 @@ function projectAbstractScopeSql($conn, $projectId, $subheadId, $dist = '', $ali
     return $sql;
 }
 
+/** Exclude Service Replacement Challan (ChallanType=2); count Regular Challan only when column exists. */
+function projectAbstractRegularChallanSql($conn, $alias = 'ts')
+{
+    if (projectAbstractHasColumn($conn, 'tbl_sell', 'ChallanType')) {
+        return " AND $alias.ChallanType=1";
+    }
+
+    return '';
+}
+
 function projectAbstractListSql($conn, $roll, $projectId, $subheadId, $dist = '', $val2 = '')
 {
     $projectId = (int) $projectId;
     $subheadId = (int) $subheadId;
     $scope = projectAbstractScopeSql($conn, $projectId, $subheadId, $dist, 'tu');
     $val2Esc = projectAbstractEscape($conn, $val2);
+    $regularChallan = projectAbstractRegularChallanSql($conn, 'ts');
 
     if ($roll === 'totapp') {
         return "SELECT tu.* FROM tbl_users tu WHERE 1=1 $scope";
@@ -63,17 +74,37 @@ function projectAbstractListSql($conn, $roll, $projectId, $subheadId, $dist = ''
 
     if ($roll === 'deliverychallan') {
         return "SELECT tu.* FROM tbl_users tu WHERE 1=1 $scope
-            AND EXISTS (SELECT 1 FROM tbl_sell ts WHERE ts.CustId=tu.id AND ts.SellType='Challan')";
+            AND EXISTS (SELECT 1 FROM tbl_sell ts WHERE ts.CustId=tu.id AND ts.SellType='Challan'$regularChallan)";
     }
 
     if ($roll === 'dispatch') {
         return "SELECT tu.* FROM tbl_users tu WHERE 1=1 $scope
-            AND EXISTS (SELECT 1 FROM tbl_sell ts WHERE ts.CustId=tu.id)";
+            AND EXISTS (SELECT 1 FROM tbl_sell ts WHERE ts.CustId=tu.id$regularChallan)";
+    }
+
+    if ($roll === 'partialmaterialdispatch') {
+        if (projectAbstractHasColumn($conn, 'tbl_sell', 'MaterialDispatchStatus')) {
+            return "SELECT tu.* FROM tbl_users tu WHERE 1=1 $scope
+                AND EXISTS (
+                    SELECT 1 FROM tbl_sell ts
+                    WHERE ts.CustId=tu.id AND ts.Inst_Dispatcher_Otp_Verify=1 AND ts.MaterialDispatchStatus=2$regularChallan
+                )";
+        }
+
+        return "SELECT tu.* FROM tbl_users tu WHERE 1=0";
+    }
+
+    if ($roll === 'materialdispatch') {
+        return "SELECT tu.* FROM tbl_users tu WHERE 1=1 $scope
+            AND EXISTS (
+                SELECT 1 FROM tbl_sell ts
+                WHERE ts.CustId=tu.id AND ts.Inst_Dispatcher_Otp_Verify=1$regularChallan
+            )";
     }
 
     if ($roll === 'dispatchpending') {
         return "SELECT tu.* FROM tbl_users tu
-            LEFT JOIN tbl_sell ts ON tu.id=ts.CustId AND ts.Inst_Dispatcher_Otp_Verify=1
+            LEFT JOIN tbl_sell ts ON tu.id=ts.CustId AND ts.Inst_Dispatcher_Otp_Verify=1$regularChallan
             WHERE tu.Roll=5 AND tu.FieldSurveyDetails=1 $scope AND ts.CustId IS NULL";
     }
 
@@ -100,7 +131,7 @@ function projectAbstractListSql($conn, $roll, $projectId, $subheadId, $dist = ''
             WHERE tu.Roll=5 AND tu.FieldSurveyDetails=1 $scope
             AND (
                 (
-                    EXISTS (SELECT 1 FROM tbl_sell ts WHERE ts.CustId=tu.id)
+                    EXISTS (SELECT 1 FROM tbl_sell ts WHERE ts.CustId=tu.id$regularChallan)
                     AND NOT EXISTS (
                         SELECT 1 FROM tbl_installations ti
                         WHERE ti.CustId=tu.id AND ti.InstallStatus='Yes' AND ti.Type=2
@@ -108,7 +139,7 @@ function projectAbstractListSql($conn, $roll, $projectId, $subheadId, $dist = ''
                 )
                 OR NOT EXISTS (
                     SELECT 1 FROM tbl_sell ts
-                    WHERE ts.CustId=tu.id AND ts.Inst_Dispatcher_Otp_Verify=1
+                    WHERE ts.CustId=tu.id AND ts.Inst_Dispatcher_Otp_Verify=1$regularChallan
                 )
             )";
     }

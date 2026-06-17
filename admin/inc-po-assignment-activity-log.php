@@ -45,7 +45,7 @@ function parsePoIdFromStoreDistNarration($narration)
 }
 
 /**
- * @param string $actionType po_to_store|dispatch_assign|dispatch_revert
+ * @param string $actionType po_to_store|dispatch_assign|dispatch_revert|po_revert
  */
 function logPoAssignmentActivity($conn, $poId, $storeDistId, $actionType, $branchId, $performedBy, $lineCount = 0, $remarks = '', $dispatchOfficerId = 0)
 {
@@ -57,7 +57,7 @@ function logPoAssignmentActivity($conn, $poId, $storeDistId, $actionType, $branc
     $lineCount = (int) $lineCount;
     $dispatchOfficerId = (int) $dispatchOfficerId;
     $actionType = strtolower(trim((string) $actionType));
-    $allowed = ['po_to_store', 'dispatch_assign', 'dispatch_revert'];
+    $allowed = ['po_to_store', 'dispatch_assign', 'dispatch_revert', 'po_revert'];
     if (!in_array($actionType, $allowed, true)) {
         return false;
     }
@@ -126,6 +126,7 @@ function renderPoAssignmentActivityLogHtml($conn, $poId)
         'po_to_store' => ['Store assignment', 'badge-primary'],
         'dispatch_assign' => ['Assigned to dispatch', 'badge-success'],
         'dispatch_revert' => ['Reverted from dispatch to store', 'badge-warning'],
+        'po_revert' => ['Reverted to purchase order', 'badge-danger'],
     ];
     ob_start();
     ?>
@@ -328,4 +329,56 @@ function logPoDispatchActivityFromStoreDist($conn, $storeDistId, $actionType, $d
         (string) $remarks,
         (int) $dispatchOfficerId
     );
+}
+
+/**
+ * Remove PO-linked store assignment so items can be assigned again from take-po-action.php.
+ *
+ * @return array{ok: bool, po_id?: int, error?: string}
+ */
+function revertStoreDistAssignmentToPo($conn, $storeDistId, $performedBy)
+{
+    $storeDistId = (int) $storeDistId;
+    $performedBy = (int) $performedBy;
+    if ($storeDistId < 1) {
+        return ['ok' => false, 'error' => 'Invalid assignment.'];
+    }
+
+    $h = getRecord("SELECT id, BranchId, Narration FROM tbl_distibute_items WHERE id='$storeDistId' AND Status=1 LIMIT 1");
+    if (!is_array($h) || empty($h['id'])) {
+        return ['ok' => false, 'error' => 'Store assignment not found or inactive.'];
+    }
+
+    $poId = parsePoIdFromStoreDistNarration($h['Narration'] ?? '');
+    if ($poId < 1) {
+        return ['ok' => false, 'error' => 'This assignment was not created from a purchase order. Revert to PO is only for PO store transfers.'];
+    }
+
+    require_once __DIR__ . '/inc-store-dist-dispatch-status.php';
+    $assignment = getStoreDistDispatchAssignment($conn, $storeDistId);
+    if ($assignment !== null) {
+        return ['ok' => false, 'error' => 'Items are assigned to a dispatch officer. Use Revert to store first, then Revert to PO.'];
+    }
+
+    $lineCountRow = getRecord("SELECT COUNT(*) AS cnt FROM tbl_distibute_item_details WHERE DistId='$storeDistId'");
+    $lineCount = (int) ($lineCountRow['cnt'] ?? 0);
+    $branchId = (int) ($h['BranchId'] ?? 0);
+
+    $conn->begin_transaction();
+    try {
+        if (!$conn->query("DELETE FROM tbl_distibute_item_details WHERE DistId='$storeDistId'")) {
+            throw new Exception($conn->error);
+        }
+        if (!$conn->query("DELETE FROM tbl_distibute_items WHERE id='$storeDistId'")) {
+            throw new Exception($conn->error);
+        }
+        if (!logPoAssignmentActivity($conn, $poId, $storeDistId, 'po_revert', $branchId, $performedBy, $lineCount, 'Reverted store assignment back to PO for re-assignment')) {
+            throw new Exception('Could not write PO activity log.');
+        }
+        $conn->commit();
+        return ['ok' => true, 'po_id' => $poId];
+    } catch (Exception $e) {
+        $conn->rollback();
+        return ['ok' => false, 'error' => $e->getMessage()];
+    }
 }

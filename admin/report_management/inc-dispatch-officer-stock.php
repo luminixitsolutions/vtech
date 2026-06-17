@@ -97,3 +97,32 @@ function dispatch_officer_stock_compute_rows($conn, $BranchId, $StoreExeId, $Fro
         'totDebit' => $TotDebitQty,
     ];
 }
+
+/**
+ * Balance qty for one product at one dispatch officer (matches dispatch officer stock report).
+ */
+function dispatch_officer_product_balance($conn, $branchId, $storeExeId, $productId)
+{
+    $branchId = (int) $branchId;
+    $storeExeId = (int) $storeExeId;
+    $productId = (int) $productId;
+    if ($branchId < 1 || $storeExeId < 1 || $productId < 1) {
+        return 0;
+    }
+
+    $creditRow = getRecord(
+        "SELECT SUM(Qty) AS Qty FROM tbl_distibute_item_details2
+         WHERE BranchId='$branchId' AND ProductId='$productId' AND StoreExeId='$storeExeId'"
+    );
+    $credit = isset($creditRow['Qty']) && $creditRow['Qty'] !== '' && $creditRow['Qty'] !== null
+        ? (float) $creditRow['Qty'] : 0;
+
+    $debitRow = getRecord(
+        "SELECT SUM(Qty) AS Qty FROM tbl_stocks
+         WHERE BranchId='$branchId' AND ProductId='$productId' AND CreatedBy='$storeExeId'"
+    );
+    $debit = isset($debitRow['Qty']) && $debitRow['Qty'] !== '' && $debitRow['Qty'] !== null
+        ? (float) $debitRow['Qty'] : 0;
+
+    return max(0, (int) round($credit - $debit));
+}

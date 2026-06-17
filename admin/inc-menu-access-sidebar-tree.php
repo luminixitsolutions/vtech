@@ -263,6 +263,8 @@ function getMenuAccessDetailedTree()
             menuAccessTreeGroup('Delivery / Sell', [
                 menuAccessTreeItem(243, 'Add Sell'),
                 menuAccessTreeItem(244, 'View Sells'),
+                menuAccessTreeItem(260, 'Service Challan'),
+                menuAccessTreeItem(262, 'Partial Material Challan'),
             ]),
         ],
         'Assign Challan to Dispatcher' => [
@@ -286,6 +288,7 @@ function getMenuAccessDetailedTree()
                 menuAccessTreeItem(245, 'Add Service Complaint'),
                 menuAccessTreeItem(246, 'View Service Complaint'),
                 menuAccessTreeItem(247, 'Service Abstract'),
+                menuAccessTreeItem(260, 'Service Challan'),
             ]),
         ],
         'Insurance Site' => [

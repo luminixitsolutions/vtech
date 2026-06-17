@@ -92,9 +92,9 @@ $abstractDistrict = isset($_REQUEST['District']) ? trim($_REQUEST['District']) :
                 }
             }
             if($_REQUEST['Status']=='Resolved'){
-                $sql.=" AND tp.ClainStatus='Close'";
+                $sql.=" AND tp.ClainStatus IN ('Close', 'Issue Solved')";
             } elseif($_REQUEST['Status']=='Pending'){
-                $sql.=" AND tp.ClainStatus<>'Close'";
+                $sql.=" AND tp.ClainStatus NOT IN ('Close', 'Issue Solved')";
             }
             if($_REQUEST['ClainStatus']!=''){
                 $sql.=" AND tp.ClainStatus='".$conn->real_escape_string($_REQUEST['ClainStatus'])."'";

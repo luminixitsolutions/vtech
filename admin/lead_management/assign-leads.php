@@ -82,7 +82,7 @@ $Page = "Assign-Lead";
             $sql = "UPDATE tbl_leads SET AllocateId='$ExeId' WHERE id='$LeadId'";
                 $conn->query($sql);
         }
-        echo "<script>alert('Lead Assigned successfully to telecaller');window.location.href='assign-leads.php';</script>";
+        echo "<script>alert('Lead assigned successfully to Co-ordinator');window.location.href='assign-leads.php';</script>";
     }
 unset($_SESSION["cart_item"]);
 ?>
@@ -111,16 +111,28 @@ unset($_SESSION["cart_item"]);
 <form id="validation-form" method="post" enctype="multipart/form-data" action="">
                             <div class="form-row">
  <div class="form-group col-lg-4">
-<label class="form-label"> Telecaller<span class="text-danger">*</span></label>
+<label class="form-label"> Co-ordinator<span class="text-danger">*</span></label>
  <select class="select2-demo form-control" name="ExeId" id="ExeId" required>
-<option selected="" value="">Select</option>
- <?php 
-  $sql12 = "SELECT * FROM tbl_users WHERE Status='1' AND Roll=2";
+<option selected="" value="">Select Co-ordinator</option>
+ <?php
+  $coordinatorRollRows = getList("SELECT id FROM tbl_user_type WHERE Status=1 AND (Name LIKE '%Co-ordinator%' OR Name LIKE '%Coordinator%')");
+  $coordinatorRollIds = [];
+  foreach ($coordinatorRollRows as $coordRoll) {
+      $coordRollId = (int) ($coordRoll['id'] ?? 0);
+      if ($coordRollId > 0) {
+          $coordinatorRollIds[$coordRollId] = $coordRollId;
+      }
+  }
+  if (empty($coordinatorRollIds)) {
+      $coordinatorRollIds[6] = 6;
+  }
+  $coordinatorRollIn = implode(',', $coordinatorRollIds);
+  $sql12 = "SELECT * FROM tbl_users WHERE Status='1' AND Roll IN ($coordinatorRollIn) ORDER BY Fname ASC, Lname ASC";
   $row12 = getList($sql12);
   foreach($row12 as $result){
      ?>
   <option value="<?php echo $result['id'];?>">
-    <?php echo $result['Fname']; ?></option>
+    <?php echo trim($result['Fname'] . ' ' . $result['Lname']); ?></option>
 <?php } ?>
 </select>
 <div class="clearfix"></div>

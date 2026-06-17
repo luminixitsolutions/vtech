@@ -6,6 +6,7 @@ $Roll = $row77['Roll'];
 $UserCat = $row77['CatId'];
 include_once __DIR__ . '/inc-menu-option-groups.php';
 $Options = adminResolveMenuOptionsFromUserRow($row77);
+$MenuOptions = adminUserRawMenuOptions($row77);
 $BranchId = $row77['BranchId'];
 $ImmediateBoss = $row77['ImmediateBoss'];
 ?>
@@ -30,7 +31,7 @@ $ImmediateBoss = $row77['ImmediateBoss'];
             </a>
         </li> 
     
-     <?php  if(in_array("44", $Options) || in_array("45", $Options) || in_array("46", $Options) || in_array("47", $Options) || in_array("48", $Options) || in_array("49", $Options) || in_array("50", $Options) || in_array("51", $Options) || in_array("52", $Options) || in_array("63", $Options)) { ?>
+     <?php  if(in_array("44", $MenuOptions) || in_array("45", $MenuOptions) || in_array("46", $MenuOptions) || in_array("47", $MenuOptions) || in_array("48", $MenuOptions) || in_array("49", $MenuOptions) || in_array("50", $MenuOptions) || in_array("51", $MenuOptions) || in_array("52", $MenuOptions) || in_array("63", $MenuOptions)) { ?>
      
         <li class="sidenav-item">
             <a href="lead_management/lead-management-dashboard.php" class="sidenav-link">
@@ -49,7 +50,7 @@ $ImmediateBoss = $row77['ImmediateBoss'];
         </li>
 <?php } ?>
 
- <?php if(in_array("24", $Options)) {?>
+ <?php if(in_array("24", $MenuOptions)) {?>
         <li class="sidenav-item">
             <a href="product_management/product-managment-dashboard.php" class="sidenav-link">
                 <i class="sidenav-icon feather icon-box"></i>
@@ -57,7 +58,7 @@ $ImmediateBoss = $row77['ImmediateBoss'];
                 
             </a>
         </li>
-<?php } if(in_array("18", $Options) || in_array("19", $Options) || in_array("20", $Options) || in_array("21", $Options) || in_array("22", $Options) || in_array("23", $Options)) {?>
+<?php } if(in_array("18", $MenuOptions) || in_array("19", $MenuOptions) || in_array("20", $MenuOptions) || in_array("21", $MenuOptions) || in_array("22", $MenuOptions) || in_array("23", $MenuOptions)) {?>
         <li class="sidenav-item">
             <a href="user_management/account-managment-dashboard.php" class="sidenav-link">
                 <i class="sidenav-icon feather icon-users"></i>
@@ -66,14 +67,14 @@ $ImmediateBoss = $row77['ImmediateBoss'];
             </a>
         </li>
 
-<?php } if(in_array("55", $Options) || in_array("79", $Options)) {?>
+<?php } if(in_array("55", $MenuOptions) || in_array("79", $MenuOptions)) {?>
     <li class="sidenav-item <?php if($MainPage=='Assign-Pump-Customers') {?> open active <?php } ?>">
 <a href="javascript:" class="sidenav-link sidenav-toggle">
  <i class="sidenav-icon feather icon-user-check"></i>
 <div>Assign Customers</div>
 </a>
 <ul class="sidenav-menu">
-    <?php if(in_array("55", $Options)) {?>
+    <?php if(in_array("55", $MenuOptions)) {?>
 <li class="sidenav-item">
 <a href="assign-customers-to-co-ordinator.php?CoordinatorStatus=0" class="sidenav-link">
 <div> Assign Pump Customers To Co-ordinator</div>
@@ -84,7 +85,7 @@ $ImmediateBoss = $row77['ImmediateBoss'];
 <?php } ?>
 </a>
 </li>
-<?php } if(in_array("79", $Options)) {?> 
+<?php } if(in_array("79", $MenuOptions)) {?> 
         <li class="sidenav-item">
 <a href="assign-customers-to-field-survey.php?FieldSurveyStatus=0" class="sidenav-link">
 <div> Assign Pump Customers To Field Survey</div>
@@ -99,7 +100,7 @@ $ImmediateBoss = $row77['ImmediateBoss'];
 </ul>
 </li>
         
-<?php } if(in_array("130", $Options) || in_array("131", $Options)) {?>
+<?php } if(in_array("130", $MenuOptions) || in_array("131", $MenuOptions)) {?>
 
 <li class="sidenav-item <?php if($MainPage=='Production-Plan') {?> open active <?php } ?>">
 <a href="javascript:" class="sidenav-link sidenav-toggle">
@@ -108,7 +109,7 @@ $ImmediateBoss = $row77['ImmediateBoss'];
 </a>
 <ul class="sidenav-menu">
 
- <?php if(in_array("130", $Options)) {?>
+ <?php if(in_array("130", $MenuOptions)) {?>
 <li class="sidenav-item">
 <a href="bos-tentative-production-plan.php?MinLimit=0" class="sidenav-link">
 <div> BOS Production Plan</div>
@@ -120,7 +121,7 @@ $ImmediateBoss = $row77['ImmediateBoss'];
 </a>
 </li>
 
- <?php } if(in_array("131", $Options)) {?>
+ <?php } if(in_array("131", $MenuOptions)) {?>
 <li class="sidenav-item">
 <a href="stucture-tentative-production-plan.php?MinLimit=0" class="sidenav-link">
 <div> Stucture Production Plan</div>
@@ -136,7 +137,7 @@ $ImmediateBoss = $row77['ImmediateBoss'];
 </ul>
 </li>
 
-<?php } if(in_array("80", $Options) || in_array("81", $Options)) {?> 
+<?php } if(in_array("80", $MenuOptions) || in_array("81", $MenuOptions)) {?> 
 
     <li class="sidenav-item <?php if($MainPage=='Pump-Survey') {?> open active <?php } ?>">
 <a href="javascript:" class="sidenav-link sidenav-toggle">
@@ -144,7 +145,7 @@ $ImmediateBoss = $row77['ImmediateBoss'];
 <div>Pump Survey</div>
 </a>
 <ul class="sidenav-menu">
-    <?php if(in_array("80", $Options)) {?>
+    <?php if(in_array("80", $MenuOptions)) {?>
 <li class="sidenav-item">
 <a href="co-ordinator-survey.php" class="sidenav-link">
 <div>Pump Co-ordinator Survey</div>
@@ -155,7 +156,7 @@ $ImmediateBoss = $row77['ImmediateBoss'];
 <?php } ?>
 </a>
 </li> 
-<?php } if(in_array("81", $Options)) {?> 
+<?php } if(in_array("81", $MenuOptions)) {?> 
 <li class="sidenav-item">
 <a href="field-survey.php" class="sidenav-link">
 <div> Pump Field Survey</div>
@@ -170,7 +171,7 @@ $ImmediateBoss = $row77['ImmediateBoss'];
 </ul>
 </li>
 
-<?php } if(in_array("132", $Options) || in_array("133", $Options)) {?>
+<?php } if(in_array("132", $MenuOptions) || in_array("133", $MenuOptions)) {?>
 
 <li class="sidenav-item <?php if($MainPage=='Final-Production-Plan') {?> open active <?php } ?>">
 <a href="javascript:" class="sidenav-link sidenav-toggle">
@@ -179,7 +180,7 @@ $ImmediateBoss = $row77['ImmediateBoss'];
 </a>
 <ul class="sidenav-menu">
 
- <?php if(in_array("132", $Options)) {?>
+ <?php if(in_array("132", $MenuOptions)) {?>
 <li class="sidenav-item">
 <a href="bos-final-production-plan.php?MinLimit=0" class="sidenav-link">
 <div> BOS Production Plan</div>
@@ -191,7 +192,7 @@ $ImmediateBoss = $row77['ImmediateBoss'];
 </a>
 </li>
 
- <?php } if(in_array("133", $Options)) {?>
+ <?php } if(in_array("133", $MenuOptions)) {?>
 <li class="sidenav-item">
 <a href="stucture-final-production-plan.php?MinLimit=0" class="sidenav-link">
 <div> Stucture Production Plan</div>
@@ -205,7 +206,7 @@ $ImmediateBoss = $row77['ImmediateBoss'];
 <?php } ?>
 </ul>
 </li>
- <?php } if(in_array("134", $Options)) {?>
+ <?php } if(in_array("134", $MenuOptions)) {?>
 <li class="sidenav-item">
             <a href="under-production-beneficiary.php?UnderProdStatus=0" class="sidenav-link">
                 <i class="sidenav-icon feather icon-check-circle"></i>
@@ -228,7 +229,7 @@ $ImmediateBoss = $row77['ImmediateBoss'];
                 <?php } ?>
             </a>
         </li>
-<?php } if(in_array("25", $Options)) {?>
+<?php } if(in_array("25", $MenuOptions)) {?>
 
 <li class="sidenav-item <?php if($MainPage=='Purchase-Order') {?> open active <?php } ?>">
 <a href="javascript:" class="sidenav-link sidenav-toggle">
@@ -236,7 +237,7 @@ $ImmediateBoss = $row77['ImmediateBoss'];
 <div>Purchase Order</div>
 </a>
 <ul class="sidenav-menu">
-<?php if(in_array("14", $Options)) {?>
+<?php if(in_array("14", $MenuOptions)) {?>
 <li class="sidenav-item">
 <a href="add-purchase-order.php" class="sidenav-link">
 <div> Add Purchase Order</div>
@@ -273,7 +274,7 @@ $ImmediateBoss = $row77['ImmediateBoss'];
 
 
 
-<?php } if(in_array("58", $Options)) {?>
+<?php } if(in_array("58", $MenuOptions)) {?>
          <li class="sidenav-item">
             <a href="assign-to-store-incharge.php?StoreInchStatus=0" class="sidenav-link">
                 <i class="sidenav-icon feather icon-share-2"></i>
@@ -285,7 +286,7 @@ $ImmediateBoss = $row77['ImmediateBoss'];
                 <?php } ?>
             </a>
         </li>
-        <?php } if(in_array("59", $Options)) {?>
+        <?php } if(in_array("59", $MenuOptions)) {?>
          <li class="sidenav-item">
             <a href="approve-store-incharge.php" class="sidenav-link">
                 <i class="sidenav-icon feather icon-check-circle"></i>
@@ -297,7 +298,7 @@ $ImmediateBoss = $row77['ImmediateBoss'];
                 <?php } ?>
             </a>
         </li>
-        <?php } if(in_array("70", $Options)) {?>
+        <?php } if(menuAccessShowStoreAssignParent($MenuOptions)) {?>
 
             <li class="sidenav-item <?php if($MainPage=='Assign-Order-Store') {?> open active <?php } ?>">
 <a href="javascript:" class="sidenav-link sidenav-toggle">
@@ -305,7 +306,7 @@ $ImmediateBoss = $row77['ImmediateBoss'];
 <div>Assign Items To Store</div>
 </a>
 <ul class="sidenav-menu">
-<?php if(in_array("14", $Options)) {?>
+<?php if(menuAccessShowStoreAssignItemsLink($MenuOptions)) {?>
 <!-- <li class="sidenav-item">
 <a href="distribute-item-store.php" class="sidenav-link">
 <div> Assign Items</div>
@@ -327,6 +328,7 @@ $ImmediateBoss = $row77['ImmediateBoss'];
 </a>
 </li>
 <?php } ?>
+<?php if(menuAccessShowStoreViewAssignItemsLink($MenuOptions)) {?>
 <li class="sidenav-item">
 <a href="view-distribute-item-store.php" class="sidenav-link">
 <div> View Assign Items</div>
@@ -337,9 +339,10 @@ $ImmediateBoss = $row77['ImmediateBoss'];
 <?php } ?>
 </a>
 </li>
+<?php } ?>
 </ul>
 </li>
-<?php } if(in_array("60", $Options)) {?>
+<?php } if(in_array("60", $MenuOptions)) {?>
  <li class="sidenav-item">
             <a href="assign-to-dispatch-officer.php?DispatchOfficerStatus=0" class="sidenav-link">
                 <i class="sidenav-icon feather icon-activity"></i>
@@ -352,7 +355,7 @@ $ImmediateBoss = $row77['ImmediateBoss'];
             </a>
         </li>
 
- <?php } if(in_array("71", $Options)) {?>
+ <?php } if(menuAccessShowDispatchAssignParent($MenuOptions)) {?>
 
             <li class="sidenav-item <?php if($MainPage=='Assign-Items-Store-Executive') {?> open active <?php } ?>">
 <a href="javascript:" class="sidenav-link sidenav-toggle">
@@ -360,7 +363,7 @@ $ImmediateBoss = $row77['ImmediateBoss'];
 <div>Assign Items To Dispatch Officier</div>
 </a>
 <ul class="sidenav-menu">
-<?php if(in_array("14", $Options)) {?>
+<?php if(menuAccessShowDispatchAssignItemsLink($MenuOptions)) {?>
 <!-- <li class="sidenav-item">
 <a href="distribute-item-store-executive.php" class="sidenav-link">
 <div> Assign Items</div>
@@ -382,6 +385,7 @@ $ImmediateBoss = $row77['ImmediateBoss'];
 </a>
 </li>
 <?php } ?>
+<?php if(menuAccessShowDispatchViewAssignItemsLink($MenuOptions)) {?>
 <li class="sidenav-item">
 <a href="view-distribute-item-store-executive.php" class="sidenav-link">
 <div> View Assign Items</div>
@@ -392,6 +396,7 @@ $ImmediateBoss = $row77['ImmediateBoss'];
 <?php } ?>
 </a>
 </li>
+<?php } ?>
 </ul>
 </li>
 
@@ -409,7 +414,7 @@ $ImmediateBoss = $row77['ImmediateBoss'];
             </a>
         </li>
  -->
-<?php } if(in_array("26", $Options)) {?>
+<?php } if(in_array("26", $MenuOptions)) {?>
 
 <li class="sidenav-item <?php if($MainPage=='Sell') {?> open active <?php } ?>">
 <a href="javascript:" class="sidenav-link sidenav-toggle">
@@ -417,7 +422,7 @@ $ImmediateBoss = $row77['ImmediateBoss'];
 <div>Delivery Challan</div>
 </a>
 <ul class="sidenav-menu">
-<?php if(in_array("14", $Options)) {?>
+<?php if(in_array("14", $MenuOptions)) {?>
 <!-- <li class="sidenav-item">
 <a href="add-sell.php" class="sidenav-link">
 <div> Add Delivery Challan</div>
@@ -449,9 +454,29 @@ $ImmediateBoss = $row77['ImmediateBoss'];
 <?php } ?>
 </a>
 </li>
+<li class="sidenav-item <?php if($Page=='View-Service-Challan') {?> active <?php } ?>">
+<a href="view-service-challans.php" class="sidenav-link">
+<div> Service Challan</div>
+<?php if($Page=='View-Service-Challan') {?>
+<div class="pl-1 ml-auto">
+<span class="badge badge-dot badge-primary"></span>
+</div>
+<?php } ?>
+</a>
+</li>
+<li class="sidenav-item <?php if($Page=='View-Partial-Material-Challan') {?> active <?php } ?>">
+<a href="view-partial-material-challans.php" class="sidenav-link">
+<div> Partial Material Challan</div>
+<?php if($Page=='View-Partial-Material-Challan') {?>
+<div class="pl-1 ml-auto">
+<span class="badge badge-dot badge-primary"></span>
+</div>
+<?php } ?>
+</a>
+</li>
 </ul>
 </li>
-<?php } if(in_array("82", $Options)) {?>
+<?php } if(in_array("82", $MenuOptions)) {?>
          <li class="sidenav-item">
             <a href="assign-challan-to-dispatcher.php" class="sidenav-link">
                 <i class="sidenav-icon feather icon-activity"></i>
@@ -463,7 +488,7 @@ $ImmediateBoss = $row77['ImmediateBoss'];
                 <?php } ?>
             </a>
         </li>
-<?php } if(in_array("83", $Options)) {?>
+<?php } if(in_array("83", $MenuOptions)) {?>
          <li class="sidenav-item">
             <a href="assign-site-to-installation.php" class="sidenav-link">
                 <i class="sidenav-icon feather icon-activity"></i>
@@ -475,7 +500,7 @@ $ImmediateBoss = $row77['ImmediateBoss'];
                 <?php } ?>
             </a>
         </li>
-        <?php } if(in_array("68", $Options)) {?>
+        <?php } if(in_array("68", $MenuOptions)) {?>
 
     <li class="sidenav-item">
 <a href="installation-project-dashboard.php" class="sidenav-link">
@@ -490,7 +515,7 @@ $ImmediateBoss = $row77['ImmediateBoss'];
 </li>
         
 
-    <?php } if(in_array("84", $Options)) {?>
+    <?php } if(in_array("84", $MenuOptions)) {?>
          <li class="sidenav-item">
             <a href="assign-site-to-inspection.php" class="sidenav-link">
                 <i class="sidenav-icon feather icon-activity"></i>
@@ -503,7 +528,7 @@ $ImmediateBoss = $row77['ImmediateBoss'];
             </a>
         </li>
 
-<?php } if(in_array("28", $Options) || in_array("135", $Options) || in_array("136", $Options) || in_array("137", $Options)) {?>
+<?php } if(in_array("28", $MenuOptions) || in_array("135", $MenuOptions) || in_array("136", $MenuOptions) || in_array("137", $MenuOptions)) {?>
 
 <li class="sidenav-item <?php if($MainPage=='Service') {?> open active <?php } ?>">
 <a href="javascript:" class="sidenav-link sidenav-toggle">
@@ -511,7 +536,7 @@ $ImmediateBoss = $row77['ImmediateBoss'];
 <div>Services</div>
 </a>
 <ul class="sidenav-menu">
-    <?php if(in_array("137", $Options)) {?>
+    <?php if(in_array("137", $MenuOptions)) {?>
 <li class="sidenav-item">
             <a href="beneficiary-service-lists.php" class="sidenav-link">
                
@@ -523,7 +548,7 @@ $ImmediateBoss = $row77['ImmediateBoss'];
                 <?php } ?>
             </a>
         </li>
-<?php } if(in_array("135", $Options)) {?>
+<?php } if(in_array("135", $MenuOptions)) {?>
     <li class="sidenav-item">
             <a href="allocate-complaints-to-engineer.php?EnggAssignStatus=0" class="sidenav-link">
                
@@ -535,7 +560,7 @@ $ImmediateBoss = $row77['ImmediateBoss'];
                 <?php } ?>
             </a>
         </li>
-<?php } if(in_array("136", $Options)) {?>
+<?php } if(in_array("136", $MenuOptions)) {?>
          <li class="sidenav-item">
             <a href="allocate-not-solved-complaints-to-engineer.php?EnggAssignStatus=0" class="sidenav-link">
                
@@ -547,7 +572,7 @@ $ImmediateBoss = $row77['ImmediateBoss'];
                 <?php } ?>
             </a>
         </li>
-<?php } if(in_array("14", $Options)) {?>
+<?php } if(in_array("14", $MenuOptions)) {?>
 <li class="sidenav-item">
 <a href="choose-service-type2.php" class="sidenav-link">
 <div> Add Service Complaint</div>
@@ -579,18 +604,28 @@ $ImmediateBoss = $row77['ImmediateBoss'];
 <?php } ?>
 </a>
 </li>
+<li class="sidenav-item <?php if($Page=='View-Service-Challan') {?> active <?php } ?>">
+<a href="view-service-challans.php" class="sidenav-link">
+<div> Service Challan</div>
+<?php if($Page=='View-Service-Challan') {?>
+<div class="pl-1 ml-auto">
+<span class="badge badge-dot badge-primary"></span>
+</div>
+<?php } ?>
+</a>
+</li>
 </ul>
 </li>
 <?php } ?>
 
-<?php if(in_array("168", $Options) || in_array("169", $Options) || in_array("170", $Options) || in_array("171", $Options) || in_array("172", $Options) || in_array("173", $Options) || in_array("121", $Options)) {?>
+<?php if(in_array("168", $MenuOptions) || in_array("169", $MenuOptions) || in_array("170", $MenuOptions) || in_array("171", $MenuOptions) || in_array("172", $MenuOptions) || in_array("173", $MenuOptions) || in_array("121", $MenuOptions)) {?>
 <li class="sidenav-item <?php if($MainPage=='Insurance') {?> open active <?php } ?>">
 <a href="javascript:" class="sidenav-link sidenav-toggle">
 <i class="sidenav-icon feather icon-shield"></i>
 <div>Insurance Site</div>
 </a>
 <ul class="sidenav-menu">
-<?php if(in_array("168", $Options) || in_array("121", $Options)) {?>
+<?php if(in_array("168", $MenuOptions) || in_array("121", $MenuOptions)) {?>
 <li class="sidenav-item <?php if($Page=='Insurance-Dashboard') {?> active <?php } ?>">
 <a href="insurance-dashboard.php" class="sidenav-link">
 <div>Dashboard</div>
@@ -601,7 +636,7 @@ $ImmediateBoss = $row77['ImmediateBoss'];
 <?php } ?>
 </a>
 </li>
-<?php } if(in_array("169", $Options)) {?>
+<?php } if(in_array("169", $MenuOptions)) {?>
 <li class="sidenav-item <?php if($Page=='Pending-Insurance') {?> active <?php } ?>">
 <a href="pending-insurance.php" class="sidenav-link">
 <div>Pending Insurance</div>
@@ -612,7 +647,7 @@ $ImmediateBoss = $row77['ImmediateBoss'];
 <?php } ?>
 </a>
 </li>
-<?php } if(in_array("170", $Options)) {?>
+<?php } if(in_array("170", $MenuOptions)) {?>
 <li class="sidenav-item <?php if($Page=='Completed-Insurance') {?> active <?php } ?>">
 <a href="completed-insurance.php" class="sidenav-link">
 <div>Completed Insurance</div>
@@ -623,7 +658,7 @@ $ImmediateBoss = $row77['ImmediateBoss'];
 <?php } ?>
 </a>
 </li>
-<?php } if(in_array("171", $Options)) {?>
+<?php } if(in_array("171", $MenuOptions)) {?>
 <li class="sidenav-item <?php if($Page=='Renewal-Insurance') {?> active <?php } ?>">
 <a href="renewal-insurance.php" class="sidenav-link">
 <div>Upcoming Renewal Insurance</div>
@@ -634,7 +669,7 @@ $ImmediateBoss = $row77['ImmediateBoss'];
 <?php } ?>
 </a>
 </li>
-<?php } if(in_array("172", $Options)) {?>
+<?php } if(in_array("172", $MenuOptions)) {?>
 <li class="sidenav-item <?php if($Page=='Expired-Insurance') {?> active <?php } ?>">
 <a href="expired-insurance.php" class="sidenav-link">
 <div>Expired Insurance</div>
@@ -645,7 +680,7 @@ $ImmediateBoss = $row77['ImmediateBoss'];
 <?php } ?>
 </a>
 </li>
-<?php } if(in_array("173", $Options)) {?>
+<?php } if(in_array("173", $MenuOptions)) {?>
 <li class="sidenav-item <?php if($Page=='Renewed-Insurance') {?> active <?php } ?>">
 <a href="renewed-insurance.php" class="sidenav-link">
 <div>Renewed Insurance</div>
@@ -661,7 +696,7 @@ $ImmediateBoss = $row77['ImmediateBoss'];
 </li>
 <?php } ?>
 
-<?php if(in_array("93", $Options)) {?>
+<?php if(in_array("93", $MenuOptions)) {?>
 <li class="sidenav-item">
             <a href="update-dispatch-calling-status.php" class="sidenav-link">
                 <i class="sidenav-icon feather icon-activity"></i>
@@ -673,7 +708,7 @@ $ImmediateBoss = $row77['ImmediateBoss'];
                 <?php } ?>
             </a>
         </li>
-<?php } if(in_array("94", $Options)) {?>
+<?php } if(in_array("94", $MenuOptions)) {?>
 <li class="sidenav-item">
             <a href="before-installation.php" class="sidenav-link">
                 <i class="sidenav-icon feather icon-activity"></i>
@@ -685,7 +720,7 @@ $ImmediateBoss = $row77['ImmediateBoss'];
                 <?php } ?>
             </a>
         </li>
-<?php } if(in_array("95", $Options)) {?>
+<?php } if(in_array("95", $MenuOptions)) {?>
         <li class="sidenav-item">
             <a href="after-installation.php" class="sidenav-link">
                 <i class="sidenav-icon feather icon-activity"></i>
@@ -697,7 +732,7 @@ $ImmediateBoss = $row77['ImmediateBoss'];
                 <?php } ?>
             </a>
         </li>
-<?php } if(in_array("96", $Options)) {?>
+<?php } if(in_array("96", $MenuOptions)) {?>
          <li class="sidenav-item">
             <a href="before-inspection.php" class="sidenav-link">
                 <i class="sidenav-icon feather icon-activity"></i>
@@ -709,7 +744,7 @@ $ImmediateBoss = $row77['ImmediateBoss'];
                 <?php } ?>
             </a>
         </li>
-        <?php } if(in_array("118", $Options)) {?>
+        <?php } if(in_array("118", $MenuOptions)) {?>
          <li class="sidenav-item">
             <a href="beneficiary-selection.php" class="sidenav-link">
                 <i class="sidenav-icon feather icon-activity"></i>
@@ -723,7 +758,7 @@ $ImmediateBoss = $row77['ImmediateBoss'];
         </li>
 
 
-<?php }  if(in_array("69", $Options)) {?>
+<?php }  if(in_array("69", $MenuOptions)) {?>
 
 <!-- <li class="sidenav-item">
             <a href="dealer-commission.php" class="sidenav-link">
@@ -791,39 +826,39 @@ $ImmediateBoss = $row77['ImmediateBoss'];
     <div>Installation Workflow</div>
 </a>
 <ul class="sidenav-menu">
-<?php if(in_array("174", $Options)) {?>
+<?php if(in_array("174", $MenuOptions)) {?>
     <li class="sidenav-item <?php if($Page=='Installation-Dashboard'){?> active <?php } ?>">
         <a href="admin-installation-dashboard.php" class="sidenav-link"><div>Installation Dashboard</div></a>
     </li>
-<?php } if(in_array("175", $Options)) {?>
+<?php } if(in_array("175", $MenuOptions)) {?>
     <li class="sidenav-item <?php if($Page=='Assign-Coordinator'){?> active <?php } ?>">
         <a href="pending-installations.php" class="sidenav-link"><div>Assign Coordinator</div></a>
     </li>
-<?php } if(in_array("176", $Options)) {?>
+<?php } if(in_array("176", $MenuOptions)) {?>
     <li class="sidenav-item <?php if($Page=='Coordinator-Sites'){?> active <?php } ?>">
         <a href="coordinator-assigned-sites.php" class="sidenav-link"><div>Coordinator Action</div></a>
     </li>
-<?php } if(in_array("177", $Options)) {?>
+<?php } if(in_array("177", $MenuOptions)) {?>
     <li class="sidenav-item <?php if($Page=='Manager-Pending'){?> active <?php } ?>">
         <a href="manager-pending-installations.php" class="sidenav-link"><div>Manager Action</div></a>
     </li>
-<?php } if(in_array("178", $Options)) {?>
+<?php } if(in_array("178", $MenuOptions)) {?>
     <li class="sidenav-item <?php if($Page=='GM-Pending'){?> active <?php } ?>">
         <a href="gm-pending-installations.php" class="sidenav-link"><div>General Manager Action</div></a>
     </li>
-<?php } if(in_array("179", $Options)) {?>
+<?php } if(in_array("179", $MenuOptions)) {?>
     <li class="sidenav-item <?php if($Page=='GM-Extensions'){?> active <?php } ?>">
         <a href="gm-extension-requests.php" class="sidenav-link"><div>GM Extension Requests</div></a>
     </li>
-<?php } if(in_array("180", $Options)) {?>
+<?php } if(in_array("180", $MenuOptions)) {?>
     <li class="sidenav-item <?php if($Page=='BH-Pending'){?> active <?php } ?>">
         <a href="business-head-pending.php" class="sidenav-link"><div>Business Head Action</div></a>
     </li>
-<?php } if(in_array("181", $Options)) {?>
+<?php } if(in_array("181", $MenuOptions)) {?>
     <li class="sidenav-item <?php if($Page=='BH-Extensions'){?> active <?php } ?>">
         <a href="bh-extension-requests.php" class="sidenav-link"><div>BH Extension Requests</div></a>
     </li>
-<?php } if(in_array("182", $Options)) {?>
+<?php } if(in_array("182", $MenuOptions)) {?>
     <li class="sidenav-item <?php if($Page=='Dispute-Sites'){?> active <?php } ?>">
         <a href="dispute-sites.php" class="sidenav-link"><div>Dispute Sites</div></a>
     </li>
@@ -831,14 +866,14 @@ $ImmediateBoss = $row77['ImmediateBoss'];
 </ul>
 </li>
 <?php } ?>
-<?php if(in_array("138", $Options) || in_array("139", $Options)) {?>
+<?php if(in_array("138", $MenuOptions) || in_array("139", $MenuOptions)) {?>
 <li class="sidenav-item <?php if($MainPage=='Trip-Details') {?> open active <?php } ?>">
 <a href="javascript:" class="sidenav-link sidenav-toggle">
  <i class="sidenav-icon feather icon-activity"></i>
 <div>Trip Details</div>
 </a>
 <ul class="sidenav-menu">
-<?php if(in_array("138", $Options)) {?>
+<?php if(in_array("138", $MenuOptions)) {?>
 <li class="sidenav-item">
 <a href="running-trips.php" class="sidenav-link">
 <div> Running Trips</div>
@@ -849,7 +884,7 @@ $ImmediateBoss = $row77['ImmediateBoss'];
 <?php } ?>
 </a>
 </li>
-<?php } if(in_array("139", $Options)) {?>
+<?php } if(in_array("139", $MenuOptions)) {?>
 <li class="sidenav-item">
 <a href="completed-trips.php" class="sidenav-link">
 <div> Completed Trips</div>
@@ -875,7 +910,7 @@ $ImmediateBoss = $row77['ImmediateBoss'];
 <?php } ?>
 </a>
 </li> -->
-<?php if(in_array("144", $Options)) {?>
+<?php if(in_array("144", $MenuOptions)) {?>
  <li class="sidenav-item">
 <a href="approve-attendance.php?FromDate=<?php echo date('Y-m-d');?>&ToDate=<?php echo date('Y-m-d');?>" class="sidenav-link">
  <i class="sidenav-icon feather icon-activity"></i>
@@ -896,7 +931,7 @@ $ImmediateBoss = $row77['ImmediateBoss'];
             </a>
         </li> -->
         
-<?php  if(in_array("37", $Options)) {?>
+<?php  if(in_array("37", $MenuOptions)) {?>
        <!--  <li class="sidenav-item">
             <a href="ecommerce-dashboard.php" class="sidenav-link">
                 <i class="sidenav-icon feather icon-activity"></i>

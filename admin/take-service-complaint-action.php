@@ -48,19 +48,35 @@ $Page = "Add-Sell";
                 <?php include_once 'top_header.php'; ?>
 
                 <?php 
-$id = $_GET['id'];
-$CompId = $_GET['qid'];
-$sql7 = "SELECT * FROM tbl_complaint_engg_actions WHERE id='$id'";
-$row7 = getRecord($sql7);
+$id = isset($_GET['id']) ? addslashes(trim($_GET['id'])) : '';
+$CompId = isset($_GET['qid']) ? addslashes(trim($_GET['qid'])) : '';
+$row7 = array();
+if($id != ''){
+    $sql7 = "SELECT * FROM tbl_complaint_engg_actions WHERE id='$id'";
+    $row7 = getRecord($sql7);
+}
 
 $sql77 = "SELECT * FROM tbl_service_complaint WHERE id='$CompId'";
 $row77 = getRecord($sql77);
 
+$BeneficiaryId = '';
+if(!empty($row7['BeneficiaryId'])){
+    $BeneficiaryId = $row7['BeneficiaryId'];
+} elseif(!empty($row77['BeneficiaryId'])){
+    $BeneficiaryId = $row77['BeneficiaryId'];
+} elseif(!empty($row77['CustId'])){
+    $rowCust = getRecord("SELECT BeneficiaryId FROM tbl_users WHERE id='".$row77['CustId']."'");
+    $BeneficiaryId = !empty($rowCust['BeneficiaryId']) ? $rowCust['BeneficiaryId'] : '';
+}
+
+$selectedIssue = !empty($row7['Issue']) ? $row7['Issue'] : $row77['Issue'];
+$selectedRelatedIssue = !empty($row7['RelatedIssue']) ? $row7['RelatedIssue'] : $row77['RelatedIssue'];
+$selectedServiceDate = !empty($row7['ServiceDate']) ? $row7['ServiceDate'] : date('Y-m-d');
 
 if(isset($_POST['submit'])){
     $CustId = $_POST['CustId'];
     $CreatedDate = date('Y-m-d H:i:s');
-$CreatedTime = date('h:i a');
+    $ModifiedDate = date('Y-m-d H:i:s');
 $BeneficiaryId = addslashes(trim($_POST['BeneficiaryId']));
 $Lattitude = addslashes(trim($_POST['Lattitude']));
 $Longitude = addslashes(trim($_POST['Longitude']));
@@ -72,38 +88,37 @@ $Issue = addslashes(trim($_POST['Issue']));
 $ClainStatus = addslashes(trim($_POST['ClainStatus']));
 $Remark = addslashes(trim($_POST['Remark']));
 
-$randno = rand(1,100);
-$src = $_FILES['Photo']['tmp_name'];
-$fnm = substr($_FILES["Photo"]["name"], 0,strrpos($_FILES["Photo"]["name"],'.')); 
-$fnm = str_replace(" ","_",$fnm);
-$ext = substr($_FILES["Photo"]["name"],strpos($_FILES["Photo"]["name"],"."));
-$dest = '../uploads/'. $randno . "_".$fnm . $ext;
-$imagepath =  $randno . "_".$fnm . $ext;
-if(move_uploaded_file($src, $dest))
-{
-$Photo = $imagepath ;
-} 
-else{
-    $Photo = $_POST['OldPhoto'];
+$Photo = addslashes(trim($_POST['OldPhoto']));
+if(!empty($_FILES['Photo']['name'])){
+    $randno = rand(1,100);
+    $src = $_FILES['Photo']['tmp_name'];
+    $fnm = substr($_FILES["Photo"]["name"], 0, strrpos($_FILES["Photo"]["name"], '.'));
+    $fnm = str_replace(" ", "_", $fnm);
+    $ext = substr($_FILES["Photo"]["name"], strpos($_FILES["Photo"]["name"], "."));
+    $dest = '../uploads/' . $randno . "_" . $fnm . $ext;
+    $imagepath = $randno . "_" . $fnm . $ext;
+    if(move_uploaded_file($src, $dest)){
+        $Photo = $imagepath;
+    }
 }
 
 
 if($_GET['id']==''){
-     $sql = "INSERT INTO tbl_complaint_engg_actions SET EnggId='$user_id',CompId='$id',CustId='$CustId',BeneficiaryId='$BeneficiaryId',CustName='$CustName',ServiceDate='$ServiceDate',RelatedIssue='$RelatedIssue',Issue='$Issue',ClainStatus='$ClainStatus',Specify='$Specify',Remark='$Remark',Photo='$Photo',Lattitude='$Lattitude',Longitude='$Longitude',CreatedBy='$user_id',CreatedDate='$CreatedDate'";
+     $sql = "INSERT INTO tbl_complaint_engg_actions SET EnggId='$user_id',CompId='$CompId',CustId='$CustId',BeneficiaryId='$BeneficiaryId',CustName='$CustName',ServiceDate='$ServiceDate',RelatedIssue='$RelatedIssue',Issue='$Issue',ClainStatus='$ClainStatus',Specify='$Specify',Remark='$Remark',Photo='$Photo',Lattitude='$Lattitude',Longitude='$Longitude',CreatedBy='$user_id',CreatedDate='$CreatedDate'";
 $conn->query($sql);
 
-$sql = "UPDATE tbl_service_complaint SET ClainStatus='$ClainStatus' WHERE id='$id'";
+$sql = "UPDATE tbl_service_complaint SET ClainStatus='$ClainStatus' WHERE id='$CompId'";
 $conn->query($sql);
-  echo "<script>alert('Service Complaint Created Successfully!');window.location.href='view-service-complaint-action.php?id=$id';</script>";
+  echo "<script>alert('Service Complaint Created Successfully!');window.location.href='view-service-complaint-action.php?id=$CompId';</script>";
 }
 else{
-    $query2 = "UPDATE tbl_complaint_engg_actions SET EnggId='$user_id',CompId='$id',CustId='$CustId',BeneficiaryId='$BeneficiaryId',CustName='$CustName',ServiceDate='$ServiceDate',RelatedIssue='$RelatedIssue',Issue='$Issue',ClainStatus='$ClainStatus',Specify='$Specify',Remark='$Remark',Photo='$Photo',Lattitude='$Lattitude',Longitude='$Longitude',ModifiedDate='$ModifiedDate',ModifiedBy='$user_id' WHERE id = '$id'";
+    $query2 = "UPDATE tbl_complaint_engg_actions SET EnggId='$user_id',CompId='$CompId',CustId='$CustId',BeneficiaryId='$BeneficiaryId',CustName='$CustName',ServiceDate='$ServiceDate',RelatedIssue='$RelatedIssue',Issue='$Issue',ClainStatus='$ClainStatus',Specify='$Specify',Remark='$Remark',Photo='$Photo',Lattitude='$Lattitude',Longitude='$Longitude',ModifiedDate='$ModifiedDate',ModifiedBy='$user_id' WHERE id = '$id'";
   $conn->query($query2);
 
-  $sql = "UPDATE tbl_service_complaint SET ClainStatus='$ClainStatus' WHERE id='$id'";
+  $sql = "UPDATE tbl_service_complaint SET ClainStatus='$ClainStatus' WHERE id='$CompId'";
   $conn->query($sql);
 
-  echo "<script>alert('Service Complaint Updated Successfully!');window.location.href='view-service-complaint-action.php?id=$id';</script>";
+  echo "<script>alert('Service Complaint Updated Successfully!');window.location.href='view-service-complaint-action.php?id=$CompId';</script>";
 
 }
     //header('Location:courses.php'); 
@@ -153,7 +168,7 @@ else{
 <div class="form-group col-md-3">
                                             <label class="form-label">Beneficiary ID </label>
                                             <input type="text" name="BeneficiaryId" class="form-control"
-                                                placeholder="" value="<?php echo $row7['BeneficiaryId']; ?>"
+                                                placeholder="" value="<?php echo $BeneficiaryId; ?>"
                                                 autocomplete="off" readonly>
                                             <div class="clearfix"></div>
                                         </div> 
@@ -185,7 +200,7 @@ else{
 <div class="form-group col-md-2">
                                             <label class="form-label"> Date </label>
                                             <input type="date" name="ServiceDate" id="ServiceDate" class="form-control"
-                                                placeholder="" value="<?php echo date('Y-m-d'); ?>"
+                                                placeholder="" value="<?php echo $selectedServiceDate; ?>"
                                                 autocomplete="off">
                                             <div class="clearfix"></div>
                                         </div> 
@@ -208,8 +223,8 @@ else{
 
 <option selected="" value="">Select Related Issue</option>
 
-  <option value="Repair" <?php if($row77['RelatedIssue'] == 'Repair'){?> selected <?php } ?>>Repair</option>
-    <option value="Replacement" <?php if($row77['RelatedIssue'] == 'Replacement'){?> selected <?php } ?>>Replacement</option>
+  <option value="Repair" <?php if($selectedRelatedIssue == 'Repair'){?> selected <?php } ?>>Repair</option>
+    <option value="Replacement" <?php if($selectedRelatedIssue == 'Replacement'){?> selected <?php } ?>>Replacement</option>
 </select>
 <div class="clearfix"></div>
 </div>
@@ -223,7 +238,7 @@ else{
   $row12 = getList($sql12);
   foreach($row12 as $result){
      ?>
-  <option <?php if($row77['Issue'] == $result['id']){?> selected <?php } ?> value="<?php echo $result['id'];?>">
+  <option <?php if($selectedIssue == $result['id']){?> selected <?php } ?> value="<?php echo $result['id'];?>">
     <?php echo $result['Name']; ?></option>
 <?php } ?>
 </select>

@@ -1,8 +1,20 @@
 <?php
 /**
  * Service complaints abstract — grouped by abstract type.
- * Status: Close = closed, In Process = material hold, pending = not Close.
+ * Closed = Close or Issue Solved; In Process = material hold; pending = neither closed status.
  */
+
+function serviceAbstractClosedStatuses() {
+    return array('Close', 'Issue Solved');
+}
+
+function serviceAbstractSqlTotalClosed($alias = 'ts') {
+    return "SUM(CASE WHEN {$alias}.ClainStatus IN ('Close', 'Issue Solved') THEN 1 ELSE 0 END)";
+}
+
+function serviceAbstractSqlTotalPending($alias = 'ts') {
+    return "SUM(CASE WHEN {$alias}.ClainStatus NOT IN ('Close', 'Issue Solved') THEN 1 ELSE 0 END)";
+}
 
 function serviceAbstractNormalizeType($type) {
     $t = strtolower(trim((string) $type));
@@ -107,10 +119,10 @@ function serviceAbstractGetCountMap($filters, $groupColumn, $exclude = array()) 
     $sql = "SELECT
         $groupColumn AS group_id,
         COUNT(*) AS total_complaints,
-        SUM(CASE WHEN ts.ClainStatus = 'Close' THEN 1 ELSE 0 END) AS total_closed,
+        " . serviceAbstractSqlTotalClosed('ts') . " AS total_closed,
         SUM(CASE WHEN ts.CreatedDate = CURDATE() THEN 1 ELSE 0 END) AS today_added,
         SUM(CASE WHEN ts.ClainStatus = 'In Process' THEN 1 ELSE 0 END) AS material_hold,
-        SUM(CASE WHEN ts.ClainStatus <> 'Close' THEN 1 ELSE 0 END) AS total_pending
+        " . serviceAbstractSqlTotalPending('ts') . " AS total_pending
         FROM tbl_service_complaint ts
         $where
         AND $groupColumn > 0
@@ -235,10 +247,10 @@ function serviceAbstractBuildDistrictRows($filters) {
     $sql = "SELECT
         UPPER(TRIM(COALESCE(NULLIF(ts.District, ''), tu.District, ''))) AS raw_dist,
         COUNT(*) AS total_complaints,
-        SUM(CASE WHEN ts.ClainStatus = 'Close' THEN 1 ELSE 0 END) AS total_closed,
+        " . serviceAbstractSqlTotalClosed('ts') . " AS total_closed,
         SUM(CASE WHEN ts.CreatedDate = CURDATE() THEN 1 ELSE 0 END) AS today_added,
         SUM(CASE WHEN ts.ClainStatus = 'In Process' THEN 1 ELSE 0 END) AS material_hold,
-        SUM(CASE WHEN ts.ClainStatus <> 'Close' THEN 1 ELSE 0 END) AS total_pending
+        " . serviceAbstractSqlTotalPending('ts') . " AS total_pending
         FROM tbl_service_complaint ts
         $where
         GROUP BY raw_dist";
@@ -344,10 +356,10 @@ function serviceAbstractBuildAllRows($filters) {
     $where = serviceAbstractBuildWhere($filters);
     $sql = "SELECT
         COUNT(*) AS total_complaints,
-        SUM(CASE WHEN ts.ClainStatus = 'Close' THEN 1 ELSE 0 END) AS total_closed,
+        " . serviceAbstractSqlTotalClosed('ts') . " AS total_closed,
         SUM(CASE WHEN ts.CreatedDate = CURDATE() THEN 1 ELSE 0 END) AS today_added,
         SUM(CASE WHEN ts.ClainStatus = 'In Process' THEN 1 ELSE 0 END) AS material_hold,
-        SUM(CASE WHEN ts.ClainStatus <> 'Close' THEN 1 ELSE 0 END) AS total_pending
+        " . serviceAbstractSqlTotalPending('ts') . " AS total_pending
         FROM tbl_service_complaint ts
         $where";
     $row = getRecord($sql);
@@ -448,7 +460,7 @@ function serviceAbstractListUrl($row, $filters, $filter = '') {
     }
 
     if ($filter === 'closed') {
-        $params['ClainStatus'] = 'Close';
+        $params['Status'] = 'Resolved';
     } elseif ($filter === 'today') {
         $params['val'] = 'today';
     } elseif ($filter === 'material') {

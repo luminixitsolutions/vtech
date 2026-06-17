@@ -107,10 +107,16 @@ $(document).ready(function () {
 });
 
 
+function hidePageLoader() {
+    $('.loader-display').stop(true, true).fadeOut('slow');
+}
+
+$(document).ready(function () {
+    setTimeout(hidePageLoader, 500);
+});
+
 $(window).on('load', function () {
-    setTimeout(function () {
-        $('.loader-display').fadeOut('slow');
-    }, 500);
+    setTimeout(hidePageLoader, 500);
 
 
     /* Background */

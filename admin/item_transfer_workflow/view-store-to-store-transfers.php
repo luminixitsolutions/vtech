@@ -2,17 +2,16 @@
 session_start();
 include_once '../config.php';
 include_once '../auth.php';
+require_once __DIR__ . '/../inc-item-transfer-workflow-access.php';
 $user_id = $_SESSION['Admin']['id'];
 $MainPage = "Item-Transfer-Workflow";
 $Page = "View-Store-To-Store-Transfers";
-$row77 = getRecord("SELECT Roll, BranchId, Options FROM tbl_users WHERE id='$user_id'");
-$Roll = $row77['Roll'] ?? 0;
-$BranchId = $row77['BranchId'] ?? 0;
-$Options = isset($row77['Options']) ? explode(',', $row77['Options']) : array();
-$is_allowed = ($Roll == 27 || $Roll == 1 || $Roll == 7 || in_array('72', $Options));
-if (!$is_allowed) {
-    echo "<script>alert('Access denied.'); window.location.href='../dashboard.php';</script>";
-    exit;
+$workflowUser = itemTransferWorkflowUserContext($user_id);
+$Roll = $workflowUser['roll'];
+$BranchId = $workflowUser['branch_id'];
+$Options = $workflowUser['options'];
+if (!itemTransferWorkflowCanAccessStore($Roll, $Options)) {
+    itemTransferWorkflowDeny();
 }
 $where = "1=1";
 if ($Roll == 27) $where = "(t.FromBranchId='$BranchId' OR t.ToBranchId='$BranchId')";

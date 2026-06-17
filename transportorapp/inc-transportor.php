@@ -27,6 +27,34 @@ function transportorTripWhere($transportorId, $extra = '')
     return $where;
 }
 
+function transportorUserLatLong($userRow)
+{
+    if (!is_array($userRow)) {
+        return ['lat' => '', 'lng' => ''];
+    }
+
+    return [
+        'lat' => trim((string) ($userRow['Lattitude'] ?? '')),
+        'lng' => trim((string) ($userRow['Longitude'] ?? '')),
+    ];
+}
+
+function transportorResolveTripLatLong($savedLat, $savedLng, $primaryUserRow, $fallbackUserRow)
+{
+    $savedLat = trim((string) $savedLat);
+    $savedLng = trim((string) $savedLng);
+    if ($savedLat !== '') {
+        return ['lat' => $savedLat, 'lng' => $savedLng];
+    }
+
+    $coords = transportorUserLatLong($primaryUserRow);
+    if ($coords['lat'] !== '' || $coords['lng'] !== '') {
+        return $coords;
+    }
+
+    return transportorUserLatLong($fallbackUserRow);
+}
+
 function transportorGetDriver($transportorId, $driverId)
 {
     global $conn;
@@ -113,6 +141,11 @@ function transportorAttachTripPayments(array $rows)
     unset($row);
 
     return $rows;
+}
+
+function transportorFlash($type, $message)
+{
+    appFlashSet($type, $message);
 }
 
 function transportorTripPaymentStatusHtml(array $row)

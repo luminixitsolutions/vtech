@@ -2,15 +2,14 @@
 session_start();
 include_once '../config.php';
 include_once '../auth.php';
+require_once __DIR__ . '/../inc-item-transfer-workflow-access.php';
 $user_id = $_SESSION['Admin']['id'];
 
-$row77 = getRecord("SELECT Roll, Options FROM tbl_users WHERE id='$user_id'");
-$Roll = $row77['Roll'] ?? 0;
-$Options = isset($row77['Options']) ? explode(',', $row77['Options']) : array();
-$is_allowed = ($Roll == 26 || $Roll == 1 || $Roll == 7 || in_array('72', $Options));
-if (!$is_allowed) {
-    echo "<script>alert('Access denied.'); window.location.href='../dashboard.php';</script>";
-    exit;
+$workflowUser = itemTransferWorkflowUserContext($user_id);
+$Roll = $workflowUser['roll'];
+$Options = $workflowUser['options'];
+if (!itemTransferWorkflowCanAccessDispatch($Roll, $Options)) {
+    itemTransferWorkflowDeny();
 }
 
 if ($_SERVER['REQUEST_METHOD'] !== 'POST' || empty($_POST['detail_ids']) || !is_array($_POST['detail_ids'])) {

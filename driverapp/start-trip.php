@@ -5,6 +5,74 @@ include_once 'auth.php';
 $user_id = $_SESSION['User']['id'];
 $MainPage = "Customers";
 $Page = "View-Customers";
+
+$id = isset($_GET['id']) ? $_GET['id'] : '';
+
+if (isset($_POST['submit'])) {
+    $postId = isset($_GET['id']) ? $_GET['id'] : '';
+    $DriverName = addslashes(trim($_POST['DriverName']));
+    $VehicalNo = addslashes(trim($_POST['VehicalNo']));
+    $InDate = addslashes(trim($_POST['InDate']));
+    $TripDetails = addslashes(trim($_POST['TripDetails']));
+    $OpeningReading = addslashes(trim($_POST['OpeningReading']));
+    $StartLattitude = addslashes(trim($_POST['StartLattitude']));
+    $StartLongitude = addslashes(trim($_POST['StartLongitude']));
+    $CreatedDate = date('Y-m-d');
+    $CreatedTime = date('H:i:s');
+
+    $StartPhoto = isset($_POST['OldStartPhoto']) ? $_POST['OldStartPhoto'] : '';
+    if (!empty($_FILES['StartPhoto']['name'])) {
+        $randno = rand(1, 100);
+        $src = $_FILES['StartPhoto']['tmp_name'];
+        $fnm = substr($_FILES['StartPhoto']['name'], 0, strrpos($_FILES['StartPhoto']['name'], '.'));
+        $fnm = str_replace(' ', '_', $fnm);
+        $ext = substr($_FILES['StartPhoto']['name'], strpos($_FILES['StartPhoto']['name'], '.'));
+        $dest = '../uploads/' . $randno . '_' . $fnm . $ext;
+        $imagepath = $randno . '_' . $fnm . $ext;
+        if (move_uploaded_file($src, $dest)) {
+            $StartPhoto = $imagepath;
+        }
+    }
+
+    if ($postId == '') {
+        $sql = "INSERT INTO tbl_trip_details SET DriverId='$user_id',DriverName='$DriverName',VehicalNo='$VehicalNo',InDate='$InDate',TripDetails='$TripDetails',OpeningReading='$OpeningReading',StartLattitude='$StartLattitude',StartLongitude='$StartLongitude',Status=0,CreatedBy='$user_id',ModifiedBy=0,CalModifiedBy=0,CreatedDate='$CreatedDate',CreatedTime='$CreatedTime',StartPhoto='$StartPhoto',InTime='$CreatedTime'";
+        $conn->query($sql);
+        $PostId = mysqli_insert_id($conn);
+        $TripNo = rand(1000, 9999) . '' . $PostId;
+        $sql2 = "UPDATE tbl_trip_details SET TripNo='$TripNo' WHERE id='$PostId'";
+        $conn->query($sql2);
+        appFlashSet('success', 'Trip started successfully!');
+        header('Location: running-trips.php');
+        exit;
+    }
+
+    $sql = "UPDATE tbl_trip_details SET InDate='$InDate',TripDetails='$TripDetails',OpeningReading='$OpeningReading',StartPhoto='$StartPhoto' WHERE id='$postId'";
+    $conn->query($sql);
+    appFlashSet('success', 'Trip updated successfully!');
+    header('Location: running-trips.php');
+    exit;
+}
+
+$row7 = array();
+if ($id != '') {
+    $sql = "SELECT * FROM tbl_trip_details WHERE id='$id'";
+    $row7 = getRecord($sql);
+}
+
+$userRow = getRecord("SELECT tu.*, tut.Name AS UserType FROM tbl_users tu LEFT JOIN tbl_user_type tut ON tu.Roll=tut.id WHERE tu.id='$user_id' LIMIT 1") ?: [];
+$Name = trim(($userRow['Fname'] ?? '') . ' ' . ($userRow['Lname'] ?? ''));
+$row110 = $userRow;
+$Latitude = trim($userRow['Lattitude'] ?? '');
+$Longitude = trim($userRow['Longitude'] ?? '');
+
+if ($id != '' && !empty($row7['StartLattitude'])) {
+    $Latitude = trim($row7['StartLattitude']);
+    $Longitude = trim($row7['StartLongitude'] ?? '');
+}
+
+if (empty($row7['InDate'])) {
+    $row7['InDate'] = date('Y-m-d');
+}
 ?>
 <!DOCTYPE html>
 <html lang="en" class="default-style layout-fixed layout-navbar-fixed">
@@ -45,59 +113,6 @@ $Page = "View-Customers";
         <!-- Fixed navbar -->
         <?php include_once 'back-header.php'; ?> 
         
-
-<?php
-$id = isset($_GET['id']) ? $_GET['id'] : '';
-$row7 = array();
-if($id != ''){
-$sql = "SELECT * FROM tbl_trip_details WHERE id='$id'";
-$row7 = getRecord($sql);
-}
-if(isset($_POST['submit'])){
-$DriverName = addslashes(trim($_POST['DriverName']));
-$VehicalNo = addslashes(trim($_POST['VehicalNo']));
-$InDate = addslashes(trim($_POST['InDate']));
-$TripDetails = addslashes(trim($_POST['TripDetails']));
-$OpeningReading = addslashes(trim($_POST['OpeningReading']));
-$StartLattitude = addslashes(trim($_POST['StartLattitude']));
-$StartLongitude = addslashes(trim($_POST['StartLongitude']));
-$CreatedDate = date('Y-m-d');
-$CreatedTime = date('H:i:s');
-
-$StartPhoto = isset($_POST['OldStartPhoto']) ? $_POST['OldStartPhoto'] : '';
-if(!empty($_FILES['StartPhoto']['name'])){
-$randno = rand(1,100);
-$src = $_FILES['StartPhoto']['tmp_name'];
-$fnm = substr($_FILES["StartPhoto"]["name"], 0,strrpos($_FILES["StartPhoto"]["name"],'.')); 
-$fnm = str_replace(" ","_",$fnm);
-$ext = substr($_FILES["StartPhoto"]["name"],strpos($_FILES["StartPhoto"]["name"],"."));
-$dest = '../uploads/'. $randno . "_".$fnm . $ext;
-$imagepath =  $randno . "_".$fnm . $ext;
-if(move_uploaded_file($src, $dest))
-{
-$StartPhoto = $imagepath ;
-}
-}
-
-if($id == ''){
-$sql = "INSERT INTO tbl_trip_details SET DriverId='$user_id',DriverName='$DriverName',VehicalNo='$VehicalNo',InDate='$InDate',TripDetails='$TripDetails',OpeningReading='$OpeningReading',StartLattitude='$StartLattitude',StartLongitude='$StartLongitude',Status=0,CreatedBy='$user_id',ModifiedBy=0,CalModifiedBy=0,CreatedDate='$CreatedDate',CreatedTime='$CreatedTime',StartPhoto='$StartPhoto',InTime='$CreatedTime'";
-$conn->query($sql);
-$PostId = mysqli_insert_id($conn);
-$TripNo = rand(1000,9999)."".$PostId;
-$sql2 = "UPDATE tbl_trip_details SET TripNo='$TripNo' WHERE id='$PostId'";
-$conn->query($sql2);
-header('Location: running-trips.php');
-exit;
-}
-else{
-$sql = "UPDATE tbl_trip_details SET InDate='$InDate',TripDetails='$TripDetails',OpeningReading='$OpeningReading',StartPhoto='$StartPhoto' WHERE id='$id'";
-$conn->query($sql);
-header('Location: running-trips.php');
-exit;
-}
-}
-?>
-
 
         <div class="main-container">
 
@@ -246,13 +261,15 @@ exit;
     }
 
     $(document).ready(function() {
-    $('#example').DataTable({
-       "scrollX": true,
-         paging: false,
-    ordering: false,
-    info: false,
-    searching: false,
-    });
+    if ($('#example').length) {
+        $('#example').DataTable({
+           "scrollX": true,
+             paging: false,
+        ordering: false,
+        info: false,
+        searching: false,
+        });
+    }
 });
 </script>
 </body>

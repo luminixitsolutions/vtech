@@ -7,6 +7,115 @@ $user_id = $_SESSION['User']['id'];
 $transportor_id = $user_id;
 $MainPage = "Customers";
 $Page = "View-Customers";
+
+$estimateKmCol = $conn->query("SHOW COLUMNS FROM tbl_trip_details LIKE 'EstimateKm'");
+if (!$estimateKmCol || $estimateKmCol->num_rows === 0) {
+    $conn->query("ALTER TABLE tbl_trip_details ADD COLUMN EstimateKm DECIMAL(12,2) NOT NULL DEFAULT 0.00 AFTER OpeningReading");
+}
+
+$id = isset($_GET['id']) ? (int) $_GET['id'] : 0;
+$driverId = isset($_REQUEST['driver_id']) ? (int) $_REQUEST['driver_id'] : 0;
+
+if (isset($_POST['submit'])) {
+    $postId = isset($_GET['id']) ? (int) $_GET['id'] : 0;
+    $driverId = (int) ($_POST['DriverId'] ?? 0);
+    $driver = transportorGetDriver($transportor_id, $driverId);
+    if (!$driver) {
+        transportorFlash('error', 'Please select a valid driver.');
+        header('Location: start-trip.php' . ($postId > 0 ? '?id=' . $postId : ''));
+        exit;
+    }
+    if (transportorDriverHasRunningTrip($driverId) && $postId <= 0) {
+        transportorFlash('error', 'This driver already has a running trip.');
+        header('Location: start-trip.php?driver_id=' . $driverId);
+        exit;
+    }
+
+    $DriverName = addslashes(trim($driver['Fname'] . ' ' . $driver['Lname']));
+    $VehicalNo = addslashes(trim($driver['VehicalNo']));
+    $InDate = addslashes(trim($_POST['InDate']));
+    $TripDetails = addslashes(trim($_POST['TripDetails']));
+    $OpeningReading = addslashes(trim($_POST['OpeningReading']));
+    $EstimateKm = trim($_POST['EstimateKm'] ?? '');
+    if ($EstimateKm === '' || !is_numeric($EstimateKm) || (float) $EstimateKm < 0) {
+        transportorFlash('error', 'Please enter Estimate Km.');
+        header('Location: start-trip.php?driver_id=' . $driverId . ($postId > 0 ? '&id=' . $postId : ''));
+        exit;
+    }
+    $EstimateKm = addslashes($EstimateKm);
+    $StartLattitude = addslashes(trim($_POST['StartLattitude']));
+    $StartLongitude = addslashes(trim($_POST['StartLongitude']));
+    $CreatedDate = date('Y-m-d');
+    $CreatedTime = date('H:i:s');
+
+    $StartPhoto = isset($_POST['OldStartPhoto']) ? $_POST['OldStartPhoto'] : '';
+    if (!empty($_FILES['StartPhoto']['name'])) {
+        $randno = rand(1, 100);
+        $src = $_FILES['StartPhoto']['tmp_name'];
+        $fnm = substr($_FILES['StartPhoto']['name'], 0, strrpos($_FILES['StartPhoto']['name'], '.'));
+        $fnm = str_replace(' ', '_', $fnm);
+        $ext = substr($_FILES['StartPhoto']['name'], strpos($_FILES['StartPhoto']['name'], '.'));
+        $dest = '../uploads/' . $randno . '_' . $fnm . $ext;
+        $imagepath = $randno . '_' . $fnm . $ext;
+        if (move_uploaded_file($src, $dest)) {
+            $StartPhoto = $imagepath;
+        }
+    }
+
+    if ($postId <= 0) {
+        $sql = "INSERT INTO tbl_trip_details SET DriverId='$driverId',DriverName='$DriverName',VehicalNo='$VehicalNo',InDate='$InDate',TripDetails='$TripDetails',OpeningReading='$OpeningReading',EstimateKm='$EstimateKm',StartLattitude='$StartLattitude',StartLongitude='$StartLongitude',Status=0,CreatedBy='$transportor_id',ModifiedBy=0,CalModifiedBy=0,CreatedDate='$CreatedDate',CreatedTime='$CreatedTime',StartPhoto='$StartPhoto',InTime='$CreatedTime'";
+        $conn->query($sql);
+        $PostId = mysqli_insert_id($conn);
+        $TripNo = rand(1000, 9999) . '' . $PostId;
+        $sql2 = "UPDATE tbl_trip_details SET TripNo='$TripNo' WHERE id='$PostId'";
+        $conn->query($sql2);
+        transportorFlash('success', 'Trip started successfully!');
+        header('Location: running-trips.php');
+        exit;
+    }
+
+    $sql = "UPDATE tbl_trip_details SET InDate='$InDate',TripDetails='$TripDetails',OpeningReading='$OpeningReading',EstimateKm='$EstimateKm',StartPhoto='$StartPhoto' WHERE id='$postId'";
+    $conn->query($sql);
+    transportorFlash('success', 'Trip updated successfully!');
+    header('Location: running-trips.php');
+    exit;
+}
+
+$row7 = array();
+$drivers = getList("SELECT id, Fname, Lname, VehicalNo FROM tbl_users WHERE UnderUser='$transportor_id' AND Roll=39 AND Status=1 ORDER BY Fname") ?: [];
+$selectedDriver = $driverId > 0 ? transportorGetDriver($transportor_id, $driverId) : null;
+$Name = '';
+$row110 = array('VehicalNo' => '');
+
+if ($id > 0) {
+    if (!transportorOwnsTrip($transportor_id, $id)) {
+        header('Location: running-trips.php');
+        exit;
+    }
+    $sql = "SELECT * FROM tbl_trip_details WHERE id='$id'";
+    $row7 = getRecord($sql);
+    $driverId = (int) ($row7['DriverId'] ?? 0);
+    $selectedDriver = transportorGetDriver($transportor_id, $driverId);
+}
+
+if ($selectedDriver) {
+    $Name = trim($selectedDriver['Fname'] . ' ' . $selectedDriver['Lname']);
+    $row110 = $selectedDriver;
+}
+
+$transportorUserRow = getRecord("SELECT Lattitude, Longitude FROM tbl_users WHERE id='$transportor_id' LIMIT 1") ?: [];
+$tripCoords = transportorResolveTripLatLong(
+    $row7['StartLattitude'] ?? '',
+    $row7['StartLongitude'] ?? '',
+    $selectedDriver,
+    $transportorUserRow
+);
+$Latitude = $tripCoords['lat'];
+$Longitude = $tripCoords['lng'];
+
+if (empty($row7['InDate'])) {
+    $row7['InDate'] = date('Y-m-d');
+}
 ?>
 <!DOCTYPE html>
 <html lang="en" class="default-style layout-fixed layout-navbar-fixed">
@@ -47,103 +156,6 @@ $Page = "View-Customers";
         <!-- Fixed navbar -->
         <?php include_once 'back-header.php'; ?> 
         
-
-<?php
-$estimateKmCol = $conn->query("SHOW COLUMNS FROM tbl_trip_details LIKE 'EstimateKm'");
-if (!$estimateKmCol || $estimateKmCol->num_rows === 0) {
-    $conn->query("ALTER TABLE tbl_trip_details ADD COLUMN EstimateKm DECIMAL(12,2) NOT NULL DEFAULT 0.00 AFTER OpeningReading");
-}
-
-$id = isset($_GET['id']) ? (int) $_GET['id'] : 0;
-$driverId = isset($_REQUEST['driver_id']) ? (int) $_REQUEST['driver_id'] : 0;
-$row7 = array();
-$drivers = getList("SELECT id, Fname, Lname, VehicalNo FROM tbl_users WHERE UnderUser='$transportor_id' AND Roll=39 AND Status=1 ORDER BY Fname") ?: [];
-$selectedDriver = $driverId > 0 ? transportorGetDriver($transportor_id, $driverId) : null;
-$Name = '';
-$row110 = array('VehicalNo' => '');
-$Latitude = '';
-$Longitude = '';
-
-if ($id > 0) {
-    if (!transportorOwnsTrip($transportor_id, $id)) {
-        header('Location: running-trips.php');
-        exit;
-    }
-    $sql = "SELECT * FROM tbl_trip_details WHERE id='$id'";
-    $row7 = getRecord($sql);
-    $driverId = (int) ($row7['DriverId'] ?? 0);
-    $selectedDriver = transportorGetDriver($transportor_id, $driverId);
-}
-
-if ($selectedDriver) {
-    $Name = trim($selectedDriver['Fname'] . ' ' . $selectedDriver['Lname']);
-    $row110 = $selectedDriver;
-}
-
-if (isset($_POST['submit'])) {
-    $driverId = (int) ($_POST['DriverId'] ?? 0);
-    $driver = transportorGetDriver($transportor_id, $driverId);
-    if (!$driver) {
-        echo "<script>alert('Please select a valid driver.');history.back();</script>";
-        exit;
-    }
-    if (transportorDriverHasRunningTrip($driverId) && $id <= 0) {
-        echo "<script>alert('This driver already has a running trip.');history.back();</script>";
-        exit;
-    }
-
-    $DriverName = addslashes(trim($driver['Fname'] . ' ' . $driver['Lname']));
-    $VehicalNo = addslashes(trim($driver['VehicalNo']));
-    $InDate = addslashes(trim($_POST['InDate']));
-    $TripDetails = addslashes(trim($_POST['TripDetails']));
-    $OpeningReading = addslashes(trim($_POST['OpeningReading']));
-    $EstimateKm = trim($_POST['EstimateKm'] ?? '');
-    if ($EstimateKm === '' || !is_numeric($EstimateKm) || (float) $EstimateKm < 0) {
-        echo "<script>alert('Please enter Estimate Km.');history.back();</script>";
-        exit;
-    }
-    $EstimateKm = addslashes($EstimateKm);
-    $StartLattitude = addslashes(trim($_POST['StartLattitude']));
-    $StartLongitude = addslashes(trim($_POST['StartLongitude']));
-    $CreatedDate = date('Y-m-d');
-    $CreatedTime = date('H:i:s');
-
-    $StartPhoto = isset($_POST['OldStartPhoto']) ? $_POST['OldStartPhoto'] : '';
-    if (!empty($_FILES['StartPhoto']['name'])) {
-        $randno = rand(1, 100);
-        $src = $_FILES['StartPhoto']['tmp_name'];
-        $fnm = substr($_FILES['StartPhoto']['name'], 0, strrpos($_FILES['StartPhoto']['name'], '.'));
-        $fnm = str_replace(' ', '_', $fnm);
-        $ext = substr($_FILES['StartPhoto']['name'], strpos($_FILES['StartPhoto']['name'], '.'));
-        $dest = '../uploads/' . $randno . '_' . $fnm . $ext;
-        $imagepath = $randno . '_' . $fnm . $ext;
-        if (move_uploaded_file($src, $dest)) {
-            $StartPhoto = $imagepath;
-        }
-    }
-
-    if ($id <= 0) {
-        $sql = "INSERT INTO tbl_trip_details SET DriverId='$driverId',DriverName='$DriverName',VehicalNo='$VehicalNo',InDate='$InDate',TripDetails='$TripDetails',OpeningReading='$OpeningReading',EstimateKm='$EstimateKm',StartLattitude='$StartLattitude',StartLongitude='$StartLongitude',Status=0,CreatedBy='$transportor_id',ModifiedBy=0,CalModifiedBy=0,CreatedDate='$CreatedDate',CreatedTime='$CreatedTime',StartPhoto='$StartPhoto',InTime='$CreatedTime'";
-        $conn->query($sql);
-        $PostId = mysqli_insert_id($conn);
-        $TripNo = rand(1000, 9999) . '' . $PostId;
-        $sql2 = "UPDATE tbl_trip_details SET TripNo='$TripNo' WHERE id='$PostId'";
-        $conn->query($sql2);
-        header('Location: running-trips.php');
-        exit;
-    }
-
-    $sql = "UPDATE tbl_trip_details SET InDate='$InDate',TripDetails='$TripDetails',OpeningReading='$OpeningReading',EstimateKm='$EstimateKm',StartPhoto='$StartPhoto' WHERE id='$id'";
-    $conn->query($sql);
-    header('Location: running-trips.php');
-    exit;
-}
-
-if (empty($row7['InDate'])) {
-    $row7['InDate'] = date('Y-m-d');
-}
-?>
-
 
         <div class="main-container">
 
@@ -313,13 +325,15 @@ if (empty($row7['InDate'])) {
     }
 
     $(document).ready(function() {
-    $('#example').DataTable({
-       "scrollX": true,
-         paging: false,
-    ordering: false,
-    info: false,
-    searching: false,
-    });
+    if ($('#example').length) {
+        $('#example').DataTable({
+           "scrollX": true,
+             paging: false,
+        ordering: false,
+        info: false,
+        searching: false,
+        });
+    }
 });
 </script>
 </body>
