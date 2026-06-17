@@ -1,139 +1,126 @@
-<!-- ======================== -->
-<!--     MAINTENANCE COMPLAINTS -->
-<!-- ======================== -->
+<?php
+$spdSubHeadId = (int) ($_GET['id'] ?? 0);
+$spdProjectId = (int) ($_GET['prjid'] ?? 0);
 
-<h4 class="mb-3 mt-4" style="font-weight:600; color:#333; border-bottom:2px solid #ccc; padding-bottom:6px;">
-    Maintenance Complaints
-</h4>
+$sqlM1 = "SELECT ts.* FROM tbl_service_complaint ts
+    INNER JOIN tbl_users tu ON tu.id = ts.CustId
+    WHERE ts.ServiceType='Maintaince'
+    AND tu.ProjectSubHeadId='".$spdSubHeadId."'
+    AND tu.ProjectType=1";
+$cntM1 = getRow($sqlM1);
 
-<div class="row">
+$sqlM2 = "SELECT ts.* FROM tbl_service_complaint ts
+    INNER JOIN tbl_users tu ON tu.id = ts.CustId
+    WHERE ts.ServiceType='Maintaince'
+    AND ts.ClainStatus='Close'
+    AND tu.ProjectSubHeadId='".$spdSubHeadId."'
+    AND tu.ProjectType=1";
+$cntM2 = getRow($sqlM2);
+$cntMPending = (int) $cntM1 - (int) $cntM2;
 
-    <!-- Total Maintenance Complaints -->
-    <div class="col-sm-6 col-xl-2">
-        <a href="view-maintenance.php?ServiceType=Maintaince&Status=All&subheadid=<?php echo $_GET['id']; ?>&projid=<?php echo $_GET['prjid'];?>">
-            <div class="card mb-4 bg-pattern-3-dark">
-                <div class="card-body" style="padding:15px;">
-                    <h6 class="mb-0" style="color:black;">Total Maintenance<br> Complaints</h6>
-                    <div class="text-large">
-                        <?php
-                            $sqlM1 = "SELECT ts.* FROM tbl_service_complaint ts
-                                      INNER JOIN tbl_users tu ON tu.id = ts.CustId
-                                      WHERE ts.ServiceType='Maintaince'
-                                      AND tu.ProjectSubHeadId='".$_GET['id']."'
-                                      AND tu.ProjectType=1";
-                            echo $cntM1 = getRow($sqlM1);
-                        ?>
-                    </div>
+$sqlI1 = "SELECT ts.* FROM tbl_service_complaint ts
+    INNER JOIN tbl_users tu ON tu.id = ts.CustId
+    WHERE ts.ServiceType='Insurance'
+    AND tu.ProjectSubHeadId='".$spdSubHeadId."'
+    AND tu.ProjectType=1";
+$cntI1 = getRow($sqlI1);
+
+$sqlI2 = "SELECT ts.* FROM tbl_service_complaint ts
+    INNER JOIN tbl_users tu ON tu.id = ts.CustId
+    WHERE ts.ServiceType='Insurance'
+    AND ts.ClainStatus='Close'
+    AND tu.ProjectSubHeadId='".$spdSubHeadId."'
+    AND tu.ProjectType=1";
+$cntI2 = getRow($sqlI2);
+$cntIPending = (int) $cntI1 - (int) $cntI2;
+?>
+
+<section class="ipd-section">
+    <h4 class="ipd-section-title">
+        <i class="feather icon-tool" aria-hidden="true"></i>
+        Maintenance Complaints
+    </h4>
+    <div class="ipd-metric-grid">
+        <a href="view-maintenance.php?ServiceType=Maintaince&amp;Status=All&amp;subheadid=<?php echo $spdSubHeadId; ?>&amp;projid=<?php echo $spdProjectId; ?>" class="ipd-stat-link">
+            <div class="ipd-stat-card ipd-accent-total">
+                <h6 class="ipd-stat-label">Total Maintenance Complaints</h6>
+                <div class="ipd-stat-meta">
+                    <span class="ipd-stat-count"><?php echo (int) $cntM1; ?></span>
+                    <span class="ipd-stat-badge ipd-badge-total">
+                        <i class="feather icon-file-text" aria-hidden="true"></i>
+                        Total
+                    </span>
+                </div>
+            </div>
+        </a>
+        <a href="view-maintenance.php?ServiceType=Maintaince&amp;Status=Resolved&amp;subheadid=<?php echo $spdSubHeadId; ?>&amp;projid=<?php echo $spdProjectId; ?>" class="ipd-stat-link">
+            <div class="ipd-stat-card ipd-accent-resolved">
+                <h6 class="ipd-stat-label">Resolved Maintenance Complaints</h6>
+                <div class="ipd-stat-meta">
+                    <span class="ipd-stat-count"><?php echo (int) $cntM2; ?></span>
+                    <span class="ipd-stat-badge ipd-badge-resolved">
+                        <i class="feather icon-check-circle" aria-hidden="true"></i>
+                        Resolved
+                    </span>
+                </div>
+            </div>
+        </a>
+        <a href="view-maintenance.php?ServiceType=Maintaince&amp;Status=Pending&amp;subheadid=<?php echo $spdSubHeadId; ?>&amp;projid=<?php echo $spdProjectId; ?>" class="ipd-stat-link">
+            <div class="ipd-stat-card ipd-accent-pending">
+                <h6 class="ipd-stat-label">Pending Maintenance Complaints</h6>
+                <div class="ipd-stat-meta">
+                    <span class="ipd-stat-count"><?php echo $cntMPending; ?></span>
+                    <span class="ipd-stat-badge ipd-badge-pending">
+                        <i class="feather icon-clock" aria-hidden="true"></i>
+                        Pending
+                    </span>
                 </div>
             </div>
         </a>
     </div>
+</section>
 
-    <!-- Resolved Maintenance Complaints -->
-    <div class="col-sm-6 col-xl-2">
-        <a href="view-maintenance.php?ServiceType=Maintaince&Status=Resolved&subheadid=<?php echo $_GET['id']; ?>&projid=<?php echo $_GET['prjid'];?>">
-            <div class="card mb-4 bg-pattern-3-dark">
-                <div class="card-body" style="padding:15px;">
-                    <h6 class="mb-0" style="color:black;">Resolved Maintenance<br> Complaints</h6>
-                    <div class="text-large">
-                        <?php
-                            $sqlM2 = "SELECT ts.* FROM tbl_service_complaint ts
-                                      INNER JOIN tbl_users tu ON tu.id = ts.CustId
-                                      WHERE ts.ServiceType='Maintaince'
-                                      AND ts.ClainStatus='Close'
-                                      AND tu.ProjectSubHeadId='".$_GET['id']."'
-                                      AND tu.ProjectType=1";
-                            echo $cntM2 = getRow($sqlM2);
-                        ?>
-                    </div>
+<section class="ipd-section">
+    <h4 class="ipd-section-title">
+        <i class="feather icon-shield" aria-hidden="true"></i>
+        Insurance Complaints
+    </h4>
+    <div class="ipd-metric-grid">
+        <a href="view-maintenance.php?ServiceType=Insurance&amp;Status=All&amp;subheadid=<?php echo $spdSubHeadId; ?>&amp;projid=<?php echo $spdProjectId; ?>" class="ipd-stat-link">
+            <div class="ipd-stat-card ipd-accent-total">
+                <h6 class="ipd-stat-label">Total Insurance Complaints</h6>
+                <div class="ipd-stat-meta">
+                    <span class="ipd-stat-count"><?php echo (int) $cntI1; ?></span>
+                    <span class="ipd-stat-badge ipd-badge-total">
+                        <i class="feather icon-file-text" aria-hidden="true"></i>
+                        Total
+                    </span>
+                </div>
+            </div>
+        </a>
+        <a href="view-maintenance.php?ServiceType=Insurance&amp;Status=Resolved&amp;subheadid=<?php echo $spdSubHeadId; ?>&amp;projid=<?php echo $spdProjectId; ?>" class="ipd-stat-link">
+            <div class="ipd-stat-card ipd-accent-resolved">
+                <h6 class="ipd-stat-label">Resolved Insurance Complaints</h6>
+                <div class="ipd-stat-meta">
+                    <span class="ipd-stat-count"><?php echo (int) $cntI2; ?></span>
+                    <span class="ipd-stat-badge ipd-badge-resolved">
+                        <i class="feather icon-check-circle" aria-hidden="true"></i>
+                        Resolved
+                    </span>
+                </div>
+            </div>
+        </a>
+        <a href="view-maintenance.php?ServiceType=Insurance&amp;Status=Pending&amp;subheadid=<?php echo $spdSubHeadId; ?>&amp;projid=<?php echo $spdProjectId; ?>" class="ipd-stat-link">
+            <div class="ipd-stat-card ipd-accent-pending">
+                <h6 class="ipd-stat-label">Pending Insurance Complaints</h6>
+                <div class="ipd-stat-meta">
+                    <span class="ipd-stat-count"><?php echo $cntIPending; ?></span>
+                    <span class="ipd-stat-badge ipd-badge-pending">
+                        <i class="feather icon-clock" aria-hidden="true"></i>
+                        Pending
+                    </span>
                 </div>
             </div>
         </a>
     </div>
-
-    <!-- Pending Maintenance Complaints -->
-    <div class="col-sm-6 col-xl-2">
-        <a href="view-maintenance.php?ServiceType=Maintaince&Status=Pending&subheadid=<?php echo $_GET['id']; ?>&projid=<?php echo $_GET['prjid'];?>">
-            <div class="card mb-4 bg-pattern-3-dark">
-                <div class="card-body" style="padding:15px;">
-                    <h6 class="mb-0" style="color:black;">Pending Maintenance<br> Complaints</h6>
-                    <div class="text-large">
-                        <?php echo $cntM1 - $cntM2; ?>
-                    </div>
-                </div>
-            </div>
-        </a>
-    </div>
-
-</div>
-
-
-
-<!-- ======================== -->
-<!--      INSURANCE COMPLAINTS -->
-<!-- ======================== -->
-
-<h4 class="mb-3 mt-4" style="font-weight:600; color:#333; border-bottom:2px solid #ccc; padding-bottom:6px;">
-    Insurance Complaints
-</h4>
-
-<div class="row">
-
-    <!-- Total Insurance Complaints -->
-    <div class="col-sm-6 col-xl-2">
-        <a href="view-maintenance.php?ServiceType=Insurance&Status=All&subheadid=<?php echo $_GET['id']; ?>&projid=<?php echo $_GET['prjid'];?>">
-            <div class="card mb-4 bg-pattern-3-dark">
-                <div class="card-body" style="padding:15px;">
-                    <h6 class="mb-0" style="color:black;">Total Insurance<br> Complaints</h6>
-                    <div class="text-large">
-                        <?php
-                            $sqlI1 = "SELECT ts.* FROM tbl_service_complaint ts
-                                      INNER JOIN tbl_users tu ON tu.id = ts.CustId
-                                      WHERE ts.ServiceType='Insurance'
-                                      AND tu.ProjectSubHeadId='".$_GET['id']."'
-                                      AND tu.ProjectType=1";
-                            echo $cntI1 = getRow($sqlI1);
-                        ?>
-                    </div>
-                </div>
-            </div>
-        </a>
-    </div>
-
-    <!-- Resolved Insurance Complaints -->
-    <div class="col-sm-6 col-xl-2">
-        <a href="view-maintenance.php?ServiceType=Insurance&Status=Resolved&subheadid=<?php echo $_GET['id']; ?>&projid=<?php echo $_GET['prjid'];?>">
-            <div class="card mb-4 bg-pattern-3-dark">
-                <div class="card-body" style="padding:15px;">
-                    <h6 class="mb-0" style="color:black;">Resolved Insurance<br> Complaints</h6>
-                    <div class="text-large">
-                        <?php
-                            $sqlI2 = "SELECT ts.* FROM tbl_service_complaint ts
-                                      INNER JOIN tbl_users tu ON tu.id = ts.CustId
-                                      WHERE ts.ServiceType='Insurance'
-                                      AND ts.ClainStatus='Close'
-                                      AND tu.ProjectSubHeadId='".$_GET['id']."'
-                                      AND tu.ProjectType=1";
-                            echo $cntI2 = getRow($sqlI2);
-                        ?>
-                    </div>
-                </div>
-            </div>
-        </a>
-    </div>
-
-    <!-- Pending Insurance Complaints -->
-    <div class="col-sm-6 col-xl-2">
-        <a href="view-maintenance.php?ServiceType=Insurance&Status=Pending&subheadid=<?php echo $_GET['id']; ?>&projid=<?php echo $_GET['prjid'];?>">
-            <div class="card mb-4 bg-pattern-3-dark">
-                <div class="card-body" style="padding:15px;">
-                    <h6 class="mb-0" style="color:black;">Pending Insurance<br> Complaints</h6>
-                    <div class="text-large">
-                        <?php echo $cntI1 - $cntI2; ?>
-                    </div>
-                </div>
-            </div>
-        </a>
-    </div>
-
-</div>
+</section>

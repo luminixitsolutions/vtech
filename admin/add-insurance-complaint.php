@@ -2,15 +2,141 @@
 session_start();
 include_once 'config.php';
 include_once 'auth.php';
+include_once 'inc-insurance-site.php';
 $user_id = $_SESSION['Admin']['id'];
 $MainPage = "Service";
 $Page = "Add-Service-Complaint";
+
+$id = isset($_GET['id']) ? trim((string) $_GET['id']) : '';
+$complaintId = (int) $id;
+$row7 = $complaintId > 0 ? getRecord("SELECT * FROM tbl_service_complaint WHERE id='$complaintId'") : null;
+
+if (isset($_POST['submit'])) {
+    $CustId = $conn->real_escape_string(trim($_POST['CustId'] ?? ''));
+    $CellNo = $conn->real_escape_string(trim($_POST['CellNo'] ?? ''));
+    $CustName = $conn->real_escape_string(trim($_POST['CustName'] ?? ''));
+    $BeneficiaryId = $conn->real_escape_string(trim($_POST['BeneficiaryId'] ?? ''));
+    $Address = $conn->real_escape_string(trim($_POST['Address'] ?? ''));
+    $RelatedIssue = $conn->real_escape_string(trim($_POST['RelatedIssue'] ?? ''));
+    $ClainStatus = $conn->real_escape_string(trim($_POST['ClainStatus'] ?? ''));
+    $ServiceType = $conn->real_escape_string(trim($_POST['ServiceType'] ?? 'Insurance'));
+    $Taluka = $conn->real_escape_string(trim($_POST['Taluka'] ?? ''));
+    $Village = $conn->real_escape_string(trim($_POST['Village'] ?? ''));
+    $District = $conn->real_escape_string(trim($_POST['District'] ?? ''));
+    $InsuranceComplaint = $conn->real_escape_string(trim($_POST['InsuranceComplaint'] ?? ''));
+    $ComplaintDate = $conn->real_escape_string(trim($_POST['ComplaintDate'] ?? ''));
+    $Remark = $conn->real_escape_string(trim($_POST['Remark'] ?? ''));
+    $DocReq = $conn->real_escape_string(trim($_POST['DocReq'] ?? 'No'));
+    $OrgDocReq = $conn->real_escape_string(trim($_POST['OrgDocReq'] ?? 'No'));
+    $SurveyUpdate = $conn->real_escape_string(trim($_POST['SurveyUpdate'] ?? 'No'));
+    $ClaimAmt = $conn->real_escape_string(trim($_POST['ClaimAmt'] ?? ''));
+    $InsuranceApproved = $conn->real_escape_string(trim($_POST['InsuranceApproved'] ?? 'No'));
+    $PaymentReceived = $conn->real_escape_string(trim($_POST['PaymentReceived'] ?? 'No'));
+    $AmountReceived = $conn->real_escape_string(trim($_POST['AmountReceived'] ?? ''));
+    $MaterialReplacement = $conn->real_escape_string(trim($_POST['MaterialReplacement'] ?? 'No'));
+    $CreatedDate = date('Y-m-d');
+    $ModifiedDate = date('Y-m-d');
+    $Status = 1;
+
+    if ($complaintId <= 0) {
+        $qx = "INSERT INTO tbl_service_complaint SET
+            CustId='$CustId',
+            CellNo='$CellNo',
+            CustName='$CustName',
+            Status='$Status',
+            Address='$Address',
+            RelatedIssue='$RelatedIssue',
+            CreatedDate='$CreatedDate',
+            CreatedBy='$user_id',
+            ClainStatus='$ClainStatus',
+            ServiceType='$ServiceType',
+            Taluka='$Taluka',
+            Village='$Village',
+            District='$District',
+            BeneficiaryId='$BeneficiaryId',
+            InsuranceComplaint='$InsuranceComplaint',
+            ComplaintDate='$ComplaintDate',
+            Remark='$Remark',
+            DocReq='$DocReq',
+            OrgDocReq='$OrgDocReq',
+            SurveyUpdate='$SurveyUpdate',
+            ClaimAmt='$ClaimAmt',
+            InsuranceApproved='$InsuranceApproved',
+            PaymentReceived='$PaymentReceived',
+            AmountReceived='$AmountReceived',
+            MaterialReplacement='$MaterialReplacement',
+            ComplaintClose='No'";
+        $conn->query($qx);
+        $PostId = (int) mysqli_insert_id($conn);
+        $TicketNo = '#' . rand(1000, 9999);
+        $conn->query("UPDATE tbl_service_complaint SET TicketNo='$TicketNo' WHERE id='$PostId'");
+        echo "<script>alert('Service Complaint Created Successfully!');window.location.href='view-service-module.php';</script>";
+        exit;
+    }
+
+    $query2 = "UPDATE tbl_service_complaint SET
+        CustId='$CustId',
+        CellNo='$CellNo',
+        CustName='$CustName',
+        Status='$Status',
+        Address='$Address',
+        RelatedIssue='$RelatedIssue',
+        ModifiedDate='$ModifiedDate',
+        ModifiedBy='$user_id',
+        ClainStatus='$ClainStatus',
+        ServiceType='$ServiceType',
+        Taluka='$Taluka',
+        Village='$Village',
+        District='$District',
+        BeneficiaryId='$BeneficiaryId',
+        InsuranceComplaint='$InsuranceComplaint',
+        ComplaintDate='$ComplaintDate',
+        Remark='$Remark',
+        DocReq='$DocReq',
+        OrgDocReq='$OrgDocReq',
+        SurveyUpdate='$SurveyUpdate',
+        ClaimAmt='$ClaimAmt',
+        InsuranceApproved='$InsuranceApproved',
+        PaymentReceived='$PaymentReceived',
+        AmountReceived='$AmountReceived',
+        MaterialReplacement='$MaterialReplacement'
+        WHERE id='$complaintId'";
+    $conn->query($query2);
+    echo "<script>alert('Service Complaint Updated Successfully!');window.location.href='view-service-module.php';</script>";
+    exit;
+}
+
+if ($complaintId <= 0) {
+    $CustId2 = isset($_GET['CustId']) ? $_GET['CustId'] : '';
+    $row3 = $CustId2 !== '' ? getRecord("SELECT id,Phone,CustomerId,Fname,Address,Taluka,Village,District,BeneficiaryId FROM tbl_users WHERE id='$CustId2'") : null;
+    $CellNo = $row3['Phone'] ?? '';
+    $CustName = $row3['Fname'] ?? '';
+    $Address = $row3['Address'] ?? '';
+    $Taluka = $row3['Taluka'] ?? '';
+    $Village = $row3['Village'] ?? '';
+    $District = $row3['District'] ?? '';
+    $BeneficiaryId = $row3['BeneficiaryId'] ?? '';
+    $row7 = $row7 ?: [];
+} else {
+    $CustId2 = $row7['CustId'] ?? '';
+    $CellNo = $row7['CellNo'] ?? '';
+    $CustName = $row7['CustName'] ?? '';
+    $Address = $row7['Address'] ?? '';
+    $Taluka = $row7['Taluka'] ?? '';
+    $Village = $row7['Village'] ?? '';
+    $District = $row7['District'] ?? '';
+    $BeneficiaryId = $row7['BeneficiaryId'] ?? '';
+    $row7 = $row7 ?: [];
+}
+$customerInsurance = ($CustId2 !== '' && (int) $CustId2 > 0)
+    ? insuranceGetLatestCustomerInsurance((int) $CustId2)
+    : null;
 ?>
 <!DOCTYPE html>
 <html lang="en" class="default-style layout-fixed layout-navbar-fixed">
 
 <head>
-    <title><?php echo $Proj_Title; ?> - <?php if($_GET['id']) {?>Edit <?php } else{?> Add <?php } ?> Raw Stock
+    <title><?php echo $Proj_Title; ?> - <?php if($complaintId > 0) {?>Edit <?php } else{?> Add <?php } ?> Insurance Service Complaint
     </title>
     <meta charset="utf-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge" />
@@ -36,6 +162,16 @@ $Page = "Add-Service-Complaint";
         text-transform: uppercase;
         z-index: 2;
     }
+    .insurance-info-block {
+        background: #f8fafc;
+        border: 1px solid #e2e8f0;
+        border-radius: 10px;
+        padding: 16px;
+        margin-bottom: 16px;
+    }
+    .insurance-info-block .form-control[readonly] {
+        background: #fff;
+    }
     </style>
     <div class="layout-wrapper layout-2">
         <div class="layout-inner">
@@ -47,132 +183,10 @@ $Page = "Add-Service-Complaint";
 
                 <?php include_once 'top_header.php'; ?>
 
-                <?php 
-$id = $_GET['id'];
-$sql7 = "SELECT * FROM tbl_service_complaint WHERE id='$id'";
-$row7 = getRecord($sql7);
-if($id == ''){
-  $CustId2 = $_GET["CustId"];
-  $sql3 = "SELECT id,Phone,CustomerId,Fname,Address,Taluka,Village,District,BeneficiaryId FROM tbl_users WHERE id='$CustId2'";
-  $row3 = getRecord($sql3);
-  $CellNo = $row3['Phone'];
-  $CustName = $row3['Fname'];
-  $Address = $row3['Address'];
-  $Taluka = $row3['Taluka'];
-  $Village = $row3['Village'];
-  $District = $row3['District'];
-  $BeneficiaryId = $row3['BeneficiaryId'];
-}
-else{
-  $CustId2 = $row7["CustId"];
-  $CellNo = $row7['CellNo'];
-  $CustName = $row7['CustName'];
-  $Address = $row7['Address'];
-  $Taluka = $row7['Taluka'];
-  $Village = $row7['Village'];
-  $District = $row7['District'];
-  $BeneficiaryId = $row7['BeneficiaryId'];
-}
-
-
-if(isset($_POST['submit'])){
-    $CustId = addslashes(trim($_POST["CustId"]));
-     $CellNo = addslashes(trim($_POST["CellNo"]));
-    $CustName = addslashes(trim($_POST["CustName"]));
-    $BeneficiaryId = addslashes(trim($_POST["BeneficiaryId"]));
-$Status = 1;
-$Address = addslashes(trim($_POST["Address"]));
-$RelatedIssue = addslashes(trim($_POST['RelatedIssue']));
-$Issue = addslashes(trim($_POST["Issue"]));
-$Message = addslashes(trim($_POST["Message"]));
-$ClainStatus = addslashes(trim($_POST["ClainStatus"]));
-$BranchId = addslashes(trim($_POST["BranchId"]));
-$ServiceType = addslashes(trim($_POST["ServiceType"]));
-$Taluka = addslashes(trim($_POST["Taluka"]));
-$Village = addslashes(trim($_POST["Village"]));
-$District = addslashes(trim($_POST["District"]));
-$InstallationDate = addslashes(trim($_POST["InstallationDate"]));
-$RegistrationId = addslashes(trim($_POST["RegistrationId"]));
-$ComissioningDate = addslashes(trim($_POST["ComissioningDate"]));
-$WaterSource = addslashes(trim($_POST["WaterSource"]));
-$Category = addslashes(trim($_POST["Category"]));
-$ServiceSystem = addslashes(trim($_POST["ServiceSystem"]));
-$AcDc = addslashes(trim($_POST["AcDc"]));
-$Surface = addslashes(trim($_POST["Surface"]));
-$RecentVfdNo = addslashes(trim($_POST["RecentVfdNo"]));
-$RecentMotorNo = addslashes(trim($_POST["RecentMotorNo"]));
-$RecentPumpNo = addslashes(trim($_POST["RecentPumpNo"]));
-$Problem = addslashes(trim($_POST["Issue"]));
-$Remark = addslashes(trim($_POST["Remark"]));
-$Photos = addslashes(trim($_POST["Photos"]));
-$InspectionDate = addslashes(trim($_POST["InspectionDate"]));
-$InspectionBy = addslashes(trim($_POST["InspectionBy"]));
-$LastDate = addslashes(trim($_POST["LastDate"]));
-$SystemStatus = addslashes(trim($_POST["SystemStatus"]));
-$Extra = addslashes(trim($_POST["Extra"]));
-$ExtraPump = addslashes(trim($_POST["ExtraPump"]));
-$ExtraVfd = addslashes(trim($_POST["ExtraVfd"]));
-$PolicyNo = addslashes(trim($_POST["PolicyNo"]));
-$ClainDone = addslashes(trim($_POST["ClainDone"]));
-$Rms = addslashes(trim($_POST["Rms"]));
-
-$VfdProblem = addslashes(trim($_POST["VfdProblem"]));
-$PlateDamageInsurance = addslashes(trim($_POST["PlateDamageInsurance"]));
-$PumpProblem = addslashes(trim($_POST["PumpProblem"]));
-$MotorProblem = addslashes(trim($_POST["MotorProblem"]));
-$PhotoReceived = addslashes(trim($_POST["PhotoReceived"]));
-$VideoReceived = addslashes(trim($_POST["VideoReceived"]));
-$LetterReceived = addslashes(trim($_POST["LetterReceived"]));
-$LastCallUpdate = addslashes(trim($_POST["LastCallUpdate"]));
-$RecentProblem = addslashes(trim($_POST["RecentProblem"]));
-$SystemWorking = addslashes(trim($_POST["SystemWorking"]));
-$PolicyPeriod = addslashes(trim($_POST["PolicyPeriod"]));
-$Depth = addslashes(trim($_POST["Depth"]));
-$PumpMake = addslashes(trim($_POST["PumpMake"]));
-$MotorMake = addslashes(trim($_POST["MotorMake"]));
-$InsuranceCompany = addslashes(trim($_POST["InsuranceCompany"]));
-$InsuranceComplaint = addslashes(trim($_POST["InsuranceComplaint"]));
-$ComplaintDate = addslashes(trim($_POST["ComplaintDate"]));
-
-$DocReq = addslashes(trim($_POST["DocReq"]));
-$OrgDocReq = addslashes(trim($_POST["OrgDocReq"]));
-$SurveyUpdate = addslashes(trim($_POST["SurveyUpdate"]));
-$ClaimAmt = addslashes(trim($_POST["ClaimAmt"]));
-$InsuranceApproved = addslashes(trim($_POST["InsuranceApproved"]));
-$PaymentReceived = addslashes(trim($_POST["PaymentReceived"]));
-$AmountReceived = addslashes(trim($_POST["AmountReceived"]));
-$MaterialReplacement = addslashes(trim($_POST["MaterialReplacement"]));
-$ComplaintClose = addslashes(trim($_POST["ComplaintClose"]));
-
-$CreatedDate = date('Y-m-d');
-$ModifiedDate = date('Y-m-d');
-
-
-if($_GET['id']==''){
-     $qx = "INSERT INTO tbl_service_complaint SET CustId='$CustId',CellNo='$CellNo',CustName = '$CustName',Status='$Status',Address='$Address',RelatedIssue='$RelatedIssue',Issue = '$Issue',Message='$Message',CreatedDate='$CreatedDate',CreatedBy='$user_id',ClainStatus='$ClainStatus',BranchId='$BranchId',ServiceType='$ServiceType',Taluka='$Taluka',Village='$Village',District='$District',InstallationDate='$InstallationDate',RegistrationId='$RegistrationId',ComissioningDate='$ComissioningDate',WaterSource='$WaterSource',Category='$Category',ServiceSystem='$ServiceSystem',AcDc='$AcDc',Surface='$Surface',RecentVfdNo='$RecentVfdNo',RecentMotorNo='$RecentMotorNo',RecentPumpNo='$RecentPumpNo',Problem='$Problem',Remark='$Remark',Photos='$Photos',InspectionDate='$InspectionDate',InspectionBy='$InspectionBy',LastDate='$LastDate',SystemStatus='$SystemStatus',Extra='$Extra',ExtraPump='$ExtraPump',ExtraVfd='$ExtraVfd',PolicyNo='$PolicyNo',ClainDone='$ClainDone',Rms='$Rms',VfdProblem='$VfdProblem',PlateDamageInsurance='$PlateDamageInsurance',PumpProblem='$PumpProblem',MotorProblem='$MotorProblem',PhotoReceived='$PhotoReceived',VideoReceived='$VideoReceived',LetterReceived='$LetterReceived',LastCallUpdate='$LastCallUpdate',RecentProblem='$RecentProblem',SystemWorking='$SystemWorking',PolicyPeriod='$PolicyPeriod',Depth='$Depth',PumpMake='$PumpMake',MotorMake='$MotorMake',InsuranceCompany='$InsuranceCompany',BeneficiaryId='$BeneficiaryId',InsuranceComplaint='$InsuranceComplaint',ComplaintDate='$ComplaintDate',DocReq='$DocReq',OrgDocReq='$OrgDocReq',SurveyUpdate='$SurveyUpdate',ClaimAmt='$ClaimAmt',InsuranceApproved='$InsuranceApproved',PaymentReceived='$PaymentReceived',AmountReceived='$AmountReceived',MaterialReplacement='$MaterialReplacement',ComplaintClose='$ComplaintClose'";
-  $conn->query($qx);
-  $PostId = mysqli_insert_id($conn);
-  $TicketNo= "#".rand(1000,9999);
-  $sql = "UPDATE tbl_service_complaint SET TicketNo='$TicketNo' WHERE id='$PostId'";
-  $conn->query($sql);
-  echo "<script>alert('Service Complaint Created Successfully!');window.location.href='view-service-module.php';</script>";
-}
-else{
- //$TicketNo= "#".rand(1000,9999);
-    $query2 = "UPDATE tbl_service_complaint SET CustId='$CustId',CellNo='$CellNo',CustName = '$CustName',Status='$Status',Address='$Address',RelatedIssue='$RelatedIssue',Issue = '$Issue',Message='$Message',ModifiedDate='$ModifiedDate',ModifiedBy='$user_id',ClainStatus='$ClainStatus',BranchId='$BranchId',ServiceType='$ServiceType',Taluka='$Taluka',Village='$Village',District='$District',InstallationDate='$InstallationDate',RegistrationId='$RegistrationId',ComissioningDate='$ComissioningDate',WaterSource='$WaterSource',Category='$Category',ServiceSystem='$ServiceSystem',AcDc='$AcDc',Surface='$Surface',RecentVfdNo='$RecentVfdNo',RecentMotorNo='$RecentMotorNo',RecentPumpNo='$RecentPumpNo',Problem='$Problem',Remark='$Remark',Photos='$Photos',InspectionDate='$InspectionDate',InspectionBy='$InspectionBy',LastDate='$LastDate',SystemStatus='$SystemStatus',Extra='$Extra',ExtraPump='$ExtraPump',ExtraVfd='$ExtraVfd',PolicyNo='$PolicyNo',ClainDone='$ClainDone',Rms='$Rms',VfdProblem='$VfdProblem',PlateDamageInsurance='$PlateDamageInsurance',PumpProblem='$PumpProblem',MotorProblem='$MotorProblem',PhotoReceived='$PhotoReceived',VideoReceived='$VideoReceived',LetterReceived='$LetterReceived',LastCallUpdate='$LastCallUpdate',RecentProblem='$RecentProblem',SystemWorking='$SystemWorking',PolicyPeriod='$PolicyPeriod',Depth='$Depth',PumpMake='$PumpMake',MotorMake='$MotorMake',InsuranceCompany='$InsuranceCompany',BeneficiaryId='$BeneficiaryId',InsuranceComplaint='$InsuranceComplaint',ComplaintDate='$ComplaintDate',DocReq='$DocReq',OrgDocReq='$OrgDocReq',SurveyUpdate='$SurveyUpdate',ClaimAmt='$ClaimAmt',InsuranceApproved='$InsuranceApproved',PaymentReceived='$PaymentReceived',AmountReceived='$AmountReceived',MaterialReplacement='$MaterialReplacement',ComplaintClose='$ComplaintClose' WHERE id = '$id'";
-  $conn->query($query2);
-  echo "<script>alert('Service Complaint Updated Successfully!');window.location.href='view-service-module.php';</script>";
-
-}
-    //header('Location:courses.php'); 
-
-  }
-?>
-
                 <div class="layout-content">
 
                     <div class="container-fluid flex-grow-1 container-p-y">
-                        <h4 class="font-weight-bold py-3 mb-0"><?php if($_GET['id']) {?>Edit <?php } else{?> Add
+                        <h4 class="font-weight-bold py-3 mb-0"><?php if($complaintId > 0) {?>Edit <?php } else{?> Add
                             <?php } ?> Insurance Service Complaint</h4>
 
                         <div class="card mb-4">
@@ -183,7 +197,7 @@ else{
                                     <div class="col-lg-12">
                                 <div id="alert_message"></div>
                                
-                                    <input type="hidden" name="id" value="<?php echo $_GET['id']; ?>" id="userid">
+                                    <input type="hidden" name="id" value="<?php echo htmlspecialchars($id); ?>" id="userid">
                                     <input type="hidden" name="action" value="Save" id="action">
                                     <input type="hidden" name="ServiceType" id="ServiceType" value="Insurance">
                                     <div class="form-row">
@@ -194,11 +208,11 @@ else{
  <select class="select2-demo form-control" name="CustId" id="CustId" required>
 <option selected="" value="">Select Customer</option>
  <?php 
- if($_GET['CustId'] == ''){
+ if($CustId2 == ''){
 $sql12 = "SELECT ti.* FROM tbl_installations ti INNER JOIN tbl_users tu ON ti.CustId=tu.id WHERE ti.WarrantyReg='Yes' AND tu.ProjectType=1 ORDER BY ti.CustName ASC";
  }
  else{
-  $sql12 = "SELECT ti.* FROM tbl_installations ti INNER JOIN tbl_users tu ON ti.CustId=tu.id WHERE ti.WarrantyReg='Yes' AND tu.ProjectType=1 AND ti.CustId='".$_GET['CustId']."'";
+  $sql12 = "SELECT ti.* FROM tbl_installations ti INNER JOIN tbl_users tu ON ti.CustId=tu.id WHERE ti.WarrantyReg='Yes' AND tu.ProjectType=1 AND ti.CustId='".$conn->real_escape_string($CustId2)."'";
 }
   $row12 = getList($sql12);
   foreach($row12 as $result){
@@ -266,13 +280,48 @@ $sql12 = "SELECT ti.* FROM tbl_installations ti INNER JOIN tbl_users tu ON ti.Cu
                                                 placeholder="" value="<?php echo $District; ?>"
                                                 autocomplete="off">
     <div class="clearfix"></div>
- </div> 
+ </div>
+
+<div class="form-group col-md-12">
+    <div class="insurance-info-block">
+        <h6 class="font-weight-bold mb-2">Latest Insurance Details</h6>
+        <p class="text-muted small mb-3" id="insuranceSourceNote"><?php
+            if (!empty($customerInsurance)) {
+                echo 'Source: ' . htmlspecialchars($customerInsurance['source_label'] ?? 'Insurance record');
+            } else {
+                echo 'Select a customer to load insurance from Completed / Renewed Insurance.';
+            }
+        ?></p>
+        <div class="form-row">
+            <div class="form-group col-md-3">
+                <label class="form-label">Insurance No</label>
+                <input type="text" id="insInsuranceNo" class="form-control" readonly value="<?php echo htmlspecialchars($customerInsurance['insurance_no'] ?? ''); ?>">
+            </div>
+            <div class="form-group col-md-3">
+                <label class="form-label">Insurance Company Name</label>
+                <input type="text" id="insCompanyName" class="form-control" readonly value="<?php echo htmlspecialchars($customerInsurance['company_name'] ?? ''); ?>">
+            </div>
+            <div class="form-group col-md-2">
+                <label class="form-label">Date Of Issue</label>
+                <input type="text" id="insDateOfIssue" class="form-control" readonly value="<?php echo htmlspecialchars($customerInsurance['date_of_issue_display'] ?? ''); ?>">
+            </div>
+            <div class="form-group col-md-2">
+                <label class="form-label">Date Of Expiry</label>
+                <input type="text" id="insDateOfExpiry" class="form-control" readonly value="<?php echo htmlspecialchars($customerInsurance['date_of_expiry_display'] ?? ''); ?>">
+            </div>
+            <div class="form-group col-md-2">
+                <label class="form-label">No of Year</label>
+                <input type="text" id="insNoOfYears" class="form-control" readonly value="<?php echo htmlspecialchars($customerInsurance['no_of_years'] ?? ''); ?>">
+            </div>
+        </div>
+    </div>
+</div>
 
 
 <div class="form-group col-md-3">
    <label class="form-label">Complaint Date <span class="text-danger">*</span></label>
      <input type="date" name="ComplaintDate" id="ComplaintDate" class="form-control"
-                                                placeholder="" value="<?php echo $row7["ComplaintDate"]; ?>"
+                                                placeholder="" value="<?php echo htmlspecialchars($row7['ComplaintDate'] ?? ''); ?>"
                                                 autocomplete="off" required>
     <div class="clearfix"></div>
  </div> 
@@ -343,7 +392,7 @@ $sql12 = "SELECT ti.* FROM tbl_installations ti INNER JOIN tbl_users tu ON ti.Cu
  <div class="form-group col-md-12">
    <label class="form-label">Remark/Requirement </label>
      <input type="text" name="Remark" id="Remark" class="form-control"
-                                                placeholder="" value="<?php echo $row7["Remark"]; ?>"
+                                                placeholder="" value="<?php echo htmlspecialchars($row7['Remark'] ?? ''); ?>"
                                                 autocomplete="off">
     <div class="clearfix"></div>
  </div>
@@ -379,7 +428,7 @@ $sql12 = "SELECT ti.* FROM tbl_installations ti INNER JOIN tbl_users tu ON ti.Cu
 
  <div class="form-group col-md-3">
    <label class="form-label">Claim Amount </label>
-     <input type="text" name="ClaimAmt" id="ClaimAmt" class="form-control" placeholder="" value="<?php echo $row7["ClaimAmt"]; ?>" autocomplete="off">
+     <input type="text" name="ClaimAmt" id="ClaimAmt" class="form-control" placeholder="" value="<?php echo htmlspecialchars($row7['ClaimAmt'] ?? ''); ?>" autocomplete="off">
     <div class="clearfix"></div>
  </div>
 
@@ -403,7 +452,7 @@ $sql12 = "SELECT ti.* FROM tbl_installations ti INNER JOIN tbl_users tu ON ti.Cu
 
  <div class="form-group col-md-3">
    <label class="form-label">Amount Received </label>
-     <input type="text" name="AmountReceived" id="AmountReceived" class="form-control" placeholder="" value="<?php echo $row7["AmountReceived"]; ?>" autocomplete="off">
+     <input type="text" name="AmountReceived" id="AmountReceived" class="form-control" placeholder="" value="<?php echo htmlspecialchars($row7['AmountReceived'] ?? ''); ?>" autocomplete="off">
     <div class="clearfix"></div>
  </div>
 
@@ -415,17 +464,6 @@ $sql12 = "SELECT ti.* FROM tbl_installations ti INNER JOIN tbl_users tu ON ti.Cu
   </select>
   <div class="clearfix"></div>
 </div>
-
- <div class="form-group col-md-3">
-  <label class="form-label"> Complaint Close  <span class="text-danger">*</span></label>
-   <select class="form-control" name="ComplaintClose" id="ComplaintClose" required>
-    <option value="No" <?php if($row7['ComplaintClose'] == 'No'){?> selected <?php } ?>>No</option>
-    <option value="Yes" <?php if($row7['ComplaintClose'] == 'Yes'){?> selected <?php } ?>>Yes</option>
-  </select>
-  <div class="clearfix"></div>
-</div>
-
-
 
  
 
@@ -482,30 +520,68 @@ $sql12 = "SELECT ti.* FROM tbl_installations ti INNER JOIN tbl_users tu ON ti.Cu
     <?php include_once 'footer_script.php'; ?>
 
 <script>
-  $(document).ready(function() {
-  $(document).on("change", "#CustId", function(event) {
-            var val = this.value;
-            var action = "getUserDetails";
-            $.ajax({
-                url: "ajax_files/ajax_vendor.php",
-                method: "POST",
-                data: {
-                    action: action,
-                    id: val
-                },
-                dataType:"json",  
-                success: function(data) {
-                    
-                    $('#Address').val(data.Taluka+", "+data.Village+", "+data.District);
-                    $('#CustName').val(data.Fname);
-                    $('#CellNo').val(data.Phone);
-                    $('#Gname').val(data.Gname);
-                    $('#BeneficiaryId').val(data.BeneficiaryId);
-                    
-                }
-            });
+  function clearInsuranceDetails(message) {
+    $('#insInsuranceNo, #insCompanyName, #insDateOfIssue, #insDateOfExpiry, #insNoOfYears').val('');
+    $('#insuranceSourceNote').text(message || 'Select a customer to load insurance from Completed / Renewed Insurance.');
+  }
 
-        });
+  function fillInsuranceDetails(data) {
+    if (!data || !data.found) {
+      clearInsuranceDetails(data && data.message ? data.message : 'No insurance record found for this customer.');
+      return;
+    }
+    $('#insInsuranceNo').val(data.insurance_no || '');
+    $('#insCompanyName').val(data.company_name || '');
+    $('#insDateOfIssue').val(data.date_of_issue || '');
+    $('#insDateOfExpiry').val(data.date_of_expiry || '');
+    $('#insNoOfYears').val(data.no_of_years || '');
+    $('#insuranceSourceNote').text(data.source_label ? ('Source: ' + data.source_label) : 'Latest insurance record loaded.');
+  }
+
+  function loadInsuranceForCustomer(custId) {
+    if (!custId) {
+      clearInsuranceDetails();
+      return;
+    }
+    $.ajax({
+      url: 'ajax-get-customer-insurance.php',
+      method: 'POST',
+      data: { CustId: custId },
+      dataType: 'json',
+      success: function(data) {
+        fillInsuranceDetails(data);
+      },
+      error: function() {
+        clearInsuranceDetails('Could not load insurance details.');
+      }
+    });
+  }
+
+  $(document).ready(function() {
+    $(document).on('change', '#CustId', function() {
+      var val = this.value;
+      $.ajax({
+        url: 'ajax_files/ajax_vendor.php',
+        method: 'POST',
+        data: { action: 'getUserDetails', id: val },
+        dataType: 'json',
+        success: function(data) {
+          $('#Address').val(data.Taluka + ', ' + data.Village + ', ' + data.District);
+          $('#CustName').val(data.Fname);
+          $('#CellNo').val(data.Phone);
+          $('#Gname').val(data.Gname);
+          $('#BeneficiaryId').val(data.BeneficiaryId);
+          $('#Taluka').val(data.Taluka);
+          $('#Village').val(data.Village);
+          $('#District').val(data.District);
+        }
+      });
+      loadInsuranceForCustomer(val);
+    });
+
+    if ($('#CustId').val()) {
+      loadInsuranceForCustomer($('#CustId').val());
+    }
   });
 </script>
 </body>

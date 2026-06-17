@@ -2,20 +2,22 @@
 session_start();
 include_once 'config.php';
 include_once 'auth.php';
-$MainPage="Installation";
-$Page = "Installation";
+$MainPage = 'Service';
+$Page = 'Service-Dashboard';
 $user_id = $_SESSION['Admin']['id'];
 $sql77 = "SELECT * FROM tbl_users WHERE id='$user_id'";
 $row77 = getRecord($sql77);
 $Roll = $row77['Roll'];
 $UserCat = $row77['CatId'];
 $Options = adminResolveMenuOptionsFromUserRow($row77);
+$projectId = isset($_GET['id']) ? (int) $_GET['id'] : 0;
+$projectName = isset($_GET['name']) ? htmlspecialchars($_GET['name'], ENT_QUOTES, 'UTF-8') : '';
 ?>
 <!DOCTYPE html>
 <html lang="en" class="default-style layout-fixed layout-navbar-fixed">
 
 <head>
-    <title><?php echo $Proj_Title; ?> - Dashboard</title>
+    <title><?php echo $Proj_Title; ?> - Service Dashboard</title>
     <meta charset="utf-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=0, minimal-ui">
@@ -23,83 +25,70 @@ $Options = adminResolveMenuOptionsFromUserRow($row77);
     <meta name="keywords" content="">
     <meta name="author" content="" />
     <?php include_once 'header_script.php'; ?>
+    <link rel="stylesheet" href="css/installation-project-dashboard.css">
 </head>
 
 <body>
-    <style type="text/css">
-    .mr_5 {
-        margin-right: 3rem !important;
-    }
-    </style>
    <div class="layout-wrapper layout-2">
         <div class="layout-inner">
 
             <?php include_once 'service-sidebar.php'; ?>
 
-
             <div class="layout-container">
 
               <?php include_once 'top_header.php'; ?>
 
-
                 <div class="layout-content">
-                    <div class="container-fluid flex-grow-1 container-p-y">
-                        <div class="text-muted small mt-0 mb-4 d-block breadcrumb">
-                        </div>
+                    <div class="container-fluid flex-grow-1 container-p-y ipd-page">
 
                         <div class="row">
-
-                            <div class="col-xl-12 col-md-12">
-                                <div class="card ui-task mb-4">
-                                    <h5 class="card-header" style="text-align:center;"><?php echo strtoupper($_GET['name']);?> SERVICE SUB HEAD</h5>
-                                    <div class="card-body">
-                                      
-
-                            <div class="row">
+                            <div class="col-12">
+                                <div class="card ipd-shell mb-4">
+                                    <h5 class="card-header ipd-header"><?php echo $projectName; ?> — Service Sub Head</h5>
+                                    <div class="card-body ipd-body">
+                                        <nav class="ipd-breadcrumb" aria-label="Breadcrumb">
+                                            <a href="service-dashboard.php">Service Dashboard</a>
+                                            <span aria-hidden="true">/</span>
+                                            <span><?php echo $projectName; ?></span>
+                                        </nav>
+                                        <div class="ipd-stat-grid">
                             <?php 
-                                $sql = "SELECT * FROM tbl_project_sub_head WHERE UnderBy='".$_GET['id']."'";
+                                $sql = "SELECT * FROM tbl_project_sub_head WHERE UnderBy='".$projectId."' ORDER BY Name ASC";
                                 $row = getList($sql);
-                                foreach($row as $result){
-
+                                if (empty($row)) {
                             ?>
-                          <div class="col-sm-6 col-xl-3">
-                                 <a href="service-project-dashboard.php?prjid=<?php echo $_GET['id'];?>&id=<?php echo $result['id'];?>&name=<?php echo $result['Name'];?>">
-                               <div class="card mb-4 bg-pattern-3-dark">
-                                    <div class="card-body" style="padding-top: 15px; padding-bottom: 15px; padding-right: 5px; padding-left: 10px;">
-                                        <div class="d-flex align-items-center">
-                                          
-                                            <div class="ml-3">
-                                                <h6 class="mb-0" style="color: black;"><?php echo $result['Name'];?></h6>
-                                        <div class="text-large"><?php  
-                                                            $sql4 = "SELECT ts.* FROM tbl_service_complaint ts INNER JOIN  tbl_users tu ON tu.id=ts.CustId WHERE tu.ProjectSubHeadId='".$result['id']."' AND tu.ProjectType=1";
-                                                            echo $rncnt4 = getRow($sql4);
-
-                                                        ?></div>
-                                        
-                                     </div>
-                                        </div>
-                                     </div>
-                                </div></a>
-                            </div>
+                                            <p class="ipd-empty">No sub heads found for this project.</p>
+                            <?php
+                                }
+                                foreach ($row as $result) {
+                                    $subHeadId = (int) $result['id'];
+                                    $subHeadName = htmlspecialchars($result['Name'], ENT_QUOTES, 'UTF-8');
+                                    $sql4 = "SELECT ts.* FROM tbl_service_complaint ts
+                                        INNER JOIN tbl_users tu ON tu.id = ts.CustId
+                                        WHERE tu.ProjectSubHeadId='".$subHeadId."'
+                                        AND tu.ProjectType=1";
+                                    $rncnt4 = getRow($sql4);
+                            ?>
+                                            <a href="service-project-dashboard.php?prjid=<?php echo $projectId; ?>&id=<?php echo $subHeadId; ?>&name=<?php echo urlencode($result['Name']); ?>" class="ipd-stat-link">
+                                                <div class="ipd-stat-card">
+                                                    <h6 class="ipd-stat-label"><?php echo $subHeadName; ?></h6>
+                                                    <div class="ipd-stat-meta">
+                                                        <span class="ipd-stat-count"><?php echo (int) $rncnt4; ?></span>
+                                                        <span class="ipd-stat-badge">
+                                                            <i class="feather icon-users" aria-hidden="true"></i>
+                                                            Complaints
+                                                        </span>
+                                                    </div>
+                                                </div>
+                                            </a>
                             <?php } ?>
-                        </div>
+                                        </div>
                                     </div>
                                 </div>
                             </div>
-
-
                          </div>
 
-                        
-                        
-
-
-</div>
-
-
-                    
-
-
+                    </div>
 
                 <?php include_once 'footer.php'; ?>
 
@@ -112,9 +101,7 @@ $Options = adminResolveMenuOptionsFromUserRow($row77);
     <div class="layout-overlay layout-sidenav-toggle"></div>
     </div>
 
-
     <?php include_once 'footer_script.php'; ?>
-
 
 </body>
 

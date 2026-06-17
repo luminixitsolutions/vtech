@@ -1211,6 +1211,118 @@ function insuranceGetSiteHistoryByCustomer($custId)
         ORDER BY h.CompletedDateTime DESC, h.id DESC");
 }
 
+/**
+ * Latest insurance snapshot for a customer (completed / renewed lists + history).
+ *
+ * @return array|null Keys: insurance_no, company_name, date_of_issue, date_of_expiry, no_of_years, source_label
+ */
+function insuranceGetLatestCustomerInsurance($custId)
+{
+    global $conn;
+
+    insuranceEnsureUser2InsuranceColumns();
+    insuranceEnsureHistoryTable();
+
+    $custId = (int) $custId;
+    if ($custId <= 0) {
+        return null;
+    }
+
+    $current = getRecord("SELECT tu.InsuranceAgency, tu.InsuranceNumber, tu.InsuranceValidity,
+            tu2.InsuranceIssueDate, tu2.InsuranceYears
+        FROM tbl_users tu
+        LEFT JOIN tbl_user2 tu2 ON tu2.id = tu.id
+        WHERE tu.id = '$custId'
+        LIMIT 1");
+
+    $history = getRecord("SELECT InsuranceCompany, PolicyNo, DateOfIssue, DateOfExpiry, NoOfYear,
+            ProcessStatus, CompletedDateTime
+        FROM tbl_insurance_site_history
+        WHERE CustId = '$custId'
+        ORDER BY CompletedDateTime DESC, id DESC
+        LIMIT 1");
+
+    $candidates = array();
+
+    if (!empty($current)) {
+        $issue = !empty($current['InsuranceIssueDate']) && $current['InsuranceIssueDate'] !== '0000-00-00'
+            ? $current['InsuranceIssueDate'] : '';
+        $expiry = !empty($current['InsuranceValidity']) ? parseInsuranceDateForDb($current['InsuranceValidity']) : '';
+        if ($expiry === '' && !empty($current['InsuranceValidity'])) {
+            $expiry = trim((string) $current['InsuranceValidity']);
+        }
+        $hasAny = trim((string) ($current['InsuranceAgency'] ?? '')) !== ''
+            || trim((string) ($current['InsuranceNumber'] ?? '')) !== ''
+            || $issue !== ''
+            || $expiry !== '';
+        if ($hasAny) {
+            $candidates[] = array(
+                'insurance_no' => trim((string) ($current['InsuranceNumber'] ?? '')),
+                'company_name' => trim((string) ($current['InsuranceAgency'] ?? '')),
+                'date_of_issue' => $issue,
+                'date_of_expiry' => $expiry,
+                'no_of_years' => getInsuranceYears($issue, $expiry, $current['InsuranceYears'] ?? ''),
+                'source_label' => 'Current Insurance',
+                'sort_key' => insuranceLatestInsuranceSortKey($expiry, $issue, ''),
+            );
+        }
+    }
+
+    if (!empty($history)) {
+        $issue = !empty($history['DateOfIssue']) && $history['DateOfIssue'] !== '0000-00-00'
+            ? $history['DateOfIssue'] : '';
+        $expiry = !empty($history['DateOfExpiry']) && $history['DateOfExpiry'] !== '0000-00-00'
+            ? $history['DateOfExpiry'] : '';
+        $source = ($history['ProcessStatus'] ?? '') === 'Renewed' ? 'Renewed Insurance' : 'Completed Insurance';
+        $candidates[] = array(
+            'insurance_no' => trim((string) ($history['PolicyNo'] ?? '')),
+            'company_name' => trim((string) ($history['InsuranceCompany'] ?? '')),
+            'date_of_issue' => $issue,
+            'date_of_expiry' => $expiry,
+            'no_of_years' => trim((string) ($history['NoOfYear'] ?? '')),
+            'source_label' => $source,
+            'sort_key' => insuranceLatestInsuranceSortKey($expiry, $issue, $history['CompletedDateTime'] ?? ''),
+        );
+    }
+
+    if (empty($candidates)) {
+        return null;
+    }
+
+    usort($candidates, function ($a, $b) {
+        return strcmp($b['sort_key'], $a['sort_key']);
+    });
+
+    $best = $candidates[0];
+    $best['date_of_issue_display'] = formatInsuranceDate($best['date_of_issue']);
+    $best['date_of_expiry_display'] = formatInsuranceDate($best['date_of_expiry']);
+    if ($best['no_of_years'] === '' && $best['date_of_issue'] !== '' && $best['date_of_expiry'] !== '') {
+        $best['no_of_years'] = getInsuranceYears($best['date_of_issue'], $best['date_of_expiry'], '');
+    }
+
+    unset($best['sort_key']);
+
+    return $best;
+}
+
+function insuranceLatestInsuranceSortKey($expiry, $issue, $completedDateTime)
+{
+    $expiryKey = parseInsuranceDateForDb($expiry);
+    if ($expiryKey !== '') {
+        return '9_' . $expiryKey;
+    }
+    $issueKey = parseInsuranceDateForDb($issue);
+    if ($issueKey !== '') {
+        return '8_' . $issueKey;
+    }
+    $dt = trim((string) $completedDateTime);
+    if ($dt !== '' && $dt !== '0000-00-00 00:00:00') {
+        return '7_' . $dt;
+    }
+
+    return '0';
+}
+
 function insuranceMarkCustomerCompleted($custId, $data, $userId, $customer = array(), $meta = array())
 {
     global $conn;

@@ -916,6 +916,18 @@ $fileSubmissionReminderAlert = $fileSubmissionReminderCount > 0;
 <?php } ?>
 </a>
 </li>
+<?php } if(menuAccessShowGranularLink($MenuOptions, 263)) {?>
+<li class="sidenav-item <?php if($Page=='Insurance-Service-Complaint' || $Page=='Fill-Insurance-Details') {?> active <?php } ?>">
+<a href="view-insurance-service-complaints.php" class="sidenav-link">
+<div> Insurance Service Complaint</div>
+</a>
+</li>
+<?php } if(menuAccessShowGranularLink($MenuOptions, 264)) {?>
+<li class="sidenav-item <?php if($Page=='Done-Insurance-Process') {?> active <?php } ?>">
+<a href="view-done-insurance-process.php" class="sidenav-link">
+<div> Done Insurance Process</div>
+</a>
+</li>
 <?php } ?>
 </ul>
 </li>

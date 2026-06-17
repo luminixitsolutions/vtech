@@ -2,8 +2,8 @@
 session_start();
 include_once 'config.php';
 include_once 'auth.php';
-$MainPage="Installation";
-$Page = "Installation";
+$MainPage = 'Service';
+$Page = 'Service-Dashboard';
 $user_id = $_SESSION['Admin']['id'];
 $sql77 = "SELECT * FROM tbl_users WHERE id='$user_id'";
 $row77 = getRecord($sql77);
@@ -13,7 +13,7 @@ $Options = adminResolveMenuOptionsFromUserRow($row77);
 
 $sql = "SELECT * FROM tbl_installations WHERE CustName=''";
 $row = getList($sql);
-foreach($row as $result){
+foreach ($row as $result) {
     $sql1 = "SELECT Fname,Phone,Address FROM tbl_users WHERE id='".$result['CustId']."'";
     $row1 = getRecord($sql1);
     $sql2 = "UPDATE tbl_installations SET CustName='".$row1['Fname']."',CellNo='".$row1['Phone']."',Address='".$row1['Address']."' WHERE CustId='".$result['CustId']."'";
@@ -22,29 +22,26 @@ foreach($row as $result){
 
 $sql = "SELECT CustId FROM tbl_installations WHERE Type=0";
 $row7 = getList($sql); 
-foreach($row7 as $result){
+foreach ($row7 as $result) {
     $id = $result['CustId'];
     $sql78 = "SELECT ProjectType FROM tbl_users WHERE id='$id'";
     $row78 = getRecord($sql78); 
     $ProjectType = $row78['ProjectType'];
-    if($ProjectType == 1){
-        $Type=2;
-    }
-    else{
-       $Type=1; 
+    if ($ProjectType == 1) {
+        $Type = 2;
+    } else {
+        $Type = 1; 
     }
     
     $sql = "UPDATE tbl_installations SET Type='$Type' WHERE CustId='$id'";
     $conn->query($sql);
-    
 }
-
 ?>
 <!DOCTYPE html>
 <html lang="en" class="default-style layout-fixed layout-navbar-fixed">
 
 <head>
-    <title><?php echo $Proj_Title; ?> - Dashboard</title>
+    <title><?php echo $Proj_Title; ?> - Service Dashboard</title>
     <meta charset="utf-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=0, minimal-ui">
@@ -52,74 +49,52 @@ foreach($row7 as $result){
     <meta name="keywords" content="">
     <meta name="author" content="" />
     <?php include_once 'header_script.php'; ?>
+    <link rel="stylesheet" href="css/installation-project-dashboard.css">
 </head>
 
 <body>
-    <style type="text/css">
-    .mr_5 {
-        margin-right: 3rem !important;
-    }
-    </style>
    <div class="layout-wrapper layout-2">
         <div class="layout-inner">
 
             <?php include_once 'service-sidebar.php'; ?>
 
-
             <div class="layout-container">
 
               <?php include_once 'top_header.php'; ?>
 
-
                 <div class="layout-content">
-                    <div class="container-fluid flex-grow-1 container-p-y">
-                        <div class="text-muted small mt-0 mb-4 d-block breadcrumb">
-                        </div>
+                    <div class="container-fluid flex-grow-1 container-p-y ipd-page">
 
                         <div class="row">
-
-                            <div class="col-xl-12 col-md-12">
-                                <div class="card ui-task mb-4">
-                                    <h5 class="card-header" style="text-align:center;">SERVICE DASHBOARD</h5>
-                                    <div class="card-body">
-                                      
-
-                            <div class="row">
+                            <div class="col-12">
+                                <div class="card ipd-shell mb-4">
+                                    <h5 class="card-header ipd-header">Service Dashboard</h5>
+                                    <div class="card-body ipd-body">
+                                        <div class="ipd-project-grid">
                             <?php 
-                                $sql = "SELECT * FROM tbl_common_master WHERE Status=1 AND Roll=24";
+                                $sql = "SELECT * FROM tbl_common_master WHERE Status=1 AND Roll=24 ORDER BY Name ASC";
                                 $row = getList($sql);
-                                foreach($row as $result){
-
+                                $tone = 0;
+                                foreach ($row as $result) {
+                                    $projId = (int) $result['id'];
+                                    $projName = htmlspecialchars($result['Name'], ENT_QUOTES, 'UTF-8');
+                                    $toneClass = 'ipd-tone-' . ($tone % 7);
+                                    $tone++;
                             ?>
-                           <div class="col-sm-6 col-xl-2">
-                                <a href="service-project-sub-head-dashboard.php?id=<?php echo $result['id'];?>&name=<?php echo $result['Name'];?>">
-                               <div class="card bg-warning text-white ui-hover-icon mb-4 bg-pattern-3">
-                                        <div class="card-body text-center">
-                                       
-                                        <h6 class="mb-0"><?php echo $result['Name'];?></h6>
-                                        <i class="lnr lnr-users hov-icon"></i>
-                                     </div>
-                                </div></a>
-                            </div>
+                                            <a href="service-project-sub-head-dashboard.php?id=<?php echo $projId; ?>&name=<?php echo urlencode($result['Name']); ?>" class="ipd-project-link">
+                                                <div class="ipd-project-card <?php echo $toneClass; ?>">
+                                                    <i class="feather icon-folder ipd-project-icon" aria-hidden="true"></i>
+                                                    <h6 class="ipd-project-name"><?php echo $projName; ?></h6>
+                                                </div>
+                                            </a>
                             <?php } ?>
-                        </div>
+                                        </div>
                                     </div>
                                 </div>
                             </div>
-
-
                          </div>
 
-                        
-                        
-
-
-</div>
-
-
-                    
-
-
+                    </div>
 
                 <?php include_once 'footer.php'; ?>
 
@@ -132,9 +107,7 @@ foreach($row7 as $result){
     <div class="layout-overlay layout-sidenav-toggle"></div>
     </div>
 
-
     <?php include_once 'footer_script.php'; ?>
-
 
 </body>
 

@@ -134,6 +134,7 @@ $abstractType = $filters['abstract_type'];
                                     <tr>
                                         <th><?php echo htmlspecialchars($columnLabel); ?></th>
                                         <th>Total Complaints</th>
+                                        <th>Total Challan</th>
                                         <th>Total complaints closed</th>
                                         <th>TODAY COMPLAINTS ADD</th>
                                         <th>Complaints Hold due to the material issue</th>
@@ -145,6 +146,7 @@ $abstractType = $filters['abstract_type'];
                                     <tr>
                                         <td class="label-col"><?php echo htmlspecialchars($row['label']); ?></td>
                                         <td><a href="<?php echo serviceAbstractListUrl($row, $filters, ''); ?>" target="_blank"><?php echo (int) $row['total_complaints']; ?></a></td>
+                                        <td><a href="<?php echo serviceAbstractChallanListUrl($row, $filters); ?>" target="_blank"><?php echo (int) $row['total_challan']; ?></a></td>
                                         <td><a href="<?php echo serviceAbstractListUrl($row, $filters, 'closed'); ?>" target="_blank"><?php echo (int) $row['total_closed']; ?></a></td>
                                         <td><a href="<?php echo serviceAbstractListUrl($row, $filters, 'today'); ?>" target="_blank"><?php echo (int) $row['today_added']; ?></a></td>
                                         <td><a href="<?php echo serviceAbstractListUrl($row, $filters, 'material'); ?>" target="_blank"><?php echo (int) $row['material_hold']; ?></a></td>
@@ -155,6 +157,7 @@ $abstractType = $filters['abstract_type'];
                                     <tr class="total-row">
                                         <td class="label-col"><?php echo htmlspecialchars($totals['label']); ?></td>
                                         <td><a href="<?php echo serviceAbstractListUrl($totals, $filters, ''); ?>" target="_blank"><?php echo (int) $totals['total_complaints']; ?></a></td>
+                                        <td><a href="<?php echo serviceAbstractChallanListUrl($totals, $filters); ?>" target="_blank"><?php echo (int) $totals['total_challan']; ?></a></td>
                                         <td><a href="<?php echo serviceAbstractListUrl($totals, $filters, 'closed'); ?>" target="_blank"><?php echo (int) $totals['total_closed']; ?></a></td>
                                         <td><a href="<?php echo serviceAbstractListUrl($totals, $filters, 'today'); ?>" target="_blank"><?php echo (int) $totals['today_added']; ?></a></td>
                                         <td><a href="<?php echo serviceAbstractListUrl($totals, $filters, 'material'); ?>" target="_blank"><?php echo (int) $totals['material_hold']; ?></a></td>

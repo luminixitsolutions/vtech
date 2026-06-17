@@ -33,13 +33,14 @@ echo "\xEF\xBB\xBF";
 </head>
 <body>
 <table>
-    <tr><td colspan="6" class="title">VTECH SUNSYSTEMS PVT LTD</td></tr>
-    <tr><td colspan="6" class="title"><?php echo htmlspecialchars($reportTitle); ?></td></tr>
-    <tr><td colspan="6" class="title">Update as on <?php echo $exportDate; ?></td></tr>
-    <tr><td colspan="6"></td></tr>
+    <tr><td colspan="7" class="title">VTECH SUNSYSTEMS PVT LTD</td></tr>
+    <tr><td colspan="7" class="title"><?php echo htmlspecialchars($reportTitle); ?></td></tr>
+    <tr><td colspan="7" class="title">Update as on <?php echo $exportDate; ?></td></tr>
+    <tr><td colspan="7"></td></tr>
     <tr>
         <th><?php echo htmlspecialchars($columnLabel); ?></th>
         <th>Total Complaints</th>
+        <th>Total Challan</th>
         <th>Total complaints closed</th>
         <th>TODAY COMPLAINTS ADD</th>
         <th>Complaints Hold due to the material issue</th>
@@ -49,6 +50,7 @@ echo "\xEF\xBB\xBF";
     <tr>
         <td class="label-col"><?php echo htmlspecialchars($row['label']); ?></td>
         <td><?php echo (int) $row['total_complaints']; ?></td>
+        <td><?php echo (int) $row['total_challan']; ?></td>
         <td><?php echo (int) $row['total_closed']; ?></td>
         <td><?php echo (int) $row['today_added']; ?></td>
         <td><?php echo (int) $row['material_hold']; ?></td>
@@ -59,6 +61,7 @@ echo "\xEF\xBB\xBF";
     <tr class="total">
         <td class="label-col"><?php echo htmlspecialchars($totals['label']); ?></td>
         <td><?php echo (int) $totals['total_complaints']; ?></td>
+        <td><?php echo (int) $totals['total_challan']; ?></td>
         <td><?php echo (int) $totals['total_closed']; ?></td>
         <td><?php echo (int) $totals['today_added']; ?></td>
         <td><?php echo (int) $totals['material_hold']; ?></td>

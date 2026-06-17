@@ -2,7 +2,16 @@
 session_start();
 include_once '../config.php';
 include_once '../auth.php';
+require_once __DIR__ . '/../inc-item-transfer-workflow-access.php';
 $user_id = $_SESSION['Admin']['id'];
+$workflowUser = itemTransferWorkflowUserContext($user_id);
+$Roll = $workflowUser['roll'];
+$BranchId = $workflowUser['branch_id'];
+$MulBranchId = $workflowUser['mul_branch_id'];
+$Options = $workflowUser['options'];
+if (!itemTransferWorkflowCanAccessStore($Roll, $Options)) {
+    itemTransferWorkflowDeny();
+}
 
 function RandomStringGenerator($n) {
     $domain = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890";
@@ -18,8 +27,12 @@ $TransferDate = $conn->real_escape_string($_POST['TransferDate']);
 $Narration = $conn->real_escape_string(trim($_POST['Narration'] ?? ''));
 $CreatedDate = date('Y-m-d H:i:s');
 
-if ($FromBranchId <= 0 || $ToBranchId <= 0) {
+if (!itemTransferWorkflowValidateFromBranchId($Roll, $BranchId, $MulBranchId, $FromBranchId) || $ToBranchId <= 0) {
     echo "<script>alert('Invalid store.'); history.back();</script>";
+    exit;
+}
+if ($FromBranchId === $ToBranchId) {
+    echo "<script>alert('From Store and To Store must be different.'); history.back();</script>";
     exit;
 }
 

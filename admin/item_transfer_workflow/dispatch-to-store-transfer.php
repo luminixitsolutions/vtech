@@ -28,6 +28,16 @@ $d2WhereNotOpenTransfer = $hasDetail2IdTd
     ? "AND td_open.Detail2Id IS NULL"
     : "";
 $Created_Date = isset($_REQUEST['TransferDate']) ? $_REQUEST['TransferDate'] : date('Y-m-d');
+$ToBranchId = isset($_REQUEST['ToBranchId']) ? (int) $_REQUEST['ToBranchId'] : 0;
+if (itemTransferWorkflowIsDispatchOfficerSelf($Roll)) {
+    $DispatchOfficerId = (int) $user_id;
+} else {
+    $DispatchOfficerId = isset($_REQUEST['DispatchOfficerId']) ? (int) $_REQUEST['DispatchOfficerId'] : 0;
+}
+$dispatchOfficers = itemTransferWorkflowListDispatchOfficers($conn, $Roll, $BranchId, $ToBranchId);
+$dispatchOfficerRow = $DispatchOfficerId > 0
+    ? getRecord("SELECT id, Fname, Phone FROM tbl_users WHERE id='$DispatchOfficerId' AND Roll=26 LIMIT 1")
+    : null;
 ?>
 <!DOCTYPE html>
 <html lang="en" class="default-style layout-fixed layout-navbar-fixed">
@@ -46,11 +56,36 @@ $Created_Date = isset($_REQUEST['TransferDate']) ? $_REQUEST['TransferDate'] : d
             <div class="layout-content">
                 <div class="container-fluid flex-grow-1 container-p-y">
                     <h4 class="font-weight-bold py-3 mb-0">Dispatch Officer - Transfer Items to Store</h4>
-                    <p class="text-muted">Transfer items from your stock (assigned by admin) to a store.</p>
+                    <p class="text-muted">Transfer items from a dispatch officer's stock to a store.</p>
                     <div class="card mb-4">
                         <div class="card-body">
                             <form method="get" action="item_transfer_workflow/dispatch-to-store-transfer.php">
                                 <div class="form-row">
+                                    <?php if (!itemTransferWorkflowIsDispatchOfficerSelf($Roll)) { ?>
+                                    <div class="form-group col-md-4">
+                                        <label class="form-label">From Dispatcher <span class="text-danger">*</span></label>
+                                        <select class="form-control" name="DispatchOfficerId" id="DispatchOfficerId" required onchange="this.form.submit()">
+                                            <option value="">Select Dispatcher</option>
+                                            <?php
+                                            foreach ($dispatchOfficers as $officer) {
+                                                $oid = (int) $officer['id'];
+                                                $sel = ($DispatchOfficerId === $oid) ? ' selected' : '';
+                                                $label = trim($officer['Fname'] ?? '');
+                                                if (!empty($officer['Phone'])) {
+                                                    $label .= ' (' . $officer['Phone'] . ')';
+                                                }
+                                                echo '<option value="' . $oid . '"' . $sel . '>' . htmlspecialchars($label) . '</option>';
+                                            }
+                                            ?>
+                                        </select>
+                                    </div>
+                                    <?php } else { ?>
+                                    <div class="form-group col-md-4">
+                                        <label class="form-label">From Dispatcher</label>
+                                        <input type="text" class="form-control" value="<?php echo htmlspecialchars($dispatchOfficerRow['Fname'] ?? $_SESSION['Admin']['Fname'] ?? 'You'); ?>" readonly>
+                                        <input type="hidden" name="DispatchOfficerId" value="<?php echo (int) $DispatchOfficerId; ?>">
+                                    </div>
+                                    <?php } ?>
                                     <div class="form-group col-md-4">
                                         <label class="form-label">To Store <span class="text-danger">*</span></label>
                                         <select class="form-control" name="ToBranchId" id="ToBranchId" required onchange="this.form.submit()">
@@ -59,12 +94,12 @@ $Created_Date = isset($_REQUEST['TransferDate']) ? $_REQUEST['TransferDate'] : d
                                             $sqlb = "SELECT * FROM tbl_branch WHERE Status='1' ORDER BY Name";
                                             if ($Roll != 1 && $Roll != 7) {
                                                 if (!empty($BranchId)) {
-                                                    $sqlb = "SELECT * FROM tbl_branch WHERE Status='1' AND id!='" . (int)$BranchId . "' ORDER BY Name";
+                                                    $sqlb = "SELECT * FROM tbl_branch WHERE Status='1' AND id!='" . (int) $BranchId . "' ORDER BY Name";
                                                 }
                                             }
                                             $rb = $conn->query($sqlb);
                                             while ($b = $rb->fetch_assoc()) {
-                                                $sel = (isset($_REQUEST['ToBranchId']) && $_REQUEST['ToBranchId'] == $b['id']) ? ' selected' : '';
+                                                $sel = ($ToBranchId === (int) $b['id']) ? ' selected' : '';
                                                 echo '<option value="' . $b['id'] . '"' . $sel . '>' . htmlspecialchars($b['Name']) . '</option>';
                                             }
                                             ?>
@@ -72,21 +107,24 @@ $Created_Date = isset($_REQUEST['TransferDate']) ? $_REQUEST['TransferDate'] : d
                                     </div>
                                     <div class="form-group col-md-3">
                                         <label class="form-label">Transfer Date <span class="text-danger">*</span></label>
-                                        <input type="date" name="TransferDate" class="form-control" value="<?php echo $Created_Date; ?>">
+                                        <input type="date" name="TransferDate" class="form-control" value="<?php echo htmlspecialchars($Created_Date); ?>">
                                     </div>
                                 </div>
                             </form>
 
                             <?php
-                            $ToBranchId = isset($_REQUEST['ToBranchId']) ? (int)$_REQUEST['ToBranchId'] : 0;
-                            if ($ToBranchId <= 0) {
-                                echo '<p class="text-info mb-0"><strong>Select a destination store</strong> above. Your available dispatch stock (including quantities returned after a revert) is listed only after you choose a store.</p>';
+                            if ($DispatchOfficerId <= 0) {
+                                echo '<p class="text-info mb-0"><strong>Select a dispatcher</strong> above to load available stock.</p>';
+                            } elseif ($ToBranchId <= 0) {
+                                echo '<p class="text-info mb-0"><strong>Select a destination store</strong> above. Available dispatch stock is listed after both dispatcher and store are chosen.</p>';
                             }
-                            if ($ToBranchId > 0) {
+                            if ($DispatchOfficerId > 0 && $ToBranchId > 0) {
+                                $stockExeId = (int) $DispatchOfficerId;
                                 ?>
                                 <form method="post" action="item_transfer_workflow/save-dispatch-to-store-transfer.php">
+                                    <input type="hidden" name="DispatchOfficerId" value="<?php echo $stockExeId; ?>">
                                     <input type="hidden" name="ToBranchId" value="<?php echo $ToBranchId; ?>">
-                                    <input type="hidden" name="TransferDate" value="<?php echo $Created_Date; ?>">
+                                    <input type="hidden" name="TransferDate" value="<?php echo htmlspecialchars($Created_Date); ?>">
 
                                     <div class="form-row mt-3">
                                         <label class="form-label font-weight-bold" style="font-size: 16px; color: #0dc30d;">Qty-based Products</label>
@@ -99,7 +137,7 @@ $Created_Date = isset($_REQUEST['TransferDate']) ? $_REQUEST['TransferDate'] : d
                                         <thead><tr><th>Product</th><th>Available Qty</th><th>Qty to Transfer</th><th>Unit</th></tr></thead>
                                         <tbody>
                                         <?php
-                                        $sq = "SELECT d2.ProductId, d2.ProductName, d2.Purity, SUM(d2.Qty) AS AvailQty FROM tbl_distibute_item_details2 d2 $d2JoinOpenTransfer WHERE d2.StoreExeId='$user_id' AND d2.ProdType=0 $d2WhereNotOpenTransfer GROUP BY d2.ProductId, d2.ProductName, d2.Purity HAVING AvailQty > 0";
+                                        $sq = "SELECT d2.ProductId, d2.ProductName, d2.Purity, SUM(d2.Qty) AS AvailQty FROM tbl_distibute_item_details2 d2 $d2JoinOpenTransfer WHERE d2.StoreExeId='$stockExeId' AND d2.ProdType=0 $d2WhereNotOpenTransfer GROUP BY d2.ProductId, d2.ProductName, d2.Purity HAVING AvailQty > 0";
                                         $rq = $conn->query($sq);
                                         $has_qty = false;
                                         while ($qr = $rq->fetch_assoc()) {
@@ -132,7 +170,7 @@ $Created_Date = isset($_REQUEST['TransferDate']) ? $_REQUEST['TransferDate'] : d
                                         <thead><tr><th><input type="checkbox" id="chkAllSerial"></th><th>Product</th><th>Serial No</th></tr></thead>
                                         <tbody>
                                         <?php
-                                        $ss = "SELECT d2.id, d2.ProductName, d2.SerialNo FROM tbl_distibute_item_details2 d2 $d2JoinOpenTransfer WHERE d2.StoreExeId='$user_id' AND d2.ProdType IN (1,2) AND d2.SerialNo!='' $d2WhereNotOpenTransfer ORDER BY d2.ProductName, d2.SerialNo";
+                                        $ss = "SELECT d2.id, d2.ProductName, d2.SerialNo FROM tbl_distibute_item_details2 d2 $d2JoinOpenTransfer WHERE d2.StoreExeId='$stockExeId' AND d2.ProdType IN (1,2) AND d2.SerialNo!='' $d2WhereNotOpenTransfer ORDER BY d2.ProductName, d2.SerialNo";
                                         $rs = $conn->query($ss);
                                         $has_serial = false;
                                         if ($rs) while ($sr = $rs->fetch_assoc()) {
@@ -161,8 +199,6 @@ $Created_Date = isset($_REQUEST['TransferDate']) ? $_REQUEST['TransferDate'] : d
                                     </div>
                                 </form>
                                 <?php
-                            } else {
-                                echo '<p class="text-muted">Select a store above to see your available stock and transfer items.</p>';
                             }
                             ?>
                         </div>

@@ -289,6 +289,8 @@ function getMenuAccessDetailedTree()
                 menuAccessTreeItem(246, 'View Service Complaint'),
                 menuAccessTreeItem(247, 'Service Abstract'),
                 menuAccessTreeItem(260, 'Service Challan'),
+                menuAccessTreeItem(263, 'Insurance Service Complaint'),
+                menuAccessTreeItem(264, 'Done Insurance Process'),
             ]),
         ],
         'Insurance Site' => [

@@ -44,7 +44,7 @@ function getMenuOptionGroups()
         'Assign Site To Installation' => [83],
         'Installation Project' => [68],
         'Assign Site To Inspection' => [84],
-        'Service Complaint' => [164, 137, 135, 136, 245, 246, 247, 260, 28],
+        'Service Complaint' => [164, 137, 135, 136, 245, 246, 247, 260, 263, 264, 28],
         'Insurance Site' => [121, 168, 169, 170, 171, 172, 173],
         'Trip Details' => [138, 139],
         'File submission reminder' => [254],

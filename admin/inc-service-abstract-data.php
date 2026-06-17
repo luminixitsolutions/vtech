@@ -93,6 +93,113 @@ function serviceAbstractDistrictWhereClause($district) {
     return " AND $col = '$distEsc'";
 }
 
+function serviceAbstractChallanDistrictWhereClause($district) {
+    if ($district === '' || $district === 'all') {
+        return '';
+    }
+    $col = "UPPER(TRIM(COALESCE(tu.District, '')))";
+    if ($district === 'NASHIK (MALEGAON)') {
+        return " AND $col IN ('NASHIK','MALEGAON')";
+    }
+    if ($district === 'AHMEDNAGAR') {
+        return " AND $col IN ('AHMEDNAGAR','AHMEDNAAGAR')";
+    }
+    global $conn;
+    $distEsc = $conn->real_escape_string(strtoupper($district));
+    return " AND $col = '$distEsc'";
+}
+
+function serviceAbstractHasChallanTypeColumn() {
+    global $conn;
+    static $hasColumn = null;
+    if ($hasColumn === null) {
+        $check = $conn->query("SHOW COLUMNS FROM tbl_sell LIKE 'ChallanType'");
+        $hasColumn = $check && $check->num_rows > 0;
+    }
+
+    return $hasColumn;
+}
+
+function serviceAbstractChallanBuildWhere($filters, $exclude = array()) {
+    $parts = array("ts.Status = 1", "ts.SellType = 'Challan'", 'tu.ProjectType = 1');
+    if (serviceAbstractHasChallanTypeColumn()) {
+        $parts[] = 'ts.ChallanType = 2';
+    }
+
+    $subheadid = (int) ($filters['subheadid'] ?? 0);
+    $projid = (int) ($filters['projid'] ?? 0);
+
+    if (!in_array('subheadid', $exclude, true) && $subheadid > 0) {
+        $parts[] = "tu.ProjectSubHeadId = '$subheadid'";
+    } elseif (!in_array('projid', $exclude, true) && $projid > 0) {
+        $parts[] = "tu.ProjectId = '$projid'";
+    }
+
+    $distClause = serviceAbstractChallanDistrictWhereClause($filters['district'] ?? '');
+    if ($distClause !== '') {
+        $parts[] = ltrim($distClause, ' AND ');
+    }
+
+    return ' INNER JOIN tbl_users tu ON tu.id = ts.CustId WHERE ' . implode(' AND ', $parts);
+}
+
+function serviceAbstractGetChallanCountMap($filters, $groupColumn, $exclude = array()) {
+    global $conn;
+    $where = serviceAbstractChallanBuildWhere($filters, $exclude);
+    $sql = "SELECT $groupColumn AS group_id, COUNT(*) AS total_challan
+        FROM tbl_sell ts
+        $where
+        AND $groupColumn > 0
+        GROUP BY $groupColumn";
+
+    $map = array();
+    $res = $conn->query($sql);
+    if ($res) {
+        while ($row = $res->fetch_assoc()) {
+            $map[(int) $row['group_id']] = (int) $row['total_challan'];
+        }
+    }
+
+    return $map;
+}
+
+function serviceAbstractGetChallanDistrictMap($filters) {
+    global $conn;
+    $where = serviceAbstractChallanBuildWhere($filters);
+    $sql = "SELECT
+        UPPER(TRIM(COALESCE(tu.District, ''))) AS raw_dist,
+        COUNT(*) AS total_challan
+        FROM tbl_sell ts
+        $where
+        AND COALESCE(tu.District, '') <> ''
+        GROUP BY raw_dist";
+
+    $map = array();
+    $res = $conn->query($sql);
+    if ($res) {
+        while ($row = $res->fetch_assoc()) {
+            if ($row['raw_dist'] === '') {
+                continue;
+            }
+            $key = serviceAbstractDistrictKey($row['raw_dist']);
+            if (!isset($map[$key])) {
+                $map[$key] = 0;
+            }
+            $map[$key] += (int) $row['total_challan'];
+        }
+    }
+
+    return $map;
+}
+
+function serviceAbstractGetTotalChallanCount($filters) {
+    global $conn;
+    $where = serviceAbstractChallanBuildWhere($filters);
+    $row = getRecord("SELECT COUNT(*) AS total_challan FROM tbl_sell ts $where");
+
+    return (int) ($row['total_challan'] ?? 0);
+}
+
 function serviceAbstractBuildWhere($filters, $exclude = array()) {
     $parts = array('tu.ProjectType = 1');
     $subheadid = (int) ($filters['subheadid'] ?? 0);
@@ -227,6 +334,7 @@ function serviceAbstractBuildTitle($filters) {
 function serviceAbstractEmptyCounts() {
     return array(
         'total_complaints' => 0,
+        'total_challan' => 0,
         'total_closed' => 0,
         'today_added' => 0,
         'material_hold' => 0,
@@ -256,6 +364,7 @@ function serviceAbstractBuildDistrictRows($filters) {
         GROUP BY raw_dist";
 
     $byKey = array();
+    $challanByKey = serviceAbstractGetChallanDistrictMap($filters);
     $res = $conn->query($sql);
     if ($res) {
         while ($row = $res->fetch_assoc()) {
@@ -278,6 +387,7 @@ function serviceAbstractBuildDistrictRows($filters) {
     $out = array();
     foreach ($districtList as $label) {
         $counts = isset($byKey[$label]) ? $byKey[$label] : serviceAbstractEmptyCounts();
+        $counts['total_challan'] = isset($challanByKey[$label]) ? (int) $challanByKey[$label] : 0;
         $out[] = array(
             'label' => $label,
             'group_kind' => 'district',
@@ -290,6 +400,7 @@ function serviceAbstractBuildDistrictRows($filters) {
             if (in_array($label, serviceAbstractDistrictRows(), true)) {
                 continue;
             }
+            $counts['total_challan'] = isset($challanByKey[$label]) ? (int) $challanByKey[$label] : 0;
             $out[] = array(
                 'label' => $label,
                 'group_kind' => 'district',
@@ -311,11 +422,13 @@ function serviceAbstractBuildProjectHeadRows($filters) {
     }
 
     $counts = serviceAbstractGetCountMap($filters, 'tu.ProjectId', array('projid'));
+    $challanCounts = serviceAbstractGetChallanCountMap($filters, 'tu.ProjectId', array('projid'));
 
     $out = array();
     foreach ($heads as $head) {
         $id = (int) $head['id'];
         $c = isset($counts[$id]) ? $counts[$id] : serviceAbstractEmptyCounts();
+        $c['total_challan'] = isset($challanCounts[$id]) ? (int) $challanCounts[$id] : 0;
         $out[] = array(
             'label' => $head['Name'],
             'group_kind' => 'project_head',
@@ -337,11 +450,13 @@ function serviceAbstractBuildSubProjectHeadRows($filters) {
     }
 
     $counts = serviceAbstractGetCountMap($filters, 'tu.ProjectSubHeadId', array('subheadid'));
+    $challanCounts = serviceAbstractGetChallanCountMap($filters, 'tu.ProjectSubHeadId', array('subheadid'));
 
     $out = array();
     foreach ($subHeads as $head) {
         $id = (int) $head['id'];
         $c = isset($counts[$id]) ? $counts[$id] : serviceAbstractEmptyCounts();
+        $c['total_challan'] = isset($challanCounts[$id]) ? (int) $challanCounts[$id] : 0;
         $out[] = array(
             'label' => $head['Name'],
             'group_kind' => 'sub_project_head',
@@ -371,6 +486,7 @@ function serviceAbstractBuildAllRows($filters) {
         'group_kind' => 'all',
         'group_id' => 0,
         'total_complaints' => (int) $row['total_complaints'],
+        'total_challan' => serviceAbstractGetTotalChallanCount($filters),
         'total_closed' => (int) $row['total_closed'],
         'today_added' => (int) $row['today_added'],
         'material_hold' => (int) $row['material_hold'],
@@ -402,6 +518,7 @@ function getServiceAbstractData($filters = null) {
 
     foreach ($rows as $row) {
         $totals['total_complaints'] += (int) $row['total_complaints'];
+        $totals['total_challan'] += (int) $row['total_challan'];
         $totals['total_closed'] += (int) $row['total_closed'];
         $totals['today_added'] += (int) $row['today_added'];
         $totals['material_hold'] += (int) $row['material_hold'];
@@ -469,4 +586,25 @@ function serviceAbstractListUrl($row, $filters, $filter = '') {
         $params['Status'] = 'Pending';
     }
     return 'view-maintenance.php?' . http_build_query($params);
+}
+
+function serviceAbstractChallanListUrl($row, $filters) {
+    $params = array('Search' => '1');
+
+    if (is_array($row) && ($row['label'] ?? '') !== 'TOTAL' && ($row['group_kind'] ?? '') !== 'total') {
+        if ($row['group_kind'] === 'project_head' && !empty($row['group_id'])) {
+            $params['ProjectId'] = (int) $row['group_id'];
+        } elseif ($row['group_kind'] === 'sub_project_head' && !empty($row['group_id'])) {
+            $params['ProjectSubHeadId'] = (int) $row['group_id'];
+        }
+    }
+
+    if (!empty($filters['projid']) && empty($params['ProjectId'])) {
+        $params['ProjectId'] = (int) $filters['projid'];
+    }
+    if (!empty($filters['subheadid']) && empty($params['ProjectSubHeadId'])) {
+        $params['ProjectSubHeadId'] = (int) $filters['subheadid'];
+    }
+
+    return 'view-service-challans.php?' . http_build_query($params);
 }

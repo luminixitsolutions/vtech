@@ -14,12 +14,13 @@ $Options = $workflowUser['options'];
 if (!itemTransferWorkflowCanAccessStore($Roll, $Options)) {
     itemTransferWorkflowDeny();
 }
-$FromBranchId = isset($_REQUEST['FromBranchId']) ? (int)$_REQUEST['FromBranchId'] : (($Roll == 27) ? $BranchId : 0);
-if ($Roll == 1 || $Roll == 7) {
-    if ($FromBranchId <= 0 && $BranchId > 0) $FromBranchId = $BranchId;
-} else {
-    $FromBranchId = $BranchId;
-}
+$fromStoreBranches = itemTransferWorkflowListFromStoreBranches($conn, $Roll, $BranchId, $MulBranchId);
+$FromBranchId = itemTransferWorkflowResolveFromBranchId(
+    $Roll,
+    $BranchId,
+    $MulBranchId,
+    isset($_REQUEST['FromBranchId']) ? (int) $_REQUEST['FromBranchId'] : 0
+);
 $Created_Date = isset($_REQUEST['TransferDate']) ? $_REQUEST['TransferDate'] : date('Y-m-d');
 ?>
 <!DOCTYPE html>
@@ -44,19 +45,15 @@ $Created_Date = isset($_REQUEST['TransferDate']) ? $_REQUEST['TransferDate'] : d
                         <div class="card-body">
                             <form method="get" action="item_transfer_workflow/store-to-store-transfer.php">
                                 <div class="form-row">
-                                    <?php if ($Roll == 1 || $Roll == 7) { ?>
+                                    <?php if (!empty($fromStoreBranches)) { ?>
                                     <div class="form-group col-md-4">
                                         <label class="form-label">From Store <span class="text-danger">*</span></label>
-                                        <select class="form-control" name="FromBranchId" id="FromBranchId" onchange="this.form.submit()">
+                                        <select class="form-control" name="FromBranchId" id="FromBranchId" required onchange="this.form.submit()">
                                             <option value="">Select Store</option>
-                                            <?php
-                                            $sqlb = "SELECT * FROM tbl_branch WHERE Status='1'";
-                                            $rb = $conn->query($sqlb);
-                                            while ($b = $rb->fetch_assoc()) {
-                                                $sel = ($FromBranchId == $b['id']) ? ' selected' : '';
-                                                echo '<option value="' . $b['id'] . '"' . $sel . '>' . htmlspecialchars($b['Name']) . '</option>';
-                                            }
-                                            ?>
+                                            <?php foreach ($fromStoreBranches as $b) {
+                                                $sel = ($FromBranchId == (int) $b['id']) ? ' selected' : '';
+                                                echo '<option value="' . (int) $b['id'] . '"' . $sel . '>' . htmlspecialchars($b['Name']) . '</option>';
+                                            } ?>
                                         </select>
                                     </div>
                                     <?php } ?>
@@ -78,7 +75,6 @@ $Created_Date = isset($_REQUEST['TransferDate']) ? $_REQUEST['TransferDate'] : d
                                         <label class="form-label">Transfer Date <span class="text-danger">*</span></label>
                                         <input type="date" name="TransferDate" class="form-control" value="<?php echo $Created_Date; ?>">
                                     </div>
-                                    <?php if ($FromBranchId > 0) { ?><input type="hidden" name="FromBranchId" value="<?php echo $FromBranchId; ?>"><?php } ?>
                                 </div>
                             </form>
 

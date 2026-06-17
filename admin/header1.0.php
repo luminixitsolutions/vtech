@@ -614,6 +614,16 @@ $ImmediateBoss = $row77['ImmediateBoss'];
 <?php } ?>
 </a>
 </li>
+<li class="sidenav-item <?php if($Page=='Insurance-Service-Complaint' || $Page=='Fill-Insurance-Details') {?> active <?php } ?>">
+<a href="view-insurance-service-complaints.php" class="sidenav-link">
+<div> Insurance Service Complaint</div>
+</a>
+</li>
+<li class="sidenav-item <?php if($Page=='Done-Insurance-Process') {?> active <?php } ?>">
+<a href="view-done-insurance-process.php" class="sidenav-link">
+<div> Done Insurance Process</div>
+</a>
+</li>
 </ul>
 </li>
 <?php } ?>
