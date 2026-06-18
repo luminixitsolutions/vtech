@@ -1,30 +1,40 @@
 <?php
-if (!isset($serialLines) || !is_array($serialLines)) {
-    $serialLines = [];
-}
 if (!isset($storeColumns) || !is_array($storeColumns)) {
     $storeColumns = [];
 }
 if (!isset($reqQtyLabel)) {
     $reqQtyLabel = 'Required qty';
 }
+if (!isset($serialCatalogCount)) {
+    $serialCatalogCount = upb_count_serial_product_catalog($conn);
+}
+if (!isset($upbSerialCustIds) || !is_array($upbSerialCustIds)) {
+    $upbSerialCustIds = [];
+}
 $storeColCount = count($storeColumns);
-$serialTotalReq = 0;
-$serialTotalAvail = 0;
+$upbSerialCustIdsJson = htmlspecialchars(json_encode(array_values(array_map('intval', $upbSerialCustIds))), ENT_QUOTES, 'UTF-8');
 ?>
-<div class="card mt-3" style="padding: 10px;">
+<div class="card mt-3" style="padding: 10px;" id="upbSerialStockRoot"
+    data-cust-ids="<?php echo $upbSerialCustIdsJson; ?>"
+    data-page-size="20">
     <h5 class="mb-2" style="font-size: 18px; color: #212529;">Serial No Products</h5>
-    <p class="text-muted small mb-3">
+    <p class="text-muted small mb-2">
         All products with <strong>Product Type = Serial No Product</strong> on <em>Add Product</em> (<code>tbl_products.Roll = 1</code>) — shown for every customer.
         <strong><?php echo htmlspecialchars($reqQtyLabel); ?></strong> is filled when the item is on this customer&apos;s BOM; otherwise <strong>0</strong>.
         <strong>Avail serials</strong> is how many serial numbers are in stock for that product.
+        Rows load <strong>20 per page</strong> via AJAX — use <strong>Previous / Next</strong> below the table to browse all products.
+    </p>
+    <p class="small mb-3" id="upbSerialStockStatus" style="color:#212529;">
+        <?php if ($serialCatalogCount > 0) { ?>
+            <span class="text-muted">Loading first 20 of <?php echo (int) $serialCatalogCount; ?> products…</span>
+        <?php } ?>
     </p>
 
-    <?php if (count($serialLines) === 0) { ?>
+    <?php if ($serialCatalogCount === 0) { ?>
         <div class="alert alert-info mb-0">No active Serial No Product records in product master. Add products with Product Type <strong>Serial No Product</strong> on Add Product.</div>
     <?php } else { ?>
-    <div class="upb-stock-card-inner">
-        <table id="tblRequiredSerialStock" class="table table-striped table-bordered table-sm nowrap" style="width:100%" cellspacing="0">
+    <div class="upb-serial-table-scroll">
+        <table id="tblRequiredSerialStock" class="table table-striped table-bordered table-sm nowrap mb-0" style="width:100%" cellspacing="0">
             <thead class="thead-light">
                 <tr>
                     <th>#</th>
@@ -40,90 +50,36 @@ $serialTotalAvail = 0;
                     <th style="min-width:130px">Serial details</th>
                 </tr>
             </thead>
-            <tbody>
-                <?php
-                $n = 1;
-                foreach ($serialLines as $ln) {
-                    $pid = (int) $ln['ProductId'];
-                    $req = (int) round((float) $ln['ReqQty']);
-                    if ($req > 0) {
-                        $serialTotalReq += $req;
-                    }
-                    $name = (string) $ln['ProductName'];
-                    $totalSerials = ($pid > 0) ? upb_serial_available_count($conn, $pid, null) : 0;
-                    $serialTotalAvail += $totalSerials;
-                    $short = ($pid > 0 && $req > 0 && $req > $totalSerials);
-                    $locPayload = [];
-                    ?>
-                    <tr class="<?php echo $short ? 'table-warning' : ''; ?>">
-                        <td style="color:#212529;"><?php echo $n++; ?></td>
-                        <td style="color:#212529;"><?php echo htmlspecialchars($name); ?></td>
-                        <td class="text-right" style="color:#212529;"><?php echo $req > 0 ? $req : '0'; ?></td>
-                        <?php foreach ($storeColumns as $storeCol) {
-                            $bid = (int) $storeCol['branch_id'];
-                            $storeSerials = ($pid > 0 && $bid > 0)
-                                ? upb_serial_available_count($conn, $pid, $bid)
-                                : 0;
-                            if ($pid > 0 && $storeSerials > 0) {
-                                $locPayload[] = [
-                                    'StoreName' => 'Store (serial): ' . (string) $storeCol['store_name'],
-                                    'AvailQty' => (float) $storeSerials,
-                                    'BranchId' => $bid,
-                                    'row_kind' => 'store_serial',
-                                    'branch_id' => $bid,
-                                    'store_exe_id' => 0,
-                                ];
-                            }
-                            $cellShort = ($pid > 0 && $req > 0 && $storeSerials < $req);
-                            ?>
-                        <td class="text-right<?php echo $cellShort ? ' upb-store-short' : ''; ?>" style="color:#212529;">
-                            <?php echo $pid > 0 ? (int) $storeSerials : '—'; ?>
-                        </td>
-                        <?php } ?>
-                        <td class="text-right font-weight-bold<?php echo $short ? ' text-danger' : ''; ?>" style="color:<?php echo $short ? '#dc3545' : '#212529'; ?>;">
-                            <?php echo $pid > 0 ? (int) $totalSerials : '—'; ?>
-                        </td>
-                        <td>
-                            <?php
-                            if ($pid <= 0) {
-                                echo '<span class="text-muted">—</span>';
-                            } elseif ($totalSerials <= 0) {
-                                echo '<span class="text-muted">0 in stock</span>';
-                            } else {
-                                $locJson = htmlspecialchars(json_encode($locPayload, JSON_UNESCAPED_UNICODE), ENT_QUOTES, 'UTF-8');
-                                $itemTitle = htmlspecialchars($name, ENT_QUOTES, 'UTF-8');
-                                ?>
-                                <button type="button" class="btn btn-sm btn-success btn-view-store-avl"
-                                    data-toggle="modal" data-target="#modalAvlByStore"
-                                    data-product-id="<?php echo (int) $pid; ?>"
-                                    data-item-name="<?php echo $itemTitle; ?>"
-                                    data-required="<?php echo (int) $req; ?>"
-                                    data-total-avail="<?php echo (int) $totalSerials; ?>"
-                                    data-is-serial="1"
-                                    data-locations="<?php echo $locJson; ?>">
-                                    View serials (<?php echo (int) $totalSerials; ?>)
-                                </button>
-                                <?php
-                            }
-                            ?>
-                        </td>
-                    </tr>
-                    <?php
-                }
-                ?>
+            <tbody id="upbSerialStockTbody">
+                <tr id="upbSerialStockLoadingRow">
+                    <td colspan="<?php echo 5 + $storeColCount; ?>" class="text-center text-muted py-4" style="color:#212529;">
+                        <span class="spinner-border spinner-border-sm mr-2" role="status" aria-hidden="true"></span>
+                        Loading serial products…
+                    </td>
+                </tr>
             </tbody>
             <tfoot>
                 <tr class="font-weight-bold">
-                    <td colspan="2" class="text-right" style="color:#212529;">Total</td>
-                    <td class="text-right" style="color:#212529;"><?php echo (int) $serialTotalReq; ?></td>
+                    <td colspan="2" class="text-right" style="color:#212529;">Total <small class="font-weight-normal text-muted">(this page)</small></td>
+                    <td class="text-right" id="upbSerialFootReq" style="color:#212529;">0</td>
                     <?php for ($i = 0; $i < $storeColCount; $i++) { ?>
                     <td></td>
                     <?php } ?>
-                    <td class="text-right" style="color:#212529;"><?php echo (int) $serialTotalAvail; ?></td>
+                    <td class="text-right" id="upbSerialFootAvail" style="color:#212529;">0</td>
                     <td></td>
                 </tr>
             </tfoot>
         </table>
+    </div>
+    <div class="upb-serial-pager mt-3 mb-2" id="upbSerialPager">
+        <div class="d-flex flex-wrap align-items-center justify-content-between gap-2">
+            <button type="button" class="btn btn-sm btn-outline-secondary" id="upbSerialPrev" disabled>&laquo; Previous</button>
+            <div class="text-center flex-grow-1 px-2">
+                <span class="font-weight-bold" id="upbSerialPageInfo" style="color:#212529;">Page 1</span>
+                <span class="text-muted small d-block" id="upbSerialPageHint">20 products per page</span>
+            </div>
+            <button type="button" class="btn btn-sm btn-primary" id="upbSerialNext" disabled>Next &raquo;</button>
+        </div>
     </div>
     <?php } ?>
 </div>

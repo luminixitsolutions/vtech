@@ -469,6 +469,163 @@ function upb_fetch_all_serial_product_catalog($conn)
 }
 
 /**
+ * Count active Serial No Product rows in product master.
+ */
+function upb_count_serial_product_catalog($conn)
+{
+    return (int) getRow("SELECT COUNT(*) AS c FROM tbl_products WHERE Roll = 1 AND Status = 1");
+}
+
+/**
+ * Paginated Serial No Product catalog (product master only).
+ *
+ * @return list<array{ProductId:int,ProductName:string,ReqQty:float}>
+ */
+function upb_fetch_serial_product_catalog_page($conn, $offset, $limit, $search = '')
+{
+    $offset = max(0, (int) $offset);
+    $limit = max(1, min(50, (int) $limit));
+    $search = trim((string) $search);
+    $where = 'Roll = 1 AND Status = 1';
+    if ($search !== '') {
+        $where .= " AND ProductName LIKE '%" . $conn->real_escape_string($search) . "%'";
+    }
+    $rows = getList(
+        "SELECT id AS ProductId, ProductName
+         FROM tbl_products
+         WHERE " . $where . "
+         ORDER BY ProductName ASC
+         LIMIT " . $offset . ", " . $limit
+    );
+    if (!is_array($rows)) {
+        return [];
+    }
+    $out = [];
+    foreach ($rows as $row) {
+        $pid = (int) ($row['ProductId'] ?? 0);
+        if ($pid <= 0) {
+            continue;
+        }
+        $out[] = [
+            'ProductId' => $pid,
+            'ProductName' => (string) ($row['ProductName'] ?? ('Product #' . $pid)),
+            'ReqQty' => 0.0,
+        ];
+    }
+
+    return $out;
+}
+
+/**
+ * Required qty map for one or more customers (combined sums duplicate product ids).
+ *
+ * @param int[] $custIds
+ * @return array<int, float>
+ */
+function upb_serial_required_qty_map_for_customer_ids($conn, array $custIds)
+{
+    $reqMap = [];
+    foreach ($custIds as $custId) {
+        $custId = (int) $custId;
+        if ($custId <= 0) {
+            continue;
+        }
+        $lines = upb_fetch_required_lines_for_customer($conn, $custId);
+        foreach (upb_serial_required_qty_map_for_customer($conn, $custId, $lines) as $pid => $qty) {
+            $pid = (int) $pid;
+            $qty = (float) $qty;
+            if ($pid <= 0 || $qty <= 0) {
+                continue;
+            }
+            if (!isset($reqMap[$pid])) {
+                $reqMap[$pid] = 0.0;
+            }
+            $reqMap[$pid] += $qty;
+        }
+    }
+
+    return $reqMap;
+}
+
+/**
+ * Build serial-stock grid rows (avail counts) for AJAX / partial render.
+ *
+ * @param list<array{ProductId:int,ProductName:string,ReqQty:float}> $serialLines
+ * @param list<array{branch_id:int,store_name:string}> $storeColumns
+ * @return list<array<string,mixed>>
+ */
+function upb_build_serial_stock_row_payload($conn, array $serialLines, array $storeColumns, $startRowNum = 1)
+{
+    $rows = [];
+    $n = max(1, (int) $startRowNum);
+    foreach ($serialLines as $ln) {
+        $pid = (int) ($ln['ProductId'] ?? 0);
+        $req = (int) round((float) ($ln['ReqQty'] ?? 0));
+        $name = (string) ($ln['ProductName'] ?? '');
+        $totalSerials = ($pid > 0) ? upb_serial_available_count($conn, $pid, null) : 0;
+        $short = ($pid > 0 && $req > 0 && $req > $totalSerials);
+        $storeSerials = [];
+        $locations = [];
+        foreach ($storeColumns as $storeCol) {
+            $bid = (int) ($storeCol['branch_id'] ?? 0);
+            $cnt = ($pid > 0 && $bid > 0) ? upb_serial_available_count($conn, $pid, $bid) : 0;
+            $storeSerials[] = [
+                'branch_id' => $bid,
+                'count' => (int) $cnt,
+                'short' => ($pid > 0 && $req > 0 && $cnt < $req),
+            ];
+            if ($pid > 0 && $cnt > 0) {
+                $locations[] = [
+                    'StoreName' => 'Store (serial): ' . (string) ($storeCol['store_name'] ?? ''),
+                    'AvailQty' => (float) $cnt,
+                    'BranchId' => $bid,
+                    'row_kind' => 'store_serial',
+                    'branch_id' => $bid,
+                    'store_exe_id' => 0,
+                ];
+            }
+        }
+        $rows[] = [
+            'row_num' => $n++,
+            'product_id' => $pid,
+            'product_name' => $name,
+            'req_qty' => $req,
+            'store_serials' => $storeSerials,
+            'total_serials' => (int) $totalSerials,
+            'short' => $short,
+            'locations' => $locations,
+        ];
+    }
+
+    return $rows;
+}
+
+/**
+ * Overlay required qty from map onto catalog lines.
+ *
+ * @param list<array{ProductId:int,ProductName:string,ReqQty:float}> $lines
+ * @param array<int, float> $reqMap
+ * @return list<array{ProductId:int,ProductName:string,ReqQty:float}>
+ */
+function upb_overlay_serial_req_map(array $lines, array $reqMap)
+{
+    $out = [];
+    foreach ($lines as $ln) {
+        $pid = (int) ($ln['ProductId'] ?? 0);
+        if ($pid <= 0) {
+            continue;
+        }
+        $out[] = [
+            'ProductId' => $pid,
+            'ProductName' => (string) ($ln['ProductName'] ?? ''),
+            'ReqQty' => isset($reqMap[$pid]) ? (float) $reqMap[$pid] : 0.0,
+        ];
+    }
+
+    return $out;
+}
+
+/**
  * Required qty per serial product id from customer BOM / BOS serial master.
  *
  * @param list<array{ProductId:int,ProductName:string,ReqQty:float}> $requiredLines
@@ -520,20 +677,8 @@ function upb_fetch_serial_required_lines_for_customer($conn, $custId, array $req
     }
 
     $reqMap = upb_serial_required_qty_map_for_customer($conn, $custId, $requiredLines);
-    $out = [];
-    foreach (upb_fetch_all_serial_product_catalog($conn) as $ln) {
-        $pid = (int) ($ln['ProductId'] ?? 0);
-        if ($pid <= 0) {
-            continue;
-        }
-        $out[] = [
-            'ProductId' => $pid,
-            'ProductName' => (string) ($ln['ProductName'] ?? ''),
-            'ReqQty' => isset($reqMap[$pid]) ? (float) $reqMap[$pid] : 0.0,
-        ];
-    }
 
-    return $out;
+    return upb_overlay_serial_req_map(upb_fetch_all_serial_product_catalog($conn), $reqMap);
 }
 
 /**
@@ -571,40 +716,9 @@ function upb_partition_required_lines($conn, array $lines, array $serialLines)
  */
 function upb_fetch_combined_serial_required_lines($conn, array $custIds)
 {
-    $reqMap = [];
-    foreach ($custIds as $custId) {
-        $custId = (int) $custId;
-        if ($custId <= 0) {
-            continue;
-        }
-        $lines = upb_fetch_required_lines_for_customer($conn, $custId);
-        foreach (upb_serial_required_qty_map_for_customer($conn, $custId, $lines) as $pid => $qty) {
-            $pid = (int) $pid;
-            $qty = (float) $qty;
-            if ($pid <= 0 || $qty <= 0) {
-                continue;
-            }
-            if (!isset($reqMap[$pid])) {
-                $reqMap[$pid] = 0.0;
-            }
-            $reqMap[$pid] += $qty;
-        }
-    }
+    $reqMap = upb_serial_required_qty_map_for_customer_ids($conn, $custIds);
 
-    $out = [];
-    foreach (upb_fetch_all_serial_product_catalog($conn) as $ln) {
-        $pid = (int) ($ln['ProductId'] ?? 0);
-        if ($pid <= 0) {
-            continue;
-        }
-        $out[] = [
-            'ProductId' => $pid,
-            'ProductName' => (string) ($ln['ProductName'] ?? ''),
-            'ReqQty' => isset($reqMap[$pid]) ? (float) $reqMap[$pid] : 0.0,
-        ];
-    }
-
-    return $out;
+    return upb_overlay_serial_req_map(upb_fetch_all_serial_product_catalog($conn), $reqMap);
 }
 
 /**
