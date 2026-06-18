@@ -357,6 +357,44 @@ function printServiceComplaintResolveVisitDate($latestAction, $complaint)
     return '—';
 }
 
+function printServiceComplaintFirstNonEmptyValue(array $candidates)
+{
+    foreach ($candidates as $value) {
+        $value = trim((string) $value);
+        if ($value !== '' && $value !== '0000-00-00' && $value !== '0000-00-00 00:00:00') {
+            return $value;
+        }
+    }
+    return '';
+}
+
+function printServiceComplaintResolveInstallationDate(array $complaint, $installation)
+{
+    return printServiceComplaintFirstNonEmptyValue([
+        $complaint['InstallationDate'] ?? '',
+        ($installation ?: [])['InstallationDate'] ?? '',
+        $complaint['CustInstallationDate'] ?? '',
+    ]);
+}
+
+function printServiceComplaintResolveSourceAcDc(array $complaint)
+{
+    return printServiceComplaintFirstNonEmptyValue([
+        $complaint['AcDc'] ?? '',
+        $complaint['CustAcDc'] ?? '',
+    ]);
+}
+
+function printServiceComplaintResolvePumpHead(array $complaint)
+{
+    return printServiceComplaintFirstNonEmptyValue([
+        $complaint['Depth'] ?? '',
+        $complaint['CustFieldPumpHead'] ?? '',
+        $complaint['CustTelPumpHead'] ?? '',
+        $complaint['CustPumpHeadName'] ?? '',
+    ]);
+}
+
 function printServiceComplaintLoad($complaintId)
 {
     $complaintId = (int) $complaintId;
@@ -364,11 +402,16 @@ function printServiceComplaintLoad($complaintId)
         return null;
     }
 
-    $complaint = getRecord("SELECT tsc.*, ti.Name AS IssueName, tu.PumpCapacity AS PumpCapacityId, tcm.Name AS PumpCapacityName
+    $complaint = getRecord("SELECT tsc.*, ti.Name AS IssueName,
+        tu.PumpCapacity AS PumpCapacityId, tcm.Name AS PumpCapacityName,
+        tu.AcDc AS CustAcDc, tu.InstallationDate AS CustInstallationDate,
+        tu.TelPumpHead AS CustTelPumpHead, tu.FieldPumpHead AS CustFieldPumpHead,
+        tcm_ph.Name AS CustPumpHeadName
         FROM tbl_service_complaint tsc
         LEFT JOIN tbl_issues ti ON ti.id = tsc.Issue
         LEFT JOIN tbl_users tu ON tu.id = tsc.CustId
         LEFT JOIN tbl_common_master tcm ON tcm.id = tu.PumpCapacity
+        LEFT JOIN tbl_common_master tcm_ph ON tcm_ph.id = tu.PumpHead
         WHERE tsc.id = '$complaintId'");
     if (!$complaint) {
         return null;
@@ -433,7 +476,7 @@ function printServiceComplaintLoad($complaintId)
         'category' => 'Solar',
         'product' => printServiceComplaintDisplay(printServiceComplaintResolveProduct($complaint, (int) ($complaint['CustId'] ?? 0))),
         'pumpCapacity' => printServiceComplaintDisplay($pumpCapacity),
-        'installationDate' => printServiceComplaintFormatDate($complaint['InstallationDate'] ?? ''),
+        'installationDate' => printServiceComplaintFormatDate(printServiceComplaintResolveInstallationDate($complaint, $installation ?: [])),
         'arrayVoltage' => printServiceComplaintActionField($action, 'ArrayVoltage'),
         'arrayCurrent' => printServiceComplaintActionField($action, 'ArrayCurrent'),
         'weather' => printServiceComplaintActionField($action, 'Weather', $complaint['SystemStatus'] ?? ''),
@@ -446,8 +489,8 @@ function printServiceComplaintLoad($complaintId)
         'waterLevelHead' => printServiceComplaintActionField($action, 'WaterLevelHead'),
         'loweringOfPump' => printServiceComplaintActionField($action, 'LoweringOfPump'),
         'complaintType' => printServiceComplaintDisplay(printServiceComplaintResolveComplaintType($complaint, $installation ?: [])),
-        'sourceAcDc' => printServiceComplaintDisplay($complaint['AcDc'] ?? ''),
-        'pumpHead' => printServiceComplaintDisplay($complaint['Depth'] ?? ''),
+        'sourceAcDc' => printServiceComplaintDisplay(printServiceComplaintResolveSourceAcDc($complaint)),
+        'pumpHead' => printServiceComplaintDisplay(printServiceComplaintResolvePumpHead($complaint)),
         'pipeLength' => printServiceComplaintActionField($action, 'PipeLength'),
         'pipeSizeInch' => printServiceComplaintActionField($action, 'PipeSizeInch'),
         'waterStatus' => printServiceComplaintActionField($action, 'WaterStatus', $complaint['WaterSource'] ?? ''),

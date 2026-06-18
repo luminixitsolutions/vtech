@@ -182,6 +182,71 @@ function pumpInstallWorkOrderFieldAttrs($workOrderDone, $workOrderDate, $isAdmin
         'required' => $locked ? '' : ' required=""',
     );
 }
+
+function pumpInstallWarrantyTillDate($installationDate)
+{
+    $installationDate = trim((string) $installationDate);
+    if ($installationDate === '' || $installationDate === '0000-00-00') {
+        return '';
+    }
+
+    $ts = strtotime($installationDate);
+    if ($ts === false) {
+        return '';
+    }
+
+    return date('Y-m-d', strtotime('+5 years', $ts));
+}
+
+function pumpInstallApplyWarrantyDefaults($installStatus, $installationDate)
+{
+    if ((string) $installStatus !== 'Yes') {
+        return array('No', '');
+    }
+
+    $tillDate = pumpInstallWarrantyTillDate($installationDate);
+    if ($tillDate === '') {
+        return array('No', '');
+    }
+
+    return array('Yes', $tillDate);
+}
+
+function pumpInstallWarrantyFieldLocked($installStatus, $isAdmin)
+{
+    return ((string) $installStatus === 'Yes' && !$isAdmin);
+}
+
+function pumpInstallWarrantyFieldAttrs($installStatus, $isAdmin)
+{
+    $locked = pumpInstallWarrantyFieldLocked($installStatus, $isAdmin);
+
+    return array(
+        'locked' => $locked,
+        'disabled' => $locked ? ' disabled="disabled"' : '',
+        'required' => $locked ? '' : ' required=""',
+    );
+}
+
+function pumpInstallResolveWarrantyDisplay($installStatus, $installationDate, $warrantyReg, $warrantyRegDate, $isAdmin)
+{
+    $warrantyReg = (string) $warrantyReg;
+    $warrantyRegDate = trim((string) $warrantyRegDate);
+    if ($warrantyRegDate === '0000-00-00') {
+        $warrantyRegDate = '';
+    }
+
+    list($autoReg, $autoDate) = pumpInstallApplyWarrantyDefaults($installStatus, $installationDate);
+    if ((string) $installStatus !== 'Yes') {
+        return array($warrantyReg !== '' ? $warrantyReg : 'No', $warrantyRegDate);
+    }
+
+    if (!$isAdmin || $warrantyReg === '' || $warrantyReg === 'No' || $warrantyRegDate === '') {
+        return array($autoReg, $autoDate);
+    }
+
+    return array($warrantyReg, $warrantyRegDate);
+}
 ?>
 <!DOCTYPE html>
 <html lang="en" class="default-style layout-fixed layout-navbar-fixed">
@@ -250,6 +315,14 @@ function pumpInstallWorkOrderFieldAttrs($workOrderDone, $workOrderDate, $isAdmin
                 $installLock = pumpInstallYesFieldAttrs(isset($row7['InstallStatus']) ? $row7['InstallStatus'] : 'No', $isPumpInstallAdmin);
                 $dataUploadLock = pumpInstallYesFieldAttrs(isset($row7['DataUploadStatus']) ? $row7['DataUploadStatus'] : 'No', $isPumpInstallAdmin);
                 $poInspectionLock = pumpInstallYesFieldAttrs(isset($row7['PoInspection']) ? $row7['PoInspection'] : 'No', $isPumpInstallAdmin);
+                $warrantyLock = pumpInstallWarrantyFieldAttrs(isset($row7['InstallStatus']) ? $row7['InstallStatus'] : 'No', $isPumpInstallAdmin);
+                list($displayWarrantyReg, $displayWarrantyRegDate) = pumpInstallResolveWarrantyDisplay(
+                    isset($row7['InstallStatus']) ? $row7['InstallStatus'] : 'No',
+                    isset($row7['InstallationDate']) ? $row7['InstallationDate'] : '',
+                    isset($row7['WarrantyReg']) ? $row7['WarrantyReg'] : 'No',
+                    isset($row7['WarrantyRegDate']) ? $row7['WarrantyRegDate'] : '',
+                    $isPumpInstallAdmin
+                );
                 $workOrderLock = pumpInstallWorkOrderFieldAttrs(
                     isset($custRow['WorkOrderDone']) ? $custRow['WorkOrderDone'] : 'No',
                     isset($custRow['WorkOrderDoneDate']) ? $custRow['WorkOrderDoneDate'] : '',
@@ -328,7 +401,7 @@ function pumpInstallWorkOrderFieldAttrs($workOrderDone, $workOrderDate, $isAdmin
                             }
                         }
                         if ($lockInstId > 0) {
-                            $existingInstRow = getRecord("SELECT InstallStatus, InstallationDate, DataUploadStatus, DataUploadDate, PoInspection, PoInspectionDate FROM tbl_installations WHERE id='$lockInstId'");
+                            $existingInstRow = getRecord("SELECT InstallStatus, InstallationDate, DataUploadStatus, DataUploadDate, PoInspection, PoInspectionDate, WarrantyReg, WarrantyRegDate FROM tbl_installations WHERE id='$lockInstId'");
                             if (is_array($existingInstRow)) {
                                 if (($existingInstRow['InstallStatus'] ?? '') === 'Yes') {
                                     $InstallStatus = 'Yes';
@@ -387,8 +460,20 @@ function pumpInstallWorkOrderFieldAttrs($workOrderDone, $workOrderDate, $isAdmin
                     $InspectionDiscrepancy = addslashes(trim($_POST['InspectionDiscrepancy']));
                     $InspectionDiscrepancyDate = addslashes(trim($_POST['InspectionDiscrepancyDate']));
                     $InspectionDiscrepancyRemark = addslashes(trim($_POST['InspectionDiscrepancyRemark']));
+
                     $WarrantyReg = addslashes(trim($_POST['WarrantyReg']));
                     $WarrantyRegDate = addslashes(trim($_POST['WarrantyRegDate']));
+                    $isPumpInstallAdminSave = ((int) $user_id) === 1;
+                    list($autoWarrantyReg, $autoWarrantyRegDate) = pumpInstallApplyWarrantyDefaults($InstallStatus, $InstallationDate);
+                    if ($autoWarrantyReg === 'Yes' && $autoWarrantyRegDate !== '') {
+                        if (!$isPumpInstallAdminSave) {
+                            $WarrantyReg = addslashes($autoWarrantyReg);
+                            $WarrantyRegDate = addslashes($autoWarrantyRegDate);
+                        } elseif ($WarrantyReg === '' || $WarrantyReg === 'No' || $WarrantyRegDate === '' || $WarrantyRegDate === '0000-00-00') {
+                            $WarrantyReg = addslashes($autoWarrantyReg);
+                            $WarrantyRegDate = addslashes($autoWarrantyRegDate);
+                        }
+                    }
 
                     $Documentation = addslashes(trim($_POST['Documentation']));
                     $DocumentationContractorId = addslashes(trim($_POST['DocumentationContractorId']));
@@ -1994,22 +2079,30 @@ function pumpInstallWorkOrderFieldAttrs($workOrderDone, $workOrderDate, $isAdmin
 
                                         <div class="form-group col-md-3">
                                             <label class="form-label">Warranty Registration <span class="text-danger">*</span></label>
+                                            <?php if ($warrantyLock['locked']) { ?>
+                                            <input type="text" class="form-control pump-install-locked" value="<?php echo htmlspecialchars($displayWarrantyReg, ENT_QUOTES, 'UTF-8'); ?>" readonly tabindex="-1">
+                                            <input type="hidden" name="WarrantyReg" value="<?php echo htmlspecialchars($displayWarrantyReg, ENT_QUOTES, 'UTF-8'); ?>">
+                                            <?php } else { ?>
                                             <select class="form-control" id="WarrantyReg" name="WarrantyReg" required="">
-                                                <!-- <option selected="" disabled="" value="">Select</option> -->
-
-                                                <option value="No" <?php if ($row7["WarrantyReg"] == 'No') { ?> selected
+                                                <option value="No" <?php if ($displayWarrantyReg == 'No') { ?> selected
                                                     <?php } ?>>No</option>
-                                                <option value="Yes" <?php if ($row7["WarrantyReg"] == 'Yes') { ?> selected
+                                                <option value="Yes" <?php if ($displayWarrantyReg == 'Yes') { ?> selected
                                                     <?php } ?>>Yes</option>
                                             </select>
+                                            <?php } ?>
                                             <div class="clearfix"></div>
                                         </div>
 
                                         <div class="form-group col-md-3">
                                             <label class="form-label"> Warranty Till Date </label>
+                                            <?php if ($warrantyLock['locked']) { ?>
+                                            <input type="text" class="form-control pump-install-locked" value="<?php echo htmlspecialchars($displayWarrantyRegDate, ENT_QUOTES, 'UTF-8'); ?>" readonly tabindex="-1">
+                                            <input type="hidden" name="WarrantyRegDate" value="<?php echo htmlspecialchars($displayWarrantyRegDate, ENT_QUOTES, 'UTF-8'); ?>">
+                                            <?php } else { ?>
                                             <input type="date" name="WarrantyRegDate" id="WarrantyRegDate" class="form-control"
-                                                placeholder="" value="<?php echo $row7["WarrantyRegDate"]; ?>"
+                                                placeholder="" value="<?php echo htmlspecialchars($displayWarrantyRegDate, ENT_QUOTES, 'UTF-8'); ?>"
                                                 autocomplete="off">
+                                            <?php } ?>
                                             <div class="clearfix"></div>
                                         </div>
 
@@ -2104,6 +2197,31 @@ function pumpInstallWorkOrderFieldAttrs($workOrderDone, $workOrderDate, $isAdmin
         }
         $(document).ready(function() {
             var isPumpInstallAdmin = <?php echo $isPumpInstallAdmin ? 'true' : 'false'; ?>;
+
+            function updateWarrantyFromInstallation() {
+                if (isPumpInstallAdmin && $('#WarrantyReg').length && $('#WarrantyReg').is(':disabled')) {
+                    return;
+                }
+                var installStatus = $('#InstallStatus').length ? $('#InstallStatus').val() : $('input[name="InstallStatus"]').val();
+                var installDate = $('#InstallationDate').length ? $('#InstallationDate').val() : $('input[name="InstallationDate"]').val();
+                if (installStatus === 'Yes' && installDate) {
+                    if ($('#WarrantyReg').length) {
+                        $('#WarrantyReg').val('Yes');
+                    }
+                    var parts = installDate.split('-');
+                    if (parts.length === 3 && $('#WarrantyRegDate').length) {
+                        var d = new Date(parseInt(parts[0], 10), parseInt(parts[1], 10) - 1, parseInt(parts[2], 10));
+                        d.setFullYear(d.getFullYear() + 5);
+                        var month = ('0' + (d.getMonth() + 1)).slice(-2);
+                        var day = ('0' + d.getDate()).slice(-2);
+                        $('#WarrantyRegDate').val(d.getFullYear() + '-' + month + '-' + day);
+                    }
+                }
+            }
+
+            $('#InstallStatus, #InstallationDate').on('change', updateWarrantyFromInstallation);
+            updateWarrantyFromInstallation();
+
             if (!isPumpInstallAdmin) {
                 $('#InstallStatus, #DataUploadStatus, #PoInspection').each(function() {
                     if ($(this).val() === 'Yes') {

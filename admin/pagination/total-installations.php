@@ -64,7 +64,11 @@ $sql = "SELECT tu.*,ti.Lattitude AS InstLattitude,ti.Longitude AS InstLongitude,
                     LEFT JOIN tbl_users tu ON ti.CustId=tu.id WHERE tu.ProjectId='$ProjectId' AND tu.Roll=5 AND tu.FieldSurveyDetails=1 AND ti.InstallStatus='Yes' AND ti.Type=2 AND tu.ProjectSubHeadId='$ProjectSubHeadId'";
 }
 else if($InstallStatus == 'No'){
-$sql = "SELECT tu.* FROM tbl_users tu WHERE tu.ProjectId = '$ProjectId' AND tu.ProjectSubHeadId = '$ProjectSubHeadId' AND tu.Roll = 5 AND tu.FieldSurveyDetails = 1 AND tu.ProjectType = 1 AND tu.id NOT IN ( SELECT ti.CustId FROM tbl_installations ti WHERE ti.InstallStatus = 'Yes' AND ti.Type = 2 )";
+include_once __DIR__ . '/../inc-project-abstract-queries.php';
+$sql = projectAbstractListSql($conn, 'installationpending', (int) $ProjectId, (int) $ProjectSubHeadId);
+if ($sql === '') {
+    $sql = "SELECT tu.* FROM tbl_users tu WHERE 1=0";
+}
 }
 
 else if($PoInspection == 'Yes'){

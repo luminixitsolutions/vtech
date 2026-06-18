@@ -63,10 +63,16 @@ $row7['Options'] = employeeMenuOptionsForAccountForm(
 );
 $row7['MulRooftopBranchId'] = explode(',', (string) ($row7['MulRooftopBranchId'] ?? ''));
 $row7['MulBranchId'] = explode(',', (string) ($row7['MulBranchId'] ?? ''));
+$row7['MulProjectId'] = [];
+$row7['MulProjectSubHeadId'] = [];
 if ($id !== '') {
-    $u2row = getRecord("SELECT OfficeEmployee FROM tbl_user2 WHERE id='" . $conn->real_escape_string($id) . "'");
+    $u2row = getRecord("SELECT OfficeEmployee, MulProjectId, MulProjectSubHeadId FROM tbl_user2 WHERE id='" . $conn->real_escape_string($id) . "'");
     if (!empty($u2row) && array_key_exists('OfficeEmployee', $u2row)) {
         $row7['OfficeEmployee'] = $u2row['OfficeEmployee'];
+    }
+    if (!empty($u2row)) {
+        $row7['MulProjectId'] = array_values(array_filter(array_map('intval', explode(',', (string) ($u2row['MulProjectId'] ?? '')))));
+        $row7['MulProjectSubHeadId'] = array_values(array_filter(array_map('intval', explode(',', (string) ($u2row['MulProjectSubHeadId'] ?? '')))));
     }
 }
 ?>
@@ -145,8 +151,49 @@ if ($id !== '') {
                                                 <?php } ?>
                                             </select>
 <div class="clearfix"></div>
-</div>                   
-                                       <div class="form-group col-md-12">
+</div>
+
+<div class="form-group col-md-6">
+<label class="form-label">Project</label>
+<select class="select2-demo form-control" multiple name="MulProjectId[]" id="MulProjectId">
+<?php
+$sqlProj = "SELECT * FROM tbl_common_master WHERE Status='1' AND Roll=24 ORDER BY Name ASC";
+$rowProj = getList($sqlProj);
+foreach ($rowProj as $proj) {
+?>
+    <option <?php if (in_array((int) $proj['id'], $row7['MulProjectId'], true)) { ?> selected <?php } ?> value="<?php echo (int) $proj['id']; ?>">
+        <?php echo htmlspecialchars($proj['Name'], ENT_QUOTES, 'UTF-8'); ?>
+    </option>
+<?php } ?>
+</select>
+<div class="clearfix"></div>
+</div>
+
+<div class="form-group col-md-6">
+<label class="form-label">Sub Project <small class="text-muted">(auto-selected from project)</small></label>
+<select class="select2-demo form-control" multiple name="MulProjectSubHeadId[]" id="MulProjectSubHeadId">
+<?php
+$selectedSubHeadIds = $row7['MulProjectSubHeadId'];
+if (!empty($row7['MulProjectId'])) {
+    $projIn = implode(',', array_map('intval', $row7['MulProjectId']));
+    $sqlSub = "SELECT * FROM tbl_project_sub_head WHERE Status='1' AND UnderBy IN ($projIn) ORDER BY Name ASC";
+    $rowSub = getList($sqlSub);
+    foreach ($rowSub as $sub) {
+        $subId = (int) $sub['id'];
+        $isSelected = empty($selectedSubHeadIds) || in_array($subId, $selectedSubHeadIds, true);
+?>
+    <option <?php if ($isSelected) { ?> selected <?php } ?> value="<?php echo $subId; ?>">
+        <?php echo htmlspecialchars($sub['Name'], ENT_QUOTES, 'UTF-8'); ?>
+    </option>
+<?php
+    }
+}
+?>
+</select>
+<div class="clearfix"></div>
+</div>
+
+<div class="form-group col-md-12">
                                             <label class="form-label">Employee Name <span
                                                     class="text-danger">*</span></label>
                                             <input type="text" name="Fname" id="Fname" class="form-control"
@@ -575,6 +622,38 @@ renderMenuAccessAccordion($row7['Options']);
         }
     }
     $(document).ready(function() {
+        function refreshEmployeeSubProjects() {
+            var projectIds = $('#MulProjectId').val() || [];
+            var $sub = $('#MulProjectSubHeadId');
+            if (!projectIds.length) {
+                $sub.empty().trigger('change');
+                return;
+            }
+            $.ajax({
+                url: '../ajax_files/ajax_dropdown.php',
+                method: 'POST',
+                dataType: 'json',
+                data: {
+                    action: 'getSubHeadsMulti',
+                    ids: projectIds
+                },
+                success: function(rows) {
+                    $sub.empty();
+                    if (!rows || !rows.length) {
+                        $sub.trigger('change');
+                        return;
+                    }
+                    rows.forEach(function(row) {
+                        var opt = new Option(row.Name, row.id, true, true);
+                        $sub.append(opt);
+                    });
+                    $sub.trigger('change');
+                }
+            });
+        }
+
+        $('#MulProjectId').on('change', refreshEmployeeSubProjects);
+
         //$(document).on("click", ".btn-finish", function(event){
         $('#validation-form').on('submit', function(e) {
             e.preventDefault();

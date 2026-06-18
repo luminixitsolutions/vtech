@@ -1,18 +1,22 @@
 <?php
 require_once __DIR__ . '/inc-project-abstract-queries.php';
-$credaSubHeadId = (int) ($_GET['id'] ?? 0);
-$credaWorkDone = projectAbstractCount($conn, 'work_order_done', 107, $credaSubHeadId);
-$credaWorkPending = projectAbstractCount($conn, 'work_order_pending', 107, $credaSubHeadId);
-$credaMaterialDispatchDone = projectAbstractCount($conn, 'materialdispatch', 107, $credaSubHeadId);
-$credaInstallationDone = projectAbstractCount($conn, 'installation', 107, $credaSubHeadId, '', 'Yes');
-$credaInstallationPending = projectAbstractInstallationPendingCount($conn, 107, $credaSubHeadId);
+$pumpProjectId = (int) ($_GET['prjid'] ?? 0);
+$pumpSubHeadId = (int) ($_GET['id'] ?? 0);
+$pumpProjectName = isset($_GET['name']) ? (string) $_GET['name'] : '';
+$pumpWorkDone = projectAbstractCount($conn, 'work_order_done', $pumpProjectId, $pumpSubHeadId);
+$pumpWorkPending = projectAbstractCount($conn, 'work_order_pending', $pumpProjectId, $pumpSubHeadId);
+$pumpMaterialDispatchDone = projectAbstractCount($conn, 'materialdispatch', $pumpProjectId, $pumpSubHeadId);
+$pumpInstallationDone = projectAbstractCount($conn, 'installation', $pumpProjectId, $pumpSubHeadId, '', 'Yes');
+$pumpInstallationPending = projectAbstractInstallationPendingCount($conn, $pumpProjectId, $pumpSubHeadId);
 ?>
- <div class="row">
+<div class="row">
                              
                             
                
-                         <div class="col-sm-6 col-xl-2">
-                                 <a href="view-total-selections.php?projid=107&page=1&title=Total Selection&subheadid=<?php echo $_GET['id'];?>">
+                         
+                      
+                               <div class="col-sm-6 col-xl-2">
+                                 <a href="view-total-selections.php?projid=<?php echo (int) $pumpProjectId;?>&page=1&title=Total Selection&subheadid=<?php echo $_GET['id'];?>">
                                <div class="card mb-4 bg-pattern-3-dark">
                                     <div class="card-body" style="padding-top: 15px; padding-bottom: 15px; padding-right: 5px; padding-left: 10px;">
                                         <div class="d-flex align-items-center">
@@ -20,7 +24,7 @@ $credaInstallationPending = projectAbstractInstallationPendingCount($conn, 107, 
                                             <div class="ml-3">
                                                 <h6 class="mb-0" style="color: black;">Total<br> Selection</h6>
                                         <div class="text-large"><?php  
-                                                            $sql4 = "SELECT * FROM tbl_users WHERE ProjectId='107' AND ProjectSubHeadId='".$_GET['id']."' AND Roll=5 AND ProjectType=1";
+                                                            $sql4 = "SELECT * FROM tbl_users WHERE ProjectId='".$pumpProjectId."' AND ProjectSubHeadId='".$_GET['id']."' AND Roll=5 AND ProjectType=1";
                                                             echo $rncnt4 = getRow($sql4);
 
                                                         ?></div>
@@ -30,18 +34,17 @@ $credaInstallationPending = projectAbstractInstallationPendingCount($conn, 107, 
                                      </div>
                                 </div></a>
                             </div>
-                      
-                            
-                            <div class="col-sm-6 col-xl-2">
-                                 <a href="view-total-selections.php?projid=107&page=2&FieldSurveyDetails=1&title=Total JSR Done&subheadid=<?php echo $_GET['id'];?>">
+
+                             <div class="col-sm-6 col-xl-2">
+                                <a href="view-total-selections.php?projid=<?php echo (int) $pumpProjectId;?>&page=2&FieldSurveyDetails=1&title=Total JSR Done&subheadid=<?php echo $_GET['id'];?>">
                                <div class="card mb-4 bg-pattern-3-dark">
                                     <div class="card-body" style="padding-top: 15px; padding-bottom: 15px; padding-right: 5px; padding-left: 10px;">
                                         <div class="d-flex align-items-center">
                                           
                                             <div class="ml-3">
-                                                <h6 class="mb-0" style="color: black;">Total JSR Done</h6>
+                                                <h6 class="mb-0" style="color: black;">Total JSR<br> Done</h6>
                                         <div class="text-large"><?php  
-                                                            $sql47 = "SELECT * FROM tbl_users WHERE ProjectId='107' AND ProjectSubHeadId='".$_GET['id']."' AND Roll=5 AND FieldSurveyDetails=1 AND ProjectType=1";
+                                                            $sql47 = "SELECT * FROM tbl_users WHERE ProjectId='".$pumpProjectId."' AND ProjectSubHeadId='".$_GET['id']."' AND Roll=5 AND FieldSurveyDetails=1 AND ProjectType=1";
                                                             echo $rncnt47 = getRow($sql47);
 
                                                         ?></div>
@@ -51,9 +54,9 @@ $credaInstallationPending = projectAbstractInstallationPendingCount($conn, 107, 
                                      </div>
                                 </div></a>
                             </div>
-                      
-                           <div class="col-sm-6 col-xl-2">
-                                 <a href="view-total-selections.php?projid=107&page=3&FieldSurveyDetails=0&title=Total JSR Pending&subheadid=<?php echo $_GET['id'];?>">
+
+                        <div class="col-sm-6 col-xl-2">
+                                <a href="view-total-selections.php?projid=<?php echo (int) $pumpProjectId;?>&page=3&FieldSurveyDetails=0&title=Total JSR Pending&subheadid=<?php echo $_GET['id'];?>">
                                <div class="card mb-4 bg-pattern-3-dark">
                                     <div class="card-body" style="padding-top: 15px; padding-bottom: 15px; padding-right: 5px; padding-left: 10px;">
                                         <div class="d-flex align-items-center">
@@ -61,7 +64,7 @@ $credaInstallationPending = projectAbstractInstallationPendingCount($conn, 107, 
                                             <div class="ml-3">
                                                 <h6 class="mb-0" style="color: black;">Total JSR Pending</h6>
                                         <div class="text-large"><?php  
-                                                            $sql4 = "SELECT * FROM tbl_users WHERE ProjectId='107' AND ProjectSubHeadId='".$_GET['id']."' AND Roll=5 AND FieldSurveyDetails=0 AND ProjectType=1";
+                                                            $sql4 = "SELECT * FROM tbl_users WHERE ProjectId='".$pumpProjectId."' AND ProjectSubHeadId='".$_GET['id']."' AND Roll=5 AND FieldSurveyDetails=0 AND ProjectType=1";
                                                             echo $rncnt4 = getRow($sql4);
 
                                                         ?></div>
@@ -71,10 +74,9 @@ $credaInstallationPending = projectAbstractInstallationPendingCount($conn, 107, 
                                      </div>
                                 </div></a>
                             </div>
-                            
-                          
-                        <div class="col-sm-6 col-xl-2">
-                                 <a href="view-total-selections.php?projid=107&page=4&FieldSurveyDetails=2&title=Total JSR Cancellation&subheadid=<?php echo $_GET['id'];?>">
+
+                            <div class="col-sm-6 col-xl-2">
+                               <a href="view-total-selections.php?projid=<?php echo (int) $pumpProjectId;?>&page=4&FieldSurveyDetails=2&title=Total JSR Cancellation&subheadid=<?php echo $_GET['id'];?>">
                                <div class="card mb-4 bg-pattern-3-dark">
                                     <div class="card-body" style="padding-top: 15px; padding-bottom: 15px; padding-right: 5px; padding-left: 10px;">
                                         <div class="d-flex align-items-center">
@@ -82,7 +84,7 @@ $credaInstallationPending = projectAbstractInstallationPendingCount($conn, 107, 
                                             <div class="ml-3">
                                                 <h6 class="mb-0" style="color: black;">Total Cancellation</h6>
                                         <div class="text-large"><?php  
-                                                            $sql4 = "SELECT * FROM tbl_users WHERE ProjectId='107' AND ProjectSubHeadId='".$_GET['id']."' AND Roll=5 AND FieldSurveyDetails=2 AND ProjectType=1";
+                                                            $sql4 = "SELECT * FROM tbl_users WHERE ProjectId='".$pumpProjectId."' AND ProjectSubHeadId='".$_GET['id']."' AND Roll=5 AND FieldSurveyDetails=2 AND ProjectType=1";
                                                             echo $rncnt4 = getRow($sql4);
 
                                                         ?></div>
@@ -92,33 +94,35 @@ $credaInstallationPending = projectAbstractInstallationPendingCount($conn, 107, 
                                      </div>
                                 </div></a>
                             </div>
-                          
-                         
+
+
                              <div class="col-sm-6 col-xl-2">
-                                 <a href="total-installations.php?projid=107&page=7&DispatchStatus=Yes&title=Total Material Dispatch Done&subheadid=<?php echo $_GET['id'];?>">
+                               <a href="total-installations.php?projid=<?php echo (int) $pumpProjectId;?>&page=7&DispatchStatus=Yes&title=Total Material Dispatch Done&subheadid=<?php echo $_GET['id'];?>">
                                <div class="card mb-4 bg-pattern-3-dark">
                                     <div class="card-body" style="padding-top: 15px; padding-bottom: 15px; padding-right: 5px; padding-left: 10px;">
                                         <div class="d-flex align-items-center">
                                           
                                             <div class="ml-3">
                                                 <h6 class="mb-0" style="color: black;">Total Material Dispatch Done</h6>
-                                        <div class="text-large"><?php echo (int) $credaMaterialDispatchDone; ?></div>
+                                        <div class="text-large"><?php echo (int) $pumpMaterialDispatchDone; ?></div>
                                         
                                      </div>
                                         </div>
                                      </div>
                                 </div></a>
                             </div>
-                            
-                            <div class="col-sm-6 col-xl-2">
-                                 <a href="total-installations.php?projid=107&page=7&DispatchStatus=No&title=Total Material Dispatch Pending&subheadid=<?php echo $_GET['id'];?>">
+
+                          
+
+                          <div class="col-sm-6 col-xl-2">
+                                <a href="total-installations.php?projid=<?php echo (int) $pumpProjectId;?>&page=7&DispatchStatus=No&title=Total Material Dispatch Pending&subheadid=<?php echo $_GET['id'];?>">
                                <div class="card mb-4 bg-pattern-3-dark">
                                     <div class="card-body" style="padding-top: 15px; padding-bottom: 15px; padding-right: 5px; padding-left: 10px;">
                                         <div class="d-flex align-items-center">
                                           
                                             <div class="ml-3">
                                                 <h6 class="mb-0" style="color: black;">Total Material Dispatch Pending</h6>
-                                        <div class="text-large"><?php echo max(0, (int) $rncnt47 - (int) $credaMaterialDispatchDone); ?></div>
+                                        <div class="text-large"><?php echo max(0, (int) $rncnt47 - (int) $pumpMaterialDispatchDone); ?></div>
                                         
                                      </div>
                                         </div>
@@ -127,13 +131,13 @@ $credaInstallationPending = projectAbstractInstallationPendingCount($conn, 107, 
                             </div>
 
                             <div class="col-sm-6 col-xl-2">
-                               <a href="total-beneficiary.php?roll=work_order_done&projid=107&val=&subheadid=<?php echo $_GET['id'];?>&title=Work Order Done">
+                               <a href="total-beneficiary.php?roll=work_order_done&projid=<?php echo (int) $pumpProjectId;?>&val=&subheadid=<?php echo $_GET['id'];?>&title=Work Order Done">
                                <div class="card mb-4 bg-pattern-3-dark">
                                     <div class="card-body" style="padding-top: 15px; padding-bottom: 15px; padding-right: 5px; padding-left: 10px;">
                                         <div class="d-flex align-items-center">
                                             <div class="ml-3">
                                                 <h6 class="mb-0" style="color: black;">Work Order Done</h6>
-                                                <div class="text-large"><?php echo (int) $credaWorkDone; ?></div>
+                                                <div class="text-large"><?php echo (int) $pumpWorkDone; ?></div>
                                             </div>
                                         </div>
                                      </div>
@@ -141,48 +145,84 @@ $credaInstallationPending = projectAbstractInstallationPendingCount($conn, 107, 
                             </div>
 
                             <div class="col-sm-6 col-xl-2">
-                               <a href="total-beneficiary.php?roll=work_order_pending&projid=107&val=&subheadid=<?php echo $_GET['id'];?>&title=Work Order Pending">
+                               <a href="total-beneficiary.php?roll=work_order_pending&projid=<?php echo (int) $pumpProjectId;?>&val=&subheadid=<?php echo $_GET['id'];?>&title=Work Order Pending">
                                <div class="card mb-4 bg-pattern-3-dark">
                                     <div class="card-body" style="padding-top: 15px; padding-bottom: 15px; padding-right: 5px; padding-left: 10px;">
                                         <div class="d-flex align-items-center">
                                             <div class="ml-3">
                                                 <h6 class="mb-0" style="color: black;">Work Order Pending</h6>
-                                                <div class="text-large"><?php echo (int) $credaWorkPending; ?></div>
+                                                <div class="text-large"><?php echo (int) $pumpWorkPending; ?></div>
                                             </div>
                                         </div>
                                      </div>
                                 </div></a>
                             </div>
-                            
-                          
-                          <div class="col-sm-6 col-xl-2">
-                                 <a href="total-installations.php?projid=107&page=7&InstallStatus=Yes&title=Total Installation Done&subheadid=<?php echo $_GET['id'];?>">
+
+                            <div class="col-sm-6 col-xl-2">
+                                 <a href="total-installations.php?projid=<?php echo (int) $pumpProjectId;?>&page=7&InstallStatus=Yes&title=Total Installation Done&subheadid=<?php echo $_GET['id'];?>">
                                <div class="card mb-4 bg-pattern-3-dark">
                                     <div class="card-body" style="padding-top: 15px; padding-bottom: 15px; padding-right: 5px; padding-left: 10px;">
                                         <div class="d-flex align-items-center">
                                           
                                             <div class="ml-3">
-                                                <h6 class="mb-0" style="color: black;">Total Installation<br> Done</h6>
-                                        <div class="text-large"><?php echo (int) $credaInstallationDone; ?></div>
+                                                <h6 class="mb-0" style="color: black;">Total Installation Done</h6>
+                                        <div class="text-large"><?php echo (int) $pumpInstallationDone; ?></div>
                                         
                                      </div>
                                         </div>
                                      </div>
                                 </div></a>
                             </div>
-
-                             
-                            
-                            
-                          <div class="col-sm-6 col-xl-2">
-                                 <a href="total-beneficiary.php?roll=installationpending&projid=107&val=&subheadid=<?php echo $_GET['id'];?>&title=Total Installation Pending">
+                          
+                            <div class="col-sm-6 col-xl-2">
+                                  <a href="total-beneficiary.php?roll=installationpending&projid=<?php echo (int) $pumpProjectId;?>&val=&subheadid=<?php echo $_GET['id'];?>&title=Total Installation Pending">
                                <div class="card mb-4 bg-pattern-3-dark">
                                     <div class="card-body" style="padding-top: 15px; padding-bottom: 15px; padding-right: 5px; padding-left: 10px;">
                                         <div class="d-flex align-items-center">
                                           
                                             <div class="ml-3">
                                                 <h6 class="mb-0" style="color: black;">Total Installation<br> Pending</h6>
-                                        <div class="text-large"><?php echo (int) $credaInstallationPending; ?></div>
+                                        <div class="text-large"><?php echo (int) $pumpInstallationPending; ?></div>
+                                        
+                                     </div>
+                                        </div>
+                                     </div>
+                                </div></a>
+                            </div>
+
+                            <div class="col-sm-6 col-xl-2">
+                                   <a href="total-installations.php?projid=<?php echo (int) $pumpProjectId;?>&page=9&PoInspection=Yes&title=Total Inspection Done&subheadid=<?php echo $_GET['id'];?>">
+                               <div class="card mb-4 bg-pattern-3-dark">
+                                    <div class="card-body" style="padding-top: 15px; padding-bottom: 15px; padding-right: 5px; padding-left: 10px;">
+                                        <div class="d-flex align-items-center">
+                                          
+                                            <div class="ml-3">
+                                                <h6 class="mb-0" style="color: black;">Total Inspection Done</h6>
+                                        <div class="text-large"><?php  
+                                                            $sql4 = "SELECT * FROM tbl_installations ti 
+                    LEFT JOIN tbl_users tu ON ti.CustId=tu.id WHERE tu.ProjectId='".$pumpProjectId."' AND tu.ProjectSubHeadId='".$_GET['id']."' AND tu.Roll=5 AND ti.PoInspection='Yes' AND ti.Type=2";
+                                                            echo $rncnt4 = getRow($sql4);
+
+                                                        ?></div>
+                                        
+                                     </div>
+                                        </div>
+                                     </div>
+                                </div></a>
+                            </div>
+
+                             <div class="col-sm-6 col-xl-2">
+                                   <a href="total-installations.php?projid=<?php echo (int) $pumpProjectId;?>&page=10&PoInspection=No&title=Total Inspection Pending&subheadid=<?php echo $_GET['id'];?>">
+                               <div class="card mb-4 bg-pattern-3-dark">
+                                    <div class="card-body" style="padding-top: 15px; padding-bottom: 15px; padding-right: 5px; padding-left: 10px;">
+                                        <div class="d-flex align-items-center">
+                                          
+                                            <div class="ml-3">
+                                                <h6 class="mb-0" style="color: black;">Total Inspection Pending</h6>
+                                        <div class="text-large"><?php  
+                                                            echo $rncnt47 - $rncnt4;
+
+                                                        ?></div>
                                         
                                      </div>
                                         </div>
@@ -190,17 +230,16 @@ $credaInstallationPending = projectAbstractInstallationPendingCount($conn, 107, 
                                 </div></a>
                             </div>
                            
-
-                          <div class="col-sm-6 col-xl-2">
-                                 <a href="total-installations.php?projid=107&page=11&IcrSignDoOffice=Yes&title=Total ICR Sign DO Office&subheadid=<?php echo $_GET['id'];?>">
+                            <div class="col-sm-6 col-xl-2">
+                                   <a href="total-installations.php?projid=<?php echo (int) $pumpProjectId;?>&page=11&DgmApproval=Yes&title=District Office Approval Done&subheadid=<?php echo $_GET['id'];?>">
                                <div class="card mb-4 bg-pattern-3-dark">
                                     <div class="card-body" style="padding-top: 15px; padding-bottom: 15px; padding-right: 5px; padding-left: 10px;">
                                         <div class="d-flex align-items-center">
                                           
                                             <div class="ml-3">
-                                                <h6 class="mb-0" style="color: black;">Total ICR Sign DO Office</h6>
+                                                <h6 class="mb-0" style="color: black;">District Office Approval Done</h6>
                                         <div class="text-large"><?php  
-                                                            $sql4 = "SELECT * FROM tbl_users tu LEFT JOIN tbl_installations ti ON ti.CustId=tu.id WHERE tu.ProjectId='107' AND tu.ProjectSubHeadId='".$_GET['id']."' AND tu.Roll=5 AND ti.IcrSignDoOffice='Yes' AND tu.ProjectType=1";
+                                                            $sql4 = "SELECT * FROM tbl_users tu LEFT JOIN tbl_installations ti ON ti.CustId=tu.id WHERE tu.ProjectId='".$pumpProjectId."' AND tu.ProjectSubHeadId='".$_GET['id']."' AND tu.Roll=5 AND ti.DgmApproval='Yes' AND ti.Type=2";
                                                             echo $rncnt4 = getRow($sql4);
 
                                                         ?></div>
@@ -210,18 +249,38 @@ $credaInstallationPending = projectAbstractInstallationPendingCount($conn, 107, 
                                      </div>
                                 </div></a>
                             </div>
-                            
+ 
                             
                             <div class="col-sm-6 col-xl-2">
-                                  <a href="total-installations.php?projid=107&page=11&BillForward=Yes&title=Total Bill Forward to RO&subheadid=<?php echo $_GET['id'];?>">
+                                  <a href="total-installations.php?projid=<?php echo (int) $pumpProjectId;?>&page=12&DgmApproval=No&title=District Office Approval Pending&subheadid=<?php echo $_GET['id'];?>">
                                <div class="card mb-4 bg-pattern-3-dark">
                                     <div class="card-body" style="padding-top: 15px; padding-bottom: 15px; padding-right: 5px; padding-left: 10px;">
                                         <div class="d-flex align-items-center">
                                           
                                             <div class="ml-3">
-                                                <h6 class="mb-0" style="color: black;">Total Bill Forward to RO</h6>
+                                                <h6 class="mb-0" style="color: black;">District Office Approval Pending</h6>
                                         <div class="text-large"><?php  
-                                                            $sql4 = "SELECT * FROM tbl_users tu LEFT JOIN tbl_installations ti ON ti.CustId=tu.id WHERE tu.ProjectId='107' AND tu.ProjectSubHeadId='".$_GET['id']."' AND tu.Roll=5 AND ti.BillForward='Yes' AND tu.ProjectType=1";
+                                                            $sql4 = "SELECT * FROM tbl_users tu LEFT JOIN tbl_installations ti ON ti.CustId=tu.id WHERE tu.ProjectId='".$pumpProjectId."' AND tu.ProjectSubHeadId='".$_GET['id']."' AND tu.Roll=5 AND ti.DgmApproval='No' AND ti.Type=2";
+                                                            echo $rncnt4 = getRow($sql4);
+
+                                                        ?></div>
+                                        
+                                     </div>
+                                        </div>
+                                     </div>
+                                </div></a>
+                            </div>
+ 
+                             <div class="col-sm-6 col-xl-2">
+                                  <a href="total-installations.php?projid=<?php echo (int) $pumpProjectId;?>&page=11&SentToHo=Yes&title=Files Sent to HO Done&subheadid=<?php echo $_GET['id'];?>">
+                               <div class="card mb-4 bg-pattern-3-dark">
+                                    <div class="card-body" style="padding-top: 15px; padding-bottom: 15px; padding-right: 5px; padding-left: 10px;">
+                                        <div class="d-flex align-items-center">
+                                          
+                                            <div class="ml-3">
+                                                <h6 class="mb-0" style="color: black;">Files Sent to HO Done</h6>
+                                        <div class="text-large"><?php  
+                                                            $sql4 = "SELECT * FROM tbl_users tu LEFT JOIN tbl_installations ti ON ti.CustId=tu.id WHERE tu.ProjectId='".$pumpProjectId."' AND tu.ProjectSubHeadId='".$_GET['id']."' AND tu.Roll=5 AND ti.SentToHo='Yes' AND ti.Type=2";
                                                             echo $rncnt4 = getRow($sql4);
 
                                                         ?></div>
@@ -232,17 +291,38 @@ $credaInstallationPending = projectAbstractInstallationPendingCount($conn, 107, 
                                 </div></a>
                             </div>
 
-                            
+                          
                             <div class="col-sm-6 col-xl-2">
-                                  <a href="total-installations.php?projid=107&page=12&RoToRoAccts=Yes&title=Total Files Forwarded to RO to RO Accts&subheadid=<?php echo $_GET['id'];?>">
+                                 <a href="total-installations.php?projid=<?php echo (int) $pumpProjectId;?>&page=12&SentToHo=No&title=Files Sent to HO Pending&subheadid=<?php echo $_GET['id'];?>">
                                <div class="card mb-4 bg-pattern-3-dark">
                                     <div class="card-body" style="padding-top: 15px; padding-bottom: 15px; padding-right: 5px; padding-left: 10px;">
                                         <div class="d-flex align-items-center">
                                           
                                             <div class="ml-3">
-                                                <h6 class="mb-0" style="color: black;">Total Files Forwarded to RO to RO Accts</h6>
+                                                <h6 class="mb-0" style="color: black;">Files Sent to HO Pending</h6>
                                         <div class="text-large"><?php  
-                                                            $sql4 = "SELECT * FROM tbl_users tu LEFT JOIN tbl_installations ti ON ti.CustId=tu.id WHERE tu.ProjectId='107' AND tu.ProjectSubHeadId='".$_GET['id']."' AND tu.Roll=5 AND ti.RoToRoAccts='Yes' AND tu.ProjectType=1";
+                                                            $sql4 = "SELECT * FROM tbl_users tu LEFT JOIN tbl_installations ti ON ti.CustId=tu.id WHERE tu.ProjectId='".$pumpProjectId."' AND tu.ProjectSubHeadId='".$_GET['id']."' AND tu.Roll=5 AND ti.SentToHo='No' AND ti.Type=2";
+                                                            echo $rncnt4 = getRow($sql4);
+
+                                                        ?></div>
+                                        
+                                     </div>
+                                        </div>
+                                     </div>
+                                </div></a>
+                            </div>
+                     
+                            
+                             <div class="col-sm-6 col-xl-2">
+                                   <a href="total-installations.php?projid=<?php echo (int) $pumpProjectId;?>&page=11&FileInHand=Yes&title=File In Hand Done&subheadid=<?php echo $_GET['id'];?>">
+                               <div class="card mb-4 bg-pattern-3-dark">
+                                    <div class="card-body" style="padding-top: 15px; padding-bottom: 15px; padding-right: 5px; padding-left: 10px;">
+                                        <div class="d-flex align-items-center">
+                                          
+                                            <div class="ml-3">
+                                                <h6 class="mb-0" style="color: black;">File In Hand <br>Done</h6>
+                                        <div class="text-large"><?php  
+                                                            $sql4 = "SELECT * FROM tbl_users tu LEFT JOIN tbl_installations ti ON ti.CustId=tu.id WHERE tu.ProjectId='".$pumpProjectId."' AND tu.ProjectSubHeadId='".$_GET['id']."' AND tu.Roll=5 AND ti.FileInHand='Yes' AND ti.Type=2";
                                                             echo $rncnt4 = getRow($sql4);
 
                                                         ?></div>
@@ -253,94 +333,29 @@ $credaInstallationPending = projectAbstractInstallationPendingCount($conn, 107, 
                                 </div></a>
                             </div>
 
-                           
+                            <div class="col-sm-6 col-xl-2">
+                                   <a href="total-installations.php?projid=<?php echo (int) $pumpProjectId;?>&page=12&FileInHand=No&title=File In Hand Pending&subheadid=<?php echo $_GET['id'];?>">
+                               <div class="card mb-4 bg-pattern-3-dark">
+                                    <div class="card-body" style="padding-top: 15px; padding-bottom: 15px; padding-right: 5px; padding-left: 10px;">
+                                        <div class="d-flex align-items-center">
+                                          
+                                            <div class="ml-3">
+                                                <h6 class="mb-0" style="color: black;">File In Hand Pending</h6>
+                                        <div class="text-large"><?php  
+                                                            $sql4 = "SELECT * FROM tbl_users tu LEFT JOIN tbl_installations ti ON ti.CustId=tu.id WHERE tu.ProjectId='".$pumpProjectId."' AND tu.ProjectSubHeadId='".$_GET['id']."' AND tu.Roll=5 AND ti.FileInHand='No' AND ti.Type=2";
+                                                            echo $rncnt4 = getRow($sql4);
+
+                                                        ?></div>
+                                        
+                                     </div>
+                                        </div>
+                                     </div>
+                                </div></a>
+                            </div>
+                             
+
                            <div class="col-sm-6 col-xl-2">
-                                 <a href="total-installations.php?projid=107&page=12&RoAcctsToZo=Yes&title=Total Files Forwarded to RO Accts to ZO&subheadid=<?php echo $_GET['id'];?>">
-                               <div class="card mb-4 bg-pattern-3-dark">
-                                    <div class="card-body" style="padding-top: 15px; padding-bottom: 15px; padding-right: 5px; padding-left: 10px;">
-                                        <div class="d-flex align-items-center">
-                                          
-                                            <div class="ml-3">
-                                                <h6 class="mb-0" style="color: black;">Total Files Forwarded to RO Accts to ZO</h6>
-                                        <div class="text-large"><?php  
-                                                            $sql4 = "SELECT * FROM tbl_users tu LEFT JOIN tbl_installations ti ON ti.CustId=tu.id WHERE tu.ProjectId='107' AND tu.ProjectSubHeadId='".$_GET['id']."' AND tu.Roll=5 AND ti.RoAcctsToZo='Yes' AND tu.ProjectType=1";
-                                                            echo $rncnt4 = getRow($sql4);
-
-                                                        ?></div>
-                                        
-                                     </div>
-                                        </div>
-                                     </div>
-                                </div></a>
-                            </div>
-
-                           
-                           <div class="col-sm-6 col-xl-2">
-                               <a href="total-installations.php?projid=107&page=12&ZoToHo=Yes&title=Total Files Forwarded to ZO to HO&subheadid=<?php echo $_GET['id'];?>">
-                               <div class="card mb-4 bg-pattern-3-dark">
-                                    <div class="card-body" style="padding-top: 15px; padding-bottom: 15px; padding-right: 5px; padding-left: 10px;">
-                                        <div class="d-flex align-items-center">
-                                          
-                                            <div class="ml-3">
-                                                <h6 class="mb-0" style="color: black;">Total Files Forwarded to ZO to HO</h6>
-                                        <div class="text-large"><?php  
-                                                            $sql4 = "SELECT * FROM tbl_users tu LEFT JOIN tbl_installations ti ON ti.CustId=tu.id WHERE tu.ProjectId='107' AND tu.ProjectSubHeadId='".$_GET['id']."' AND tu.Roll=5 AND ti.ZoToHo='Yes' AND tu.ProjectType=1";
-                                                            echo $rncnt4 = getRow($sql4);
-
-                                                        ?></div>
-                                        
-                                     </div>
-                                        </div>
-                                     </div>
-                                </div></a>
-                            </div>
-
-
-    
-                        <div class="col-sm-6 col-xl-2">
-                              <a href="total-installations.php?projid=107&page=12&HoToHoAccts=Yes&title=Total Files Forwarded to HO to HO Accts&subheadid=<?php echo $_GET['id'];?>">
-                               <div class="card mb-4 bg-pattern-3-dark">
-                                    <div class="card-body" style="padding-top: 15px; padding-bottom: 15px; padding-right: 5px; padding-left: 10px;">
-                                        <div class="d-flex align-items-center">
-                                          
-                                            <div class="ml-3">
-                                                <h6 class="mb-0" style="color: black;">Total Files Forwarded to HO to HO Accts</h6>
-                                        <div class="text-large"><?php  
-                                                            $sql4 = "SELECT * FROM tbl_users tu LEFT JOIN tbl_installations ti ON ti.CustId=tu.id WHERE tu.ProjectId='107' AND tu.ProjectSubHeadId='".$_GET['id']."' AND tu.Roll=5 AND ti.HoToHoAccts='Yes' AND tu.ProjectType=1";
-                                                            echo $rncnt4 = getRow($sql4);
-
-                                                        ?></div>
-                                        
-                                     </div>
-                                        </div>
-                                     </div>
-                                </div></a>
-                            </div>
-                            
-                        
-                         <div class="col-sm-6 col-xl-2">
-                             <a href="total-installations.php?projid=107&page=12&ForwardToPayment=Yes&title=Total Files Forwarded to Payment&subheadid=<?php echo $_GET['id'];?>">
-                               <div class="card mb-4 bg-pattern-3-dark">
-                                    <div class="card-body" style="padding-top: 15px; padding-bottom: 15px; padding-right: 5px; padding-left: 10px;">
-                                        <div class="d-flex align-items-center">
-                                          
-                                            <div class="ml-3">
-                                                <h6 class="mb-0" style="color: black;">Total Files Forwarded to Payment</h6>
-                                        <div class="text-large"><?php  
-                                                            $sql4 = "SELECT * FROM tbl_users tu LEFT JOIN tbl_installations ti ON ti.CustId=tu.id WHERE tu.ProjectId='107' AND tu.ProjectSubHeadId='".$_GET['id']."' AND tu.Roll=5 AND ti.ForwardToPayment='Yes' AND tu.ProjectType=1";
-                                                            echo $rncnt4 = getRow($sql4);
-
-                                                        ?></div>
-                                        
-                                     </div>
-                                        </div>
-                                     </div>
-                                </div></a>
-                            </div>
-                            
-                            
-                            <div class="col-sm-6 col-xl-2">
-                             <a href="total-installations.php?projid=107&page=13&InsuranceApproval=Yes&title=Total Insurance Done&subheadid=<?php echo $_GET['id'];?>">
+                                  <a href="total-installations.php?projid=<?php echo (int) $pumpProjectId;?>&page=13&InsuranceApproval=Yes&title=Total Insurance Done&subheadid=<?php echo $_GET['id'];?>">
                                <div class="card mb-4 bg-pattern-3-dark">
                                     <div class="card-body" style="padding-top: 15px; padding-bottom: 15px; padding-right: 5px; padding-left: 10px;">
                                         <div class="d-flex align-items-center">
@@ -348,7 +363,7 @@ $credaInstallationPending = projectAbstractInstallationPendingCount($conn, 107, 
                                             <div class="ml-3">
                                                 <h6 class="mb-0" style="color: black;">Total Insurance<br> Done</h6>
                                         <div class="text-large"><?php  
-                                                            $sql4 = "SELECT * FROM tbl_users tu LEFT JOIN tbl_installations ti ON ti.CustId=tu.id WHERE tu.ProjectId='107' AND tu.ProjectSubHeadId='".$_GET['id']."' AND tu.Roll=5 AND ti.InsuranceApproval='Yes' AND tu.ProjectType=1";
+                                                            $sql4 = "SELECT * FROM tbl_users tu LEFT JOIN tbl_installations ti ON ti.CustId=tu.id WHERE tu.ProjectId='".$pumpProjectId."' AND tu.ProjectSubHeadId='".$_GET['id']."' AND tu.Roll=5 AND ti.InsuranceApproval='Yes' AND ti.Type=2";
                                                             echo $rncnt4 = getRow($sql4);
 
                                                         ?></div>
@@ -358,10 +373,10 @@ $credaInstallationPending = projectAbstractInstallationPendingCount($conn, 107, 
                                      </div>
                                 </div></a>
                             </div>
-                            
-                            
-                             <div class="col-sm-6 col-xl-2">
-                            <a href="total-installations.php?projid=107&page=14&InsuranceApproval=No&title=Total Insurance Pending&subheadid=<?php echo $_GET['id'];?>">
+                             
+
+                           <div class="col-sm-6 col-xl-2">
+                                 <a href="total-installations.php?projid=<?php echo (int) $pumpProjectId;?>&page=14&InsuranceApproval=No&title=Total Insurance Pending&subheadid=<?php echo $_GET['id'];?>">
                                <div class="card mb-4 bg-pattern-3-dark">
                                     <div class="card-body" style="padding-top: 15px; padding-bottom: 15px; padding-right: 5px; padding-left: 10px;">
                                         <div class="d-flex align-items-center">
@@ -369,7 +384,7 @@ $credaInstallationPending = projectAbstractInstallationPendingCount($conn, 107, 
                                             <div class="ml-3">
                                                 <h6 class="mb-0" style="color: black;">Total Insurance<br> Pending</h6>
                                         <div class="text-large"><?php  
-                                                            $sql4 = "SELECT * FROM tbl_users tu LEFT JOIN tbl_installations ti ON ti.CustId=tu.id WHERE tu.ProjectId='107' AND tu.ProjectSubHeadId='".$_GET['id']."' AND tu.Roll=5 AND ti.InsuranceApproval='No' AND tu.ProjectType=1";
+                                                            $sql4 = "SELECT * FROM tbl_users tu LEFT JOIN tbl_installations ti ON ti.CustId=tu.id WHERE tu.ProjectId='".$pumpProjectId."' AND tu.ProjectSubHeadId='".$_GET['id']."' AND tu.Roll=5 AND ti.InsuranceApproval='No' AND ti.Type=2";
                                                             echo $rncnt4 = getRow($sql4);
 
                                                         ?></div>
@@ -379,10 +394,10 @@ $credaInstallationPending = projectAbstractInstallationPendingCount($conn, 107, 
                                      </div>
                                 </div></a>
                             </div>
+
                             
-                            
-                            <div class="col-sm-6 col-xl-2">
-                            <a href="total-installations.php?projid=107&page=15&PaymentDone=Yes&title=Total Site Payment Received&subheadid=<?php echo $_GET['id'];?>">
+                           <div class="col-sm-6 col-xl-2">
+                                  <a href="total-installations.php?projid=<?php echo (int) $pumpProjectId;?>&page=15&PaymentDone=Yes&title=Total Site Payment Received&subheadid=<?php echo $_GET['id'];?>">
                                <div class="card mb-4 bg-pattern-3-dark">
                                     <div class="card-body" style="padding-top: 15px; padding-bottom: 15px; padding-right: 5px; padding-left: 10px;">
                                         <div class="d-flex align-items-center">
@@ -390,7 +405,7 @@ $credaInstallationPending = projectAbstractInstallationPendingCount($conn, 107, 
                                             <div class="ml-3">
                                                 <h6 class="mb-0" style="color: black;">Total Site Payment Received</h6>
                                         <div class="text-large"><?php  
-                                                            $sql4 = "SELECT * FROM tbl_users tu LEFT JOIN tbl_installations ti ON ti.CustId=tu.id WHERE tu.ProjectId='107' AND tu.ProjectSubHeadId='".$_GET['id']."' AND tu.Roll=5 AND ti.PaymentDone='Yes' AND tu.ProjectType=1";
+                                                            $sql4 = "SELECT * FROM tbl_users tu LEFT JOIN tbl_installations ti ON ti.CustId=tu.id WHERE tu.ProjectId='".$pumpProjectId."' AND tu.ProjectSubHeadId='".$_GET['id']."' AND tu.Roll=5 AND ti.PaymentDone='Yes' AND ti.Type=2";
                                                             echo $rncnt4 = getRow($sql4);
 
                                                         ?></div>
@@ -402,8 +417,8 @@ $credaInstallationPending = projectAbstractInstallationPendingCount($conn, 107, 
                             </div>
                             
                           
-                              <div class="col-sm-6 col-xl-2">
-                            <a href="total-installations.php?projid=107&page=16&PaymentDone=No&title=Total Site Payment Pending&subheadid=<?php echo $_GET['id'];?>">
+                          <div class="col-sm-6 col-xl-2">
+                                  <a href="total-installations.php?projid=<?php echo (int) $pumpProjectId;?>&page=16&PaymentDone=No&title=Total Site Payment Pending&subheadid=<?php echo $_GET['id'];?>">
                                <div class="card mb-4 bg-pattern-3-dark">
                                     <div class="card-body" style="padding-top: 15px; padding-bottom: 15px; padding-right: 5px; padding-left: 10px;">
                                         <div class="d-flex align-items-center">
@@ -411,7 +426,7 @@ $credaInstallationPending = projectAbstractInstallationPendingCount($conn, 107, 
                                             <div class="ml-3">
                                                 <h6 class="mb-0" style="color: black;">Total Site Payment<br> Pending</h6>
                                         <div class="text-large"><?php  
-                                                            $sql4 = "SELECT * FROM tbl_users tu LEFT JOIN tbl_installations ti ON ti.CustId=tu.id WHERE tu.ProjectId='107' AND tu.ProjectSubHeadId='".$_GET['id']."' AND tu.Roll=5 AND ti.PaymentDone='No' AND tu.ProjectType=1";
+                                                            $sql4 = "SELECT * FROM tbl_users tu LEFT JOIN tbl_installations ti ON ti.CustId=tu.id WHERE tu.ProjectId='".$pumpProjectId."' AND tu.ProjectSubHeadId='".$_GET['id']."' AND tu.Roll=5 AND ti.PaymentDone='No' AND ti.Type=2";
                                                             echo $rncnt4 = getRow($sql4);
 
                                                         ?></div>
@@ -423,14 +438,14 @@ $credaInstallationPending = projectAbstractInstallationPendingCount($conn, 107, 
                             </div>
 
                             <div class="col-sm-6 col-xl-2">
-                               <a href="total-installations.php?projid=107&page=12&RmsIntegration7Days=Yes&title=RMS%20Integration%207%20days&subheadid=<?php echo $_GET['id'];?>">
+                               <a href="total-installations.php?projid=<?php echo (int) $pumpProjectId;?>&page=12&RmsIntegration7Days=Yes&title=RMS%20Integration%207%20days&subheadid=<?php echo $_GET['id'];?>">
                                <div class="card mb-4 bg-pattern-3-dark">
                                     <div class="card-body" style="padding-top: 15px; padding-bottom: 15px; padding-right: 5px; padding-left: 10px;">
                                         <div class="d-flex align-items-center">
                                             <div class="ml-3">
                                                 <h6 class="mb-0" style="color: black;">RMS Integration<br>7 days</h6>
                                         <div class="text-large"><?php  
-                                                            $sql4 = "SELECT * FROM tbl_users tu LEFT JOIN tbl_installations ti ON ti.CustId=tu.id WHERE tu.ProjectId='107' AND tu.ProjectSubHeadId='".$_GET['id']."' AND tu.Roll=5 AND ti.RmsIntegration7Days='Yes' AND tu.ProjectType=1";
+                                                            $sql4 = "SELECT * FROM tbl_users tu LEFT JOIN tbl_installations ti ON ti.CustId=tu.id WHERE tu.ProjectId='".$pumpProjectId."' AND tu.ProjectSubHeadId='".$_GET['id']."' AND tu.Roll=5 AND ti.RmsIntegration7Days='Yes' AND ti.Type=2";
                                                             echo $rncnt4 = getRow($sql4);
 
                                                         ?></div>
@@ -442,14 +457,14 @@ $credaInstallationPending = projectAbstractInstallationPendingCount($conn, 107, 
                             </div>
 
                             <div class="col-sm-6 col-xl-2">
-                               <a href="total-installations.php?projid=107&page=12&RmsIntegration90Days=Yes&title=RMS%20Integration%2090%20days&subheadid=<?php echo $_GET['id'];?>">
+                               <a href="total-installations.php?projid=<?php echo (int) $pumpProjectId;?>&page=12&RmsIntegration90Days=Yes&title=RMS%20Integration%2090%20days&subheadid=<?php echo $_GET['id'];?>">
                                <div class="card mb-4 bg-pattern-3-dark">
                                     <div class="card-body" style="padding-top: 15px; padding-bottom: 15px; padding-right: 5px; padding-left: 10px;">
                                         <div class="d-flex align-items-center">
                                             <div class="ml-3">
                                                 <h6 class="mb-0" style="color: black;">RMS Integration<br>90 days</h6>
                                         <div class="text-large"><?php  
-                                                            $sql4 = "SELECT * FROM tbl_users tu LEFT JOIN tbl_installations ti ON ti.CustId=tu.id WHERE tu.ProjectId='107' AND tu.ProjectSubHeadId='".$_GET['id']."' AND tu.Roll=5 AND ti.RmsIntegration90Days='Yes' AND tu.ProjectType=1";
+                                                            $sql4 = "SELECT * FROM tbl_users tu LEFT JOIN tbl_installations ti ON ti.CustId=tu.id WHERE tu.ProjectId='".$pumpProjectId."' AND tu.ProjectSubHeadId='".$_GET['id']."' AND tu.Roll=5 AND ti.RmsIntegration90Days='Yes' AND ti.Type=2";
                                                             echo $rncnt4 = getRow($sql4);
 
                                                         ?></div>
@@ -459,9 +474,10 @@ $credaInstallationPending = projectAbstractInstallationPendingCount($conn, 107, 
                                      </div>
                                 </div></a>
                             </div>
-
-                             <div class="col-sm-6 col-xl-2">
-                                  <a href="project-abstract.php?projid=107&subheadid=<?php echo $_GET['id'];?>&title=<?php echo $_GET['name'];?>">
+                              
+                                
+                                <div class="col-sm-6 col-xl-2">
+                                  <a href="project-abstract.php?projid=<?php echo (int) $pumpProjectId;?>&subheadid=<?php echo $_GET['id'];?>&title=<?php echo $_GET['name'];?>">
                                <div class="card mb-4 bg-pattern-3-dark" style="height: 100px;">
                                     <div class="card-body" style="padding-top: 15px; padding-bottom: 15px; padding-right: 5px; padding-left: 10px;">
                                         <div class="d-flex align-items-center">
@@ -475,7 +491,22 @@ $credaInstallationPending = projectAbstractInstallationPendingCount($conn, 107, 
                                      </div>
                                 </div></a>
                             </div>
-  
+                            
+                             <div class="col-sm-6 col-xl-2">
+                                  <a href="project-abstract-of-abstract.php?projid=<?php echo (int) $pumpProjectId;?>&subheadid=<?php echo $_GET['id'];?>&title=<?php echo urlencode($pumpProjectName);?>">
+                               <div class="card mb-4 bg-pattern-3-dark" style="height: 100px;">
+                                    <div class="card-body" style="padding-top: 15px; padding-bottom: 15px; padding-right: 5px; padding-left: 10px;">
+                                        <div class="d-flex align-items-center">
+                                          
+                                            <div class="ml-3">
+                                                <h6 class="mb-0" style="color: black;padding-top: 25px;">Project Abstract of Abstracts</h6>
+                                        <div class="text-large"></div>
+                                        
+                                     </div>
+                                        </div>
+                                     </div>
+                                </div></a>
+                            </div>
                           
                             
                             

@@ -175,7 +175,6 @@ $Projectname = $row['Name'];
                         $totworkdone+=getDetails('work_order_done',$result['District'],'');
                         $totworkpending+=getDetails('work_order_pending',$result['District'],'');
                         $totinstallationdone+=getDetails('installation',$result['District'],'Yes');
-                        $totinstallationpending+=getDetails('installationpending',$result['District'],'');
                         $totdatauploadone+=getDetails('dataupload',$result['District'],'Yes');
                         $totdatauploapending+=getDetails('datauploadpending',$result['District'],'');
                         $totinspectiondone+=getDetails('inspection',$result['District'],'Yes');
@@ -217,6 +216,8 @@ $Projectname = $row['Name'];
                     <td><a href="total-beneficiary.php?roll=dcr&dist=<?php echo $result['District'];?>&projid=<?php echo $_REQUEST['projid'];?>&val=Yes&subheadid=<?php echo $_REQUEST['SubHeadProjectId'];?>&title=DCR Verification Done" target="_blank"><?php echo getDetails('dcr',$result['District'],'Yes');?></a></td>
                     </tr>
                     <?php $i++;} ?>
+
+                    <?php $totinstallationpending = max(0, (int) $totmaterialdispatch - (int) $totinstallationdone); ?>
                     
                     <tr>
                         <th colspan="2">TOTAL</th>

@@ -585,6 +585,8 @@ foreach ($row as $result) {
                                                                     <th style="width: 10px;">#</th>
                                                                     <th width="50%">Product</th>
                                                                     <th>Serial No </th>
+                                                                    <th class="text-center">PDI Verification</th>
+                                                                    <th class="text-center">DCR Verification</th>
                                                                 </tr>
                                                             </thead>
 
@@ -843,9 +845,19 @@ foreach ($row as $result) {
                         },
                         {
                             data: 'SerialNo'
+                        },
+                        {
+                            data: 'PdiVerification',
+                            className: 'text-center',
+                            orderable: false,
+                            searchable: false
+                        },
+                        {
+                            data: 'DcrVerification',
+                            className: 'text-center',
+                            orderable: false,
+                            searchable: false
                         }
-
-
                     ],
 
                     "pageLength": PageLength,

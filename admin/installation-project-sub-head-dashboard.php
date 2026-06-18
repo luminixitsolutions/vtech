@@ -2,6 +2,7 @@
 session_start();
 include_once 'config.php';
 include_once 'auth.php';
+require_once __DIR__ . '/inc-employee-project-access.php';
 $MainPage="Installation";
 $Page = "Installation";
 $user_id = $_SESSION['Admin']['id'];
@@ -12,6 +13,7 @@ $UserCat = $row77['CatId'];
 $Options = adminResolveMenuOptionsFromUserRow($row77);
 $projectId = isset($_GET['id']) ? (int)$_GET['id'] : 0;
 $projectName = isset($_GET['name']) ? htmlspecialchars($_GET['name'], ENT_QUOTES, 'UTF-8') : '';
+employeeProjectAccessEnforceProject($row77, $projectId, 'installation-project-dashboard.php');
 ?>
 <!DOCTYPE html>
 <html lang="en" class="default-style layout-fixed layout-navbar-fixed">
@@ -55,8 +57,7 @@ $projectName = isset($_GET['name']) ? htmlspecialchars($_GET['name'], ENT_QUOTES
                                         </nav>
                                         <div class="ipd-stat-grid">
                             <?php 
-                                $sql = "SELECT * FROM tbl_project_sub_head WHERE UnderBy='".$projectId."'";
-                                $row = getList($sql);
+                                $row = employeeProjectAccessAssignedSubHeads($row77, $projectId);
                                 if (empty($row)) {
                             ?>
                                             <p class="ipd-empty">No sub heads found for this project.</p>

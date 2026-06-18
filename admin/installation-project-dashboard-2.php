@@ -2,9 +2,15 @@
 session_start();
 include_once 'config.php';
 include_once 'auth.php';
+require_once __DIR__ . '/inc-employee-project-access.php';
 $MainPage="Dashboard";
 $Page = "Dashboard";
 $user_id = $_SESSION['Admin']['id'];
+$sql77 = getRecord("SELECT * FROM tbl_users WHERE id='$user_id'");
+$projectId = isset($_GET['prjid']) ? (int) $_GET['prjid'] : 0;
+$subHeadId = isset($_GET['id']) ? (int) $_GET['id'] : 0;
+employeeProjectAccessEnforceProject($sql77, $projectId, 'installation-project-dashboard.php');
+employeeProjectAccessEnforceSubHead($sql77, $subHeadId, 'installation-project-dashboard.php');
 ?>
 <!DOCTYPE html>
 <html lang="en" class="default-style layout-fixed layout-navbar-fixed">
@@ -44,10 +50,19 @@ $user_id = $_SESSION['Admin']['id'];
 <h5 class="card-header" style="text-align:center;"><?php echo strtoupper($_GET['name']);?> PROJECT DASHBOARD</h5>
                                     <div class="card-body">
                                       
-<?php if($_GET['prjid'] == 102){ include_once 'inc-meda-project-dashboard.php'; } 
-if($_GET['prjid'] == 103){ include_once 'inc-msedl-project-dashboard.php'; } 
-if($_GET['prjid'] == 107){ include_once 'inc-creda-project-dashboard.php'; } 
-if($_GET['prjid'] == 106){ include_once 'inc-mpuvnl-project-dashboard.php'; } 
+<?php
+$dashboardProjectId = (int) ($_GET['prjid'] ?? 0);
+if ($dashboardProjectId === 102) {
+    include_once 'inc-meda-project-dashboard.php';
+} elseif ($dashboardProjectId === 103) {
+    include_once 'inc-msedl-project-dashboard.php';
+} elseif ($dashboardProjectId === 107) {
+    include_once 'inc-creda-project-dashboard.php';
+} elseif ($dashboardProjectId === 106) {
+    include_once 'inc-mpuvnl-project-dashboard.php';
+} else {
+    include_once 'inc-pump-project-dashboard.php';
+}
 ?>
                            
                     </div>

@@ -56,6 +56,29 @@ if (!empty($_SESSION['cart_item']) && is_array($_SESSION['cart_item'])) {
     }
 }
 
+$pdiVerifiedSerials = [];
+$dcrVerifiedSerials = [];
+$pdiRes = $conn->query("SELECT serialno FROM tbl_pdi_verification_serialno WHERE match_status=1 AND TRIM(COALESCE(serialno,''))!=''");
+if ($pdiRes) {
+    while ($pdiRow = $pdiRes->fetch_assoc()) {
+        $pdiVerifiedSerials[strtoupper(trim((string) $pdiRow['serialno']))] = true;
+    }
+}
+$dcrRes = $conn->query("SELECT serialno FROM tbl_dcr_verification_serialno WHERE match_status=1 AND TRIM(COALESCE(serialno,''))!=''");
+if ($dcrRes) {
+    while ($dcrRow = $dcrRes->fetch_assoc()) {
+        $dcrVerifiedSerials[strtoupper(trim((string) $dcrRow['serialno']))] = true;
+    }
+}
+
+function serialNoVerificationIcon($verified)
+{
+    if ($verified) {
+        return '<span class="text-success d-inline-block text-center" style="font-size:20px;line-height:1;" title="Verified"><span class="ion ion-md-checkmark"></span></span>';
+    }
+    return '<span class="text-danger d-inline-block text-center" style="font-size:20px;line-height:1;" title="Not Verified"><span class="ion ion-md-close"></span></span>';
+}
+
 while ($row = mysqli_fetch_assoc($empRecords)) {
     $rowId = (string) $row['id'];
     $isChecked = isset($cartIds[$rowId]);
@@ -68,11 +91,13 @@ while ($row = mysqli_fetch_assoc($empRecords)) {
                  </label>
                  <input type="hidden" value="'.$checkVal.'" name="CheckId[]" id="CheckId'.$row['id'].'">
                  ';
+    $serialKey = strtoupper(trim((string) $row['SerialNo']));
     $data[] = array(
             "id"=>$checkbox,
             "Product"=>$row['ProductName'],
             "SerialNo"=>$row['SerialNo'],
-        
+            "PdiVerification"=>serialNoVerificationIcon(isset($pdiVerifiedSerials[$serialKey])),
+            "DcrVerification"=>serialNoVerificationIcon(isset($dcrVerifiedSerials[$serialKey])),
         );
        
     

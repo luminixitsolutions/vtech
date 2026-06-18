@@ -129,18 +129,13 @@ function projectAbstractListSql($conn, $roll, $projectId, $subheadId, $dist = ''
     if ($roll === 'installationpending') {
         return "SELECT tu.* FROM tbl_users tu
             WHERE tu.Roll=5 AND tu.FieldSurveyDetails=1 $scope
-            AND (
-                (
-                    EXISTS (SELECT 1 FROM tbl_sell ts WHERE ts.CustId=tu.id$regularChallan)
-                    AND NOT EXISTS (
-                        SELECT 1 FROM tbl_installations ti
-                        WHERE ti.CustId=tu.id AND ti.InstallStatus='Yes' AND ti.Type=2
-                    )
-                )
-                OR NOT EXISTS (
-                    SELECT 1 FROM tbl_sell ts
-                    WHERE ts.CustId=tu.id AND ts.Inst_Dispatcher_Otp_Verify=1$regularChallan
-                )
+            AND EXISTS (
+                SELECT 1 FROM tbl_sell ts
+                WHERE ts.CustId=tu.id AND ts.Inst_Dispatcher_Otp_Verify=1$regularChallan
+            )
+            AND NOT EXISTS (
+                SELECT 1 FROM tbl_installations ti
+                WHERE ti.CustId=tu.id AND ti.InstallStatus='Yes' AND ti.Type=2
             )";
     }
 
@@ -258,8 +253,20 @@ function projectAbstractListSql($conn, $roll, $projectId, $subheadId, $dist = ''
     return '';
 }
 
+function projectAbstractInstallationPendingCount($conn, $projectId, $subheadId, $dist = '')
+{
+    $dispatchDone = projectAbstractCount($conn, 'materialdispatch', $projectId, $subheadId, $dist, '');
+    $installationDone = projectAbstractCount($conn, 'installation', $projectId, $subheadId, $dist, 'Yes');
+
+    return max(0, $dispatchDone - $installationDone);
+}
+
 function projectAbstractCount($conn, $roll, $projectId, $subheadId, $dist = '', $val2 = '')
 {
+    if ($roll === 'installationpending') {
+        return projectAbstractInstallationPendingCount($conn, $projectId, $subheadId, $dist);
+    }
+
     $listSql = projectAbstractListSql($conn, $roll, $projectId, $subheadId, $dist, $val2);
     if ($listSql === '') {
         return 0;

@@ -609,7 +609,24 @@ if($_POST['action'] == 'get_Areas'){?>
     {
 ?>
                 <option value="<?php echo $rw['id']; ?>"><?php echo $rw['Name']; ?></option>
-<?php } } 
+<?php } }
+
+    if ($_POST['action'] === 'getSubHeadsMulti') {
+        header('Content-Type: application/json; charset=utf-8');
+        $ids = $_POST['ids'] ?? [];
+        if (!is_array($ids)) {
+            $ids = explode(',', (string) $ids);
+        }
+        $ids = array_values(array_filter(array_map('intval', $ids)));
+        if (empty($ids)) {
+            echo json_encode([]);
+            exit;
+        }
+        $in = implode(',', $ids);
+        $rows = getList("SELECT id, Name, UnderBy FROM tbl_project_sub_head WHERE Status=1 AND UnderBy IN ($in) ORDER BY UnderBy, Name ASC");
+        echo json_encode($rows ?: []);
+        exit;
+    }
         ?>
 
 

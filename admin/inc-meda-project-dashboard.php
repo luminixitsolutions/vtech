@@ -3,6 +3,9 @@ require_once __DIR__ . '/inc-project-abstract-queries.php';
 $medaSubHeadId = (int) ($_GET['id'] ?? 0);
 $medaWorkDone = projectAbstractCount($conn, 'work_order_done', 102, $medaSubHeadId);
 $medaWorkPending = projectAbstractCount($conn, 'work_order_pending', 102, $medaSubHeadId);
+$medaMaterialDispatchDone = projectAbstractCount($conn, 'materialdispatch', 102, $medaSubHeadId);
+$medaInstallationDone = projectAbstractCount($conn, 'installation', 102, $medaSubHeadId, '', 'Yes');
+$medaInstallationPending = projectAbstractInstallationPendingCount($conn, 102, $medaSubHeadId);
 ?>
  <div class="row">
                              
@@ -99,12 +102,7 @@ $medaWorkPending = projectAbstractCount($conn, 'work_order_pending', 102, $medaS
                                           
                                             <div class="ml-3">
                                                 <h6 class="mb-0" style="color: black;">Total Material Dispatch Done</h6>
-                                        <div class="text-large"><?php  
-                                                            $sql4 = "SELECT tdo.*,tu.Fname,tu.Phone,tu.Address FROM tbl_sell tdo 
-                    LEFT JOIN tbl_users tu ON tdo.CustId=tu.id WHERE tdo.Inst_Dispatcher_Otp_Verify=1 AND tu.ProjectId='102' AND tu.ProjectSubHeadId='".$_GET['id']."' AND tu.Roll=5 AND tu.ProjectType=1";
-                                                            echo $rncnt4 = getRow($sql4);
-
-                                                        ?></div>
+                                        <div class="text-large"><?php echo (int) $medaMaterialDispatchDone; ?></div>
                                         
                                      </div>
                                         </div>
@@ -122,11 +120,7 @@ $medaWorkPending = projectAbstractCount($conn, 'work_order_pending', 102, $medaS
                                           
                                             <div class="ml-3">
                                                 <h6 class="mb-0" style="color: black;">Total Material Dispatch Pending</h6>
-                                        <div class="text-large"><?php  
-
-                                        
-                                                            echo $rncnt47 - $rncnt4;
-                                                        ?></div>
+                                        <div class="text-large"><?php echo max(0, (int) $rncnt47 - (int) $medaMaterialDispatchDone); ?></div>
                                         
                                      </div>
                                         </div>
@@ -170,12 +164,7 @@ $medaWorkPending = projectAbstractCount($conn, 'work_order_pending', 102, $medaS
                                           
                                             <div class="ml-3">
                                                 <h6 class="mb-0" style="color: black;">Total Installation Done</h6>
-                                        <div class="text-large"><?php  
-                                                            $sql4 = "SELECT * FROM tbl_installations ti 
-                    LEFT JOIN tbl_users tu ON ti.CustId=tu.id WHERE tu.ProjectId='102' AND tu.ProjectSubHeadId='".$_GET['id']."' AND tu.Roll=5 AND ti.InstallStatus='Yes' AND ti.Type=2";
-                                                            echo $rncnt4 = getRow($sql4);
-
-                                                        ?></div>
+                                        <div class="text-large"><?php echo (int) $medaInstallationDone; ?></div>
                                         
                                      </div>
                                         </div>
@@ -184,17 +173,14 @@ $medaWorkPending = projectAbstractCount($conn, 'work_order_pending', 102, $medaS
                             </div>
                           
                             <div class="col-sm-6 col-xl-2">
-                                  <a href="total-installations.php?projid=102&page=8&InstallStatus=No&title=Total Installation Pending&subheadid=<?php echo $_GET['id'];?>">
+                                  <a href="total-beneficiary.php?roll=installationpending&projid=102&val=&subheadid=<?php echo $_GET['id'];?>&title=Total Installation Pending">
                                <div class="card mb-4 bg-pattern-3-dark">
                                     <div class="card-body" style="padding-top: 15px; padding-bottom: 15px; padding-right: 5px; padding-left: 10px;">
                                         <div class="d-flex align-items-center">
                                           
                                             <div class="ml-3">
                                                 <h6 class="mb-0" style="color: black;">Total Installation<br> Pending</h6>
-                                        <div class="text-large"><?php  
-                                                           
-                                                            echo $rncnt47 - $rncnt4;
-                                                        ?></div>
+                                        <div class="text-large"><?php echo (int) $medaInstallationPending; ?></div>
                                         
                                      </div>
                                         </div>

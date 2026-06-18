@@ -9,6 +9,8 @@ $MainPage = "Sell";
 $Page = "View-Sell";
 $filterFromDate = $_POST['FromDate'] ?? $_GET['FromDate'] ?? '';
 $filterToDate = $_POST['ToDate'] ?? $_GET['ToDate'] ?? '';
+$filterStateId = $_REQUEST['StateId'] ?? 'all';
+$filterDistrict = $_REQUEST['District'] ?? 'all';
 $filterSearchActive = isset($_POST['Search']) || isset($_GET['Search']);
 ?>
 <!DOCTYPE html>
@@ -199,6 +201,43 @@ $filterSearchActive = isset($_POST['Search']) || isset($_GET['Search']);
                                                 <div class="clearfix"></div>
                                             </div>
 
+                                            <div class="form-group col-md-3">
+                                                <label class="form-label">State</label>
+                                                <select class="select2-demo form-control" name="StateId" id="StateId">
+                                                    <option value="all"<?php if ($filterStateId === 'all' || $filterStateId === '') { ?> selected<?php } ?>>All State</option>
+                                                    <?php
+                                                    $stateRes = $conn->query("SELECT id, Name FROM tbl_state WHERE CountryId='1' ORDER BY Name ASC");
+                                                    while ($stateRow = $stateRes->fetch_assoc()) {
+                                                        $sel = ((string) $filterStateId === (string) $stateRow['id']) ? ' selected' : '';
+                                                        echo '<option value="' . (int) $stateRow['id'] . '"' . $sel . '>' . htmlspecialchars($stateRow['Name']) . '</option>';
+                                                    }
+                                                    ?>
+                                                </select>
+                                                <div class="clearfix"></div>
+                                            </div>
+
+                                            <div class="form-group col-md-3">
+                                                <label class="form-label">District</label>
+                                                <select class="select2-demo form-control" name="District" id="District">
+                                                    <option value="all"<?php if ($filterDistrict === 'all' || $filterDistrict === '') { ?> selected<?php } ?>>All District</option>
+                                                    <?php
+                                                    if ($filterStateId !== '' && $filterStateId !== 'all') {
+                                                        $stateIdInt = (int) $filterStateId;
+                                                        $districtSql = "SELECT DISTINCT(District) AS District FROM tbl_users WHERE District!='' AND StateId='$stateIdInt' ORDER BY District ASC";
+                                                    } else {
+                                                        $districtSql = "SELECT DISTINCT(District) AS District FROM tbl_users WHERE District!='' ORDER BY District ASC";
+                                                    }
+                                                    $districtRes = $conn->query($districtSql);
+                                                    while ($districtRow = $districtRes->fetch_assoc()) {
+                                                        $districtName = $districtRow['District'];
+                                                        $sel = ((string) $filterDistrict === (string) $districtName) ? ' selected' : '';
+                                                        echo '<option value="' . htmlspecialchars($districtName, ENT_QUOTES, 'UTF-8') . '"' . $sel . '>' . htmlspecialchars($districtName) . '</option>';
+                                                    }
+                                                    ?>
+                                                </select>
+                                                <div class="clearfix"></div>
+                                            </div>
+
 
                                             <div class="form-group col-md-3">
                                                 <label class="form-label">From Date </label>
@@ -308,6 +347,16 @@ $filterSearchActive = isset($_POST['Search']) || isset($_GET['Search']);
                                             } else {
                                                 $sql .= " AND tu.ProjectSubHeadId='$ProjectSubHeadId'";
                                             }
+                                        }
+
+                                        if (!empty($_REQUEST['StateId']) && $_REQUEST['StateId'] != 'all') {
+                                            $stateId = (int) $_REQUEST['StateId'];
+                                            $sql .= " AND tu.StateId='$stateId'";
+                                        }
+
+                                        if (!empty($_REQUEST['District']) && $_REQUEST['District'] != 'all') {
+                                            $district = $conn->real_escape_string($_REQUEST['District']);
+                                            $sql .= " AND tu.District='$district'";
                                         }
                                         
                                         if ($filterFromDate) {
@@ -459,8 +508,27 @@ $filterSearchActive = isset($_POST['Search']) || isset($_GET['Search']);
   }
   });
         }
+
+        function getDistrictByState(stateId) {
+            if (!stateId || stateId === 'all') {
+                $('#District').html('<option value="all">All District</option>');
+                return;
+            }
+            $.ajax({
+                type: 'POST',
+                url: 'ajax_files/ajax_dropdown.php',
+                data: { action: 'getDistrict', id: stateId },
+                success: function(data) {
+                    $('#District').html(data);
+                }
+            });
+        }
         
             $(document).ready(function() {
+                $('#StateId').on('change', function() {
+                    getDistrictByState(this.value);
+                });
+
                 $('#example').DataTable({
                     "scrollX": true,
         "pageLength":500,

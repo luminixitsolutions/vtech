@@ -7,6 +7,7 @@
 	$Options = adminResolveMenuOptionsFromUserRow($row77);
 	$BranchId = $row77['BranchId'];
 	require_once __DIR__ . '/inc-menu-option-groups.php';
+	require_once __DIR__ . '/inc-employee-project-access.php';
  ?>
 <div class="page-loader">
     <div class="bg-primary"></div>
@@ -41,8 +42,7 @@
 
         </li>
         <?php 
-                                $sql = "SELECT * FROM tbl_common_master WHERE Status=1 AND Roll=24";
-                                $row = getList($sql);
+                                $row = employeeProjectAccessAssignedProjects($row77);
                                 foreach($row as $result){
 
                             ?>
@@ -54,8 +54,7 @@
             </a>
             <ul class="sidenav-menu">
                 <?php 
-                                $sql2 = "SELECT * FROM tbl_project_sub_head WHERE UnderBy='".$result['id']."'";
-                                $row2 = getList($sql2);
+                                $row2 = employeeProjectAccessAssignedSubHeads($row77, (int) $result['id']);
                                 foreach($row2 as $result2){
 
                             ?>

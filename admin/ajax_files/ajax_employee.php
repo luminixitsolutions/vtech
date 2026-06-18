@@ -2,6 +2,7 @@
 session_start();
 include_once '../config.php';
 require_once dirname(__DIR__) . '/inc-employee-menu-options.php';
+require_once dirname(__DIR__) . '/inc-employee-project-access.php';
 
 function ajaxEmployeeIsXhr()
 {
@@ -156,6 +157,16 @@ $CreatedDate = date('Y-m-d');
 
 $MulBranchId = ajaxEmployeePostImplode('MulBranchId');
 $MulRooftopBranchId = ajaxEmployeePostImplode('MulRooftopBranchId');
+$mulProjectIds = [];
+if (!empty($_POST['MulProjectId'])) {
+    $postedProjects = $_POST['MulProjectId'];
+    if (!is_array($postedProjects)) {
+        $postedProjects = explode(',', (string) $postedProjects);
+    }
+    $mulProjectIds = array_values(array_filter(array_map('intval', $postedProjects)));
+}
+$MulProjectId = employeeProjectAccessImplodeIds($mulProjectIds);
+$MulProjectSubHeadId = employeeProjectAccessResolveSubHeadsForSave($mulProjectIds);
 
 $randno = rand(1,100);
 $Photo = isset($_POST['OldPhoto']) ? $_POST['OldPhoto'] : '';
@@ -224,7 +235,7 @@ $EmpId = mysqli_insert_id($conn);
 $CustomerId = "VTECH-E".$EmpId;
 $sql3 = "UPDATE tbl_users SET CustomerId='$CustomerId' WHERE id='$EmpId'";
 $conn->query($sql3);
-$conn->query("INSERT INTO tbl_user2 (id, OfficeEmployee) VALUES ('$EmpId', '$OfficeEmployee') ON DUPLICATE KEY UPDATE OfficeEmployee='$OfficeEmployee'");
+$conn->query("INSERT INTO tbl_user2 (id, OfficeEmployee, MulProjectId, MulProjectSubHeadId) VALUES ('$EmpId', '$OfficeEmployee', '$MulProjectId', '$MulProjectSubHeadId') ON DUPLICATE KEY UPDATE OfficeEmployee='$OfficeEmployee', MulProjectId='$MulProjectId', MulProjectSubHeadId='$MulProjectSubHeadId'");
 
 if (function_exists('addEmployeeLog')) {
     $empNewData['id'] = $EmpId;
@@ -254,7 +265,7 @@ $sql = "UPDATE tbl_users SET UnderByManager='$UnderByManager',UnderByGrManager='
 if (!$conn->query($sql)) {
     ajaxEmployeeFail('-1', $conn->error);
 }
-$conn->query("INSERT INTO tbl_user2 (id, OfficeEmployee) VALUES ('$id', '$OfficeEmployee') ON DUPLICATE KEY UPDATE OfficeEmployee='$OfficeEmployee'");
+$conn->query("INSERT INTO tbl_user2 (id, OfficeEmployee, MulProjectId, MulProjectSubHeadId) VALUES ('$id', '$OfficeEmployee', '$MulProjectId', '$MulProjectSubHeadId') ON DUPLICATE KEY UPDATE OfficeEmployee='$OfficeEmployee', MulProjectId='$MulProjectId', MulProjectSubHeadId='$MulProjectSubHeadId'");
 
 if (function_exists('addEmployeeLog')) {
     $empNewRow = function_exists('employeeActivityLogFetchUserRowForEdit')

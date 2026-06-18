@@ -3,6 +3,9 @@ require_once __DIR__ . '/inc-project-abstract-queries.php';
 $msedlSubHeadId = (int) ($_GET['id'] ?? 0);
 $msedlWorkDone = projectAbstractCount($conn, 'work_order_done', 103, $msedlSubHeadId);
 $msedlWorkPending = projectAbstractCount($conn, 'work_order_pending', 103, $msedlSubHeadId);
+$msedlMaterialDispatchDone = projectAbstractCount($conn, 'materialdispatch', 103, $msedlSubHeadId);
+$msedlInstallationDone = projectAbstractCount($conn, 'installation', 103, $msedlSubHeadId, '', 'Yes');
+$msedlInstallationPending = projectAbstractInstallationPendingCount($conn, 103, $msedlSubHeadId);
 ?>
  <div class="row">
                              
@@ -102,12 +105,7 @@ $msedlWorkPending = projectAbstractCount($conn, 'work_order_pending', 103, $msed
                                           
                                             <div class="ml-3">
                                                 <h6 class="mb-0" style="color: black;">Total Material Dispatch Done</h6>
-                                        <div class="text-large"><?php  
-                                                            $sql4 = "SELECT tdo.*,tu.Fname,tu.Phone,tu.Address FROM tbl_sell tdo 
-                    LEFT JOIN tbl_users tu ON tdo.CustId=tu.id WHERE tdo.Inst_Dispatcher_Otp_Verify=1 AND tu.ProjectId='103' AND tu.ProjectSubHeadId='".$_GET['id']."' AND tu.Roll=5 AND tu.ProjectType=1";
-                                                            echo $rncnt4 = getRow($sql4);
-
-                                                        ?></div>
+                                        <div class="text-large"><?php echo (int) $msedlMaterialDispatchDone; ?></div>
                                         
                                      </div>
                                         </div>
@@ -124,14 +122,7 @@ $msedlWorkPending = projectAbstractCount($conn, 'work_order_pending', 103, $msed
                                           
                                             <div class="ml-3">
                                                 <h6 class="mb-0" style="color: black;">Total Material Dispatch Pending</h6>
-                                        <div class="text-large"><?php  
-
-                                        
-                                                          $sql4 = "SELECT tdo.*,tu.Fname,tu.Phone,tu.Address FROM tbl_sell tdo 
-                    LEFT JOIN tbl_users tu ON tdo.CustId=tu.id WHERE tdo.Inst_Dispatcher_Otp_Verify=1 AND tu.ProjectId='103' AND tu.ProjectSubHeadId='".$_GET['id']."' AND tu.Roll=5 AND tu.ProjectType=1";
-                                                            $rncnt4 = getRow($sql4);
-                                                            echo $rncnt47 - $rncnt4;
-                                                        ?></div>
+                                        <div class="text-large"><?php echo max(0, (int) $rncnt47 - (int) $msedlMaterialDispatchDone); ?></div>
                                         
                                      </div>
                                         </div>
@@ -176,12 +167,7 @@ $msedlWorkPending = projectAbstractCount($conn, 'work_order_pending', 103, $msed
                                           
                                             <div class="ml-3">
                                                 <h6 class="mb-0" style="color: black;">Total Installation<br> Done</h6>
-                                        <div class="text-large"><?php  
-                                                            $sql4 = "SELECT * FROM tbl_installations ti 
-                    LEFT JOIN tbl_users tu ON ti.CustId=tu.id WHERE tu.ProjectId='103' AND tu.ProjectSubHeadId='".$_GET['id']."' AND tu.Roll=5 AND ti.InstallStatus='Yes' AND ti.Type=2";
-                                                            echo $rncnt4 = getRow($sql4);
-
-                                                        ?></div>
+                                        <div class="text-large"><?php echo (int) $msedlInstallationDone; ?></div>
                                         
                                      </div>
                                         </div>
@@ -190,21 +176,14 @@ $msedlWorkPending = projectAbstractCount($conn, 'work_order_pending', 103, $msed
                             </div>
                              
                             <div class="col-sm-6 col-xl-2">
-                               <a href="total-installations.php?projid=103&page=8&InstallStatus=No&title=Total Installation Pending&subheadid=<?php echo $_GET['id'];?>">
+                               <a href="total-beneficiary.php?roll=installationpending&projid=103&val=&subheadid=<?php echo $_GET['id'];?>&title=Total Installation Pending">
                                <div class="card mb-4 bg-pattern-3-dark">
                                     <div class="card-body" style="padding-top: 15px; padding-bottom: 15px; padding-right: 5px; padding-left: 10px;">
                                         <div class="d-flex align-items-center">
                                           
                                             <div class="ml-3">
                                                 <h6 class="mb-0" style="color: black;">Total Installation<br> Pending</h6>
-                                        <div class="text-large"><?php  
-                                        //echo $rncnt47 - $rncnt4;
-                                        
-                                         $sql4 = "SELECT * FROM tbl_users tu WHERE tu.ProjectId ='103' AND tu.ProjectSubHeadId ='".$_GET['id']."' AND tu.Roll = 5 AND tu.FieldSurveyDetails = 1 AND tu.ProjectType = 1 AND tu.id NOT IN ( SELECT ti.CustId FROM tbl_installations ti WHERE ti.InstallStatus = 'Yes' AND ti.Type = 2 )";
-                                                            echo $rncnt4 = getRow($sql4);
-                                                 
-                                                            
-                                                        ?></div>
+                                        <div class="text-large"><?php echo (int) $msedlInstallationPending; ?></div>
                                         
                                      </div>
                                         </div>

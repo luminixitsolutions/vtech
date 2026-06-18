@@ -3,6 +3,9 @@ require_once __DIR__ . '/inc-project-abstract-queries.php';
 $mpuvnlSubHeadId = (int) ($_GET['id'] ?? 0);
 $mpuvnlWorkDone = projectAbstractCount($conn, 'work_order_done', 106, $mpuvnlSubHeadId);
 $mpuvnlWorkPending = projectAbstractCount($conn, 'work_order_pending', 106, $mpuvnlSubHeadId);
+$mpuvnlMaterialDispatchDone = projectAbstractCount($conn, 'materialdispatch', 106, $mpuvnlSubHeadId);
+$mpuvnlInstallationDone = projectAbstractCount($conn, 'installation', 106, $mpuvnlSubHeadId, '', 'Yes');
+$mpuvnlInstallationPending = projectAbstractInstallationPendingCount($conn, 106, $mpuvnlSubHeadId);
 ?>
  <div class="row">
                              
@@ -99,12 +102,7 @@ $mpuvnlWorkPending = projectAbstractCount($conn, 'work_order_pending', 106, $mpu
                                           
                                             <div class="ml-3">
                                                 <h6 class="mb-0" style="color: black;">Total Material Dispatch Done</h6>
-                                        <div class="text-large"><?php  
-                                                            $sql4 = "SELECT tdo.*,tu.Fname,tu.Phone,tu.Address FROM tbl_sell tdo 
-                    LEFT JOIN tbl_users tu ON tdo.CustId=tu.id WHERE tdo.Inst_Dispatcher_Otp_Verify=1 AND tu.ProjectId='106' AND tu.ProjectSubHeadId='".$_GET['id']."' AND tu.Roll=5 AND tu.ProjectType=1";
-                                                            echo $rncnt4 = getRow($sql4);
-
-                                                        ?></div>
+                                        <div class="text-large"><?php echo (int) $mpuvnlMaterialDispatchDone; ?></div>
                                         
                                      </div>
                                         </div>
@@ -122,11 +120,7 @@ $mpuvnlWorkPending = projectAbstractCount($conn, 'work_order_pending', 106, $mpu
                                           
                                             <div class="ml-3">
                                                 <h6 class="mb-0" style="color: black;">Total Material Dispatch Pending</h6>
-                                        <div class="text-large"><?php  
-
-                                        
-                                                            echo $rncnt47 - $rncnt4;
-                                                        ?></div>
+                                        <div class="text-large"><?php echo max(0, (int) $rncnt47 - (int) $mpuvnlMaterialDispatchDone); ?></div>
                                         
                                      </div>
                                         </div>
@@ -170,12 +164,7 @@ $mpuvnlWorkPending = projectAbstractCount($conn, 'work_order_pending', 106, $mpu
                                           
                                             <div class="ml-3">
                                                 <h6 class="mb-0" style="color: black;">Total Installation Done</h6>
-                                        <div class="text-large"><?php  
-                                                            $sql4 = "SELECT * FROM tbl_installations ti 
-                    LEFT JOIN tbl_users tu ON ti.CustId=tu.id WHERE tu.ProjectId='106' AND tu.ProjectSubHeadId='".$_GET['id']."' AND tu.Roll=5 AND ti.InstallStatus='Yes' AND ti.Type=2";
-                                                            echo $rncnt4 = getRow($sql4);
-
-                                                        ?></div>
+                                        <div class="text-large"><?php echo (int) $mpuvnlInstallationDone; ?></div>
                                         
                                      </div>
                                         </div>
@@ -184,17 +173,14 @@ $mpuvnlWorkPending = projectAbstractCount($conn, 'work_order_pending', 106, $mpu
                             </div>
                           
                             <div class="col-sm-6 col-xl-2">
-                                  <a href="total-installations.php?projid=106&page=8&InstallStatus=No&title=Total Installation Pending&subheadid=<?php echo $_GET['id'];?>">
+                                  <a href="total-beneficiary.php?roll=installationpending&projid=106&val=&subheadid=<?php echo $_GET['id'];?>&title=Total Installation Pending">
                                <div class="card mb-4 bg-pattern-3-dark">
                                     <div class="card-body" style="padding-top: 15px; padding-bottom: 15px; padding-right: 5px; padding-left: 10px;">
                                         <div class="d-flex align-items-center">
                                           
                                             <div class="ml-3">
                                                 <h6 class="mb-0" style="color: black;">Total Installation<br> Pending</h6>
-                                        <div class="text-large"><?php  
-                                                           
-                                                            echo $rncnt47 - $rncnt4;
-                                                        ?></div>
+                                        <div class="text-large"><?php echo (int) $mpuvnlInstallationPending; ?></div>
                                         
                                      </div>
                                         </div>

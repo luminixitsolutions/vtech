@@ -2,11 +2,15 @@
 session_start();
 include_once 'config.php';
 include_once 'auth.php';
+require_once __DIR__ . '/inc-employee-project-access.php';
 $MainPage = 'Service';
 $Page = 'Service-Dashboard';
 $user_id = $_SESSION['Admin']['id'];
+$sql77 = getRecord("SELECT * FROM tbl_users WHERE id='$user_id'");
 $projectId = isset($_GET['prjid']) ? (int) $_GET['prjid'] : 0;
 $subHeadId = isset($_GET['id']) ? (int) $_GET['id'] : 0;
+employeeProjectAccessEnforceProject($sql77, $projectId, 'service-dashboard.php');
+employeeProjectAccessEnforceSubHead($sql77, $subHeadId, 'service-dashboard.php');
 $subHeadName = isset($_GET['name']) ? htmlspecialchars($_GET['name'], ENT_QUOTES, 'UTF-8') : '';
 $projectName = '';
 if ($projectId > 0) {

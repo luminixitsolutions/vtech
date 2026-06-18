@@ -2,6 +2,7 @@
 session_start();
 include_once 'config.php';
 include_once 'auth.php';
+require_once __DIR__ . '/inc-employee-project-access.php';
 $MainPage = 'Service';
 $Page = 'Service-Dashboard';
 $user_id = $_SESSION['Admin']['id'];
@@ -72,8 +73,7 @@ foreach ($row7 as $result) {
                                     <div class="card-body ipd-body">
                                         <div class="ipd-project-grid">
                             <?php 
-                                $sql = "SELECT * FROM tbl_common_master WHERE Status=1 AND Roll=24 ORDER BY Name ASC";
-                                $row = getList($sql);
+                                $row = employeeProjectAccessAssignedProjects($row77);
                                 $tone = 0;
                                 foreach ($row as $result) {
                                     $projId = (int) $result['id'];
