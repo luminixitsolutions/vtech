@@ -5,11 +5,15 @@ if (!isset($reqQtyLabel)) {
 if (!isset($storeColumns) || !is_array($storeColumns)) {
     $storeColumns = [];
 }
+if (!isset($lines) || !is_array($lines)) {
+    $lines = [];
+}
 $showTotalRow = !empty($isCombined);
 $tableTotalReq = 0;
 $storeColCount = count($storeColumns);
 ?>
 <div class="card" style="padding: 10px;">
+    <h5 class="mb-2">Bulk / regular products</h5>
     <?php if ($storeColCount > 0) { ?>
     <p class="text-muted small mb-2 mb-md-3">
         Store columns are from each customer&apos;s assigned store (Add Pump Customer &rarr; Store).
@@ -50,21 +54,21 @@ $storeColCount = count($storeColumns);
                     $short = ($pid > 0 && $req > $totalAvail);
                     ?>
                     <tr class="<?php echo $short ? 'table-warning' : ''; ?>">
-                        <td><?php echo $n++; ?></td>
-                        <td><?php echo htmlspecialchars($name); ?><?php if ($pid <= 0) {
+                        <td style="color:#212529;"><?php echo $n++; ?></td>
+                        <td style="color:#212529;"><?php echo htmlspecialchars($name); ?><?php if ($pid <= 0) {
                             echo ' <span class="text-muted">(no product id)</span>';
                         } ?></td>
-                        <td class="text-right"><?php echo $req; ?></td>
+                        <td class="text-right" style="color:#212529;"><?php echo $req; ?></td>
                         <?php foreach ($storeColumns as $storeCol) {
                             $bid = (int) $storeCol['branch_id'];
                             $storeQty = ($pid > 0 && $bid > 0) ? upb_store_balance_qty($conn, $pid, $bid) : 0;
                             $cellShort = ($pid > 0 && $req > 0 && $storeQty < $req);
                             ?>
-                        <td class="text-right<?php echo $cellShort ? ' upb-store-short' : ''; ?>">
+                        <td class="text-right<?php echo $cellShort ? ' upb-store-short' : ''; ?>" style="color:#212529;">
                             <?php echo $pid > 0 ? (int) $storeQty : '—'; ?>
                         </td>
                         <?php } ?>
-                        <td class="text-right"><?php echo $pid > 0 ? $totalAvail : '—'; ?></td>
+                        <td class="text-right" style="color:#212529;"><?php echo $pid > 0 ? (int) $totalAvail : '—'; ?></td>
                         <td>
                             <?php
                             if ($pid <= 0) {
@@ -93,6 +97,7 @@ $storeColCount = count($storeColumns);
                                     data-item-name="<?php echo $itemTitle; ?>"
                                     data-required="<?php echo (int) $req; ?>"
                                     data-total-avail="<?php echo (int) $totalAvail; ?>"
+                                    data-is-serial="0"
                                     data-locations="<?php echo $locJson; ?>">View</button>
                                 <?php
                             }

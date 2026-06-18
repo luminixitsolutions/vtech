@@ -59,15 +59,15 @@ function installationDashboardItemCount($optionId)
         case '176':
             return installationDashboardFlowCount("current_stage='COORDINATOR' AND is_completed=0");
         case '177':
-            return installationDashboardFlowCount("current_stage='MANAGER' AND is_completed=0");
+            return installationDashboardFlowCount("is_completed=0 AND (current_stage='MANAGER' OR (current_stage='COORDINATOR' AND coordinator_due_date IS NOT NULL AND coordinator_due_date <= NOW()))");
         case '178':
-            return installationDashboardFlowCount("current_stage='GENERAL_MANAGER' AND is_completed=0");
+            return installationDashboardFlowCount("current_stage IN ('GENERAL_MANAGER','GM') AND is_completed=0");
         case '179':
-            return installationDashboardExtensionCount("status='PENDING' AND IFNULL(next_approver_role, '') != 'BUSINESS_HEAD'");
+            return installationDashboardExtensionCount("status='PENDING' AND requested_role='MANAGER'");
         case '180':
-            return installationDashboardFlowCount("current_stage='BUSINESS_HEAD' AND is_completed=0");
+            return installationDashboardFlowCount("is_completed=0 AND (current_stage='BUSINESS_HEAD' OR (current_stage IN ('GENERAL_MANAGER','GM') AND gm_due_date IS NOT NULL AND gm_due_date <= NOW()) OR current_stage='DISPUTE')");
         case '181':
-            return installationDashboardExtensionCount("status='PENDING' AND next_approver_role='BUSINESS_HEAD'");
+            return installationDashboardExtensionCount("status='PENDING' AND requested_role='GM'");
         case '182':
             return installationDashboardFlowCount("current_stage='DISPUTE' AND status='DISPUTED'");
         default:

@@ -45,6 +45,23 @@ if (count($custIds) === 1) {
     $customers = upb_fetch_stock_report_customers($conn, $custIds);
     $lines = upb_fetch_combined_required_lines($conn, $custIds);
 }
+
+// Always load full serial catalog for stock report customers (not only BOM serial lines).
+$serialLines = [];
+$bulkLines = $lines;
+if (count($custIds) === 1) {
+    $singleCustId = (int) $custIds[0];
+    $serialLines = upb_fetch_serial_required_lines_for_customer($conn, $singleCustId, $lines);
+    $parts = upb_partition_required_lines($conn, $lines, $serialLines);
+    $bulkLines = $parts['bulk'];
+} elseif ($isCombined && count($custIds) > 0) {
+    $serialLines = upb_fetch_combined_serial_required_lines($conn, $custIds);
+    $parts = upb_partition_required_lines($conn, $lines, $serialLines);
+    $bulkLines = $parts['bulk'];
+} elseif (count($custIds) === 0 && count($rawIds) === 1 && (int) $rawIds[0] > 0) {
+    // Preview serial catalog when customer fails done-beneficiary validation but uid was given.
+    $serialLines = upb_fetch_serial_required_lines_for_customer($conn, (int) $rawIds[0], []);
+}
 ?>
 <!DOCTYPE html>
 <html lang="en" class="default-style layout-fixed layout-navbar-fixed">
@@ -79,10 +96,19 @@ if (count($custIds) === 1) {
             border-radius: .25rem;
         }
         .upb-stock-card-inner table#tblRequiredStock,
-        .upb-stock-main-scroll table#tblRequiredStock {
+        .upb-stock-main-scroll table#tblRequiredStock,
+        .upb-stock-card-inner table#tblRequiredSerialStock {
             min-width: 1100px;
             margin-bottom: 0;
             table-layout: auto;
+        }
+        table#tblRequiredSerialStock thead th:first-child,
+        table#tblRequiredSerialStock tbody td:first-child {
+            min-width: 52px;
+            width: 56px;
+            max-width: 72px;
+            text-align: center;
+            white-space: nowrap;
         }
         table#tblRequiredStock thead th:first-child,
         table#tblRequiredStock tbody td:first-child {
@@ -114,6 +140,9 @@ if (count($custIds) === 1) {
         #modalAvlByStore .modal-body .table th:first-child {
             padding-left: 1rem;
         }
+        #modalAvlByStore .upb-serial-detail-table {
+            min-width: 640px;
+        }
         .upb-customer-list {
             max-height: 120px;
             overflow-y: auto;
@@ -122,6 +151,23 @@ if (count($custIds) === 1) {
         .upb-store-short {
             background-color: #fff3cd !important;
             font-weight: 600;
+        }
+        /* DataTables / theme can force pale text on striped rows — keep readable */
+        #tblRequiredStock tbody td,
+        #tblRequiredStock tbody th,
+        #tblRequiredSerialStock tbody td,
+        #tblRequiredSerialStock tbody th,
+        table#tblRequiredStock.dataTable > tbody > tr > td,
+        table#tblRequiredSerialStock.dataTable > tbody > tr > td,
+        table#tblRequiredStock.dataTable > tbody > tr > td a,
+        table#tblRequiredSerialStock.dataTable > tbody > tr > td a {
+            color: #212529 !important;
+        }
+        table#tblRequiredStock.table-warning > tbody > tr > td,
+        table#tblRequiredSerialStock.table-warning > tbody > tr > td,
+        #tblRequiredStock tbody tr.table-warning td,
+        #tblRequiredSerialStock tbody tr.table-warning td {
+            color: #212529 !important;
         }
     </style>
 </head>
@@ -167,10 +213,14 @@ if (count($custIds) === 1) {
     </div>
     <p class="mb-3"><a href="under-production-beneficiary-stock-report.php" class="btn btn-sm btn-secondary">Back to done list</a></p>
 
-    <?php if (count($lines) === 0) { ?>
+    <?php if (count($lines) === 0 && count($serialLines) === 0) { ?>
         <div class="alert alert-info">No required materials were found for the selected customer(s).</div>
     <?php } else {
-        include __DIR__ . '/inc-under-production-beneficiary-required-stock-table.php';
+        if (count($bulkLines) > 0) {
+            $lines = $bulkLines;
+            include __DIR__ . '/inc-under-production-beneficiary-required-stock-table.php';
+        }
+        include __DIR__ . '/inc-under-production-beneficiary-required-stock-serial-table.php';
     } ?>
 
 <?php } elseif (!$cust || empty($cust['id'])) { ?>
@@ -199,10 +249,14 @@ if (count($custIds) === 1) {
     </p>
     <p class="mb-3"><a href="under-production-beneficiary-stock-report.php" class="btn btn-sm btn-secondary">Back to done list</a></p>
 
-    <?php if (count($lines) === 0) { ?>
+    <?php if (count($lines) === 0 && count($serialLines) === 0) { ?>
         <div class="alert alert-info">No required materials were found for this customer: there are no rows in <code>tbl_cust_product_specification</code> (BOS / structure lines from <strong>Add Pump Customer</strong>) and no lines on a <code>tbl_quotation</code> for this <code>CustId</code>. Save the customer form with product specs, or add a quotation.</div>
     <?php } else {
-        include __DIR__ . '/inc-under-production-beneficiary-required-stock-table.php';
+        if (count($bulkLines) > 0) {
+            $lines = $bulkLines;
+            include __DIR__ . '/inc-under-production-beneficiary-required-stock-table.php';
+        }
+        include __DIR__ . '/inc-under-production-beneficiary-required-stock-serial-table.php';
     } ?>
 
 <?php } ?>
@@ -228,16 +282,32 @@ if (count($custIds) === 1) {
                 </button>
             </div>
             <div class="modal-body p-0 px-3 pt-2">
+                <p id="modalAvlSerialSummary" class="small text-muted px-2 pt-2 mb-2 d-none"></p>
                 <div class="upb-modal-table-scroll table-responsive">
                     <table class="table table-striped table-bordered table-sm mb-0">
                         <thead class="thead-light">
-                            <tr>
+                            <tr id="modalAvlByStoreHeadRow">
                                 <th>Location</th>
                                 <th class="text-right" style="width:100px">Qty</th>
                             </tr>
                         </thead>
                         <tbody id="modalAvlByStoreTbody"></tbody>
                     </table>
+                </div>
+                <div id="modalAvlSerialDetailWrap" class="d-none border-top mt-3 pt-2">
+                    <h6 class="px-2 mb-2">Serial numbers <span id="modalAvlSerialCount" class="text-muted font-weight-normal"></span></h6>
+                    <div class="upb-modal-table-scroll table-responsive px-2 pb-2">
+                        <table class="table table-striped table-bordered table-sm mb-0 upb-serial-detail-table">
+                            <thead class="thead-light">
+                                <tr>
+                                    <th>Serial no</th>
+                                    <th>Location</th>
+                                    <th>Source</th>
+                                </tr>
+                            </thead>
+                            <tbody id="modalAvlSerialTbody"></tbody>
+                        </table>
+                    </div>
                 </div>
             </div>
             <div class="modal-footer">
@@ -248,46 +318,132 @@ if (count($custIds) === 1) {
 </div>
 
 <script type="text/javascript">
+function upbParseLocations(raw) {
+    try {
+        var rows = JSON.parse(raw || '[]');
+        return Array.isArray(rows) ? rows : [];
+    } catch (err) {
+        return [];
+    }
+}
+
+function upbRenderLocationRows($tbody, rows, isSerial) {
+    $tbody.empty();
+    if (!rows.length) {
+        var emptyMsg = isSerial ? 'No available serial numbers by location' : 'No locations';
+        $tbody.append($('<tr>').append($('<td colspan="2">').addClass('text-muted text-center py-3').text(emptyMsg)));
+        return;
+    }
+    rows.forEach(function (r) {
+        var loc = (r.StoreName != null && String(r.StoreName).trim() !== '')
+            ? String(r.StoreName)
+            : ('Store #' + (r.branch_id != null ? r.branch_id : (r.BranchId != null ? r.BranchId : '')));
+        var q = Math.round(parseFloat(r.AvailQty != null ? r.AvailQty : 0));
+        $tbody.append(
+            $('<tr>')
+                .append($('<td>').text(loc))
+                .append($('<td>').addClass('text-right').text(q))
+        );
+    });
+}
+
+function upbLoadSerialDetail(productId) {
+    var $serialBody = $('#modalAvlSerialTbody').empty();
+    var $wrap = $('#modalAvlSerialDetailWrap').removeClass('d-none');
+    $('#modalAvlSerialCount').text('(loading…)');
+    $serialBody.append(
+        $('<tr>').append($('<td colspan="3">').addClass('text-muted text-center py-3').text('Loading serial numbers…'))
+    );
+
+    $.post('ajax_files/ajax_required_stock_item_serials.php', {
+        product_id: productId,
+        scope: 'all'
+    }).done(function (resp) {
+        $serialBody.empty();
+        var rows = (resp && resp.ok && Array.isArray(resp.rows)) ? resp.rows : [];
+        var serialRows = rows.filter(function (r) {
+            var sn = r.serial_no != null ? String(r.serial_no).trim() : '';
+            return sn !== '' && sn.toLowerCase() !== '(bulk — no serial line)';
+        });
+        $('#modalAvlSerialCount').text('(' + serialRows.length + ' available)');
+        if (!serialRows.length) {
+            $serialBody.append(
+                $('<tr>').append($('<td colspan="3">').addClass('text-muted text-center py-3').text('No serial numbers found in stock'))
+            );
+            return;
+        }
+        serialRows.forEach(function (r) {
+            $serialBody.append(
+                $('<tr>')
+                    .append($('<td>').text(r.serial_no || ''))
+                    .append($('<td>').text(r.location || ''))
+                    .append($('<td>').text(r.source || ''))
+            );
+        });
+    }).fail(function () {
+        $serialBody.empty().append(
+            $('<tr>').append($('<td colspan="3">').addClass('text-danger text-center py-3').text('Could not load serial numbers'))
+        );
+        $('#modalAvlSerialCount').text('');
+    });
+}
+
 $(document).on('show.bs.modal', '#modalAvlByStore', function (e) {
     var btn = $(e.relatedTarget);
     if (!btn || !btn.length) {
         return;
     }
     var itemName = btn.data('item-name') || '';
+    var isSerial = String(btn.data('is-serial') || '0') === '1';
+    var productId = parseInt(btn.data('product-id'), 10) || 0;
+    var totalAvail = parseInt(btn.data('total-avail'), 10) || 0;
+    var required = parseInt(btn.data('required'), 10) || 0;
+
     $('#modalAvlItemTitle').text(itemName ? ('— ' + itemName) : '');
-    var raw = btn.attr('data-locations') || '[]';
-    var rows = [];
-    try {
-        rows = JSON.parse(raw);
-    } catch (err) {
-        rows = [];
-    }
-    var $tbody = $('#modalAvlByStoreTbody').empty();
-    if (!rows.length) {
-        $tbody.append($('<tr>').append($('<td colspan="2">').addClass('text-muted text-center py-3').text('No locations')));
+    $('#modalAvlByStoreHeadRow th').eq(1).text(isSerial ? 'Serials' : 'Qty');
+
+    var $summary = $('#modalAvlSerialSummary');
+    if (isSerial) {
+        $summary.removeClass('d-none').text(
+            'Required: ' + required + ' | Available serial numbers (all locations): ' + totalAvail
+        );
     } else {
-        rows.forEach(function (r) {
-            var loc = (r.StoreName != null && String(r.StoreName).trim() !== '')
-                ? String(r.StoreName)
-                : ('Store #' + (r.branch_id != null ? r.branch_id : (r.BranchId != null ? r.BranchId : '')));
-            var q = Math.round(parseFloat(r.AvailQty != null ? r.AvailQty : 0));
-            $tbody.append(
-                $('<tr>')
-                    .append($('<td>').text(loc))
-                    .append($('<td>').addClass('text-right').text(q))
-            );
-        });
+        $summary.addClass('d-none').text('');
+    }
+
+    var rows = upbParseLocations(btn.attr('data-locations') || '[]');
+    upbRenderLocationRows($('#modalAvlByStoreTbody'), rows, isSerial);
+
+    if (isSerial && productId > 0) {
+        upbLoadSerialDetail(productId);
+    } else {
+        $('#modalAvlSerialDetailWrap').addClass('d-none');
+        $('#modalAvlSerialTbody').empty();
+        $('#modalAvlSerialCount').text('');
     }
 });
 
+$(document).on('hidden.bs.modal', '#modalAvlByStore', function () {
+    $('#modalAvlSerialDetailWrap').addClass('d-none');
+    $('#modalAvlSerialTbody').empty();
+    $('#modalAvlSerialCount').text('');
+    $('#modalAvlSerialSummary').addClass('d-none').text('');
+});
+
 (function () {
-    $(function () {
-        var $tbl = $('#tblRequiredStock');
+    function upbInitStockTable(selector, lastColNoSort) {
+        var $tbl = $(selector);
         if (!$tbl.length || typeof $.fn.DataTable === 'undefined') {
             return;
         }
         if ($.fn.DataTable.isDataTable($tbl)) {
             $tbl.DataTable().destroy();
+        }
+        var colDefs = [
+            { targets: 0, className: 'text-center text-nowrap', width: '56px' }
+        ];
+        if (lastColNoSort) {
+            colDefs.push({ targets: -1, orderable: false, searchable: false });
         }
         $tbl.DataTable({
             paging: true,
@@ -303,15 +459,16 @@ $(document).on('show.bs.modal', '#modalAvlByStore', function (e) {
             scrollX: false,
             scrollCollapse: false,
             dom: "<'d-flex flex-wrap justify-content-between align-items-end gap-3 mb-3'lf>rtip",
-            columnDefs: [
-                { targets: 0, className: 'text-center text-nowrap', width: '56px' },
-                { targets: -1, orderable: false, searchable: false }
-            ],
+            columnDefs: colDefs,
             language: {
                 emptyTable: 'No materials',
                 zeroRecords: 'No matching rows'
             }
         });
+    }
+    $(function () {
+        upbInitStockTable('#tblRequiredSerialStock', true);
+        upbInitStockTable('#tblRequiredStock', true);
     });
 })();
 </script>

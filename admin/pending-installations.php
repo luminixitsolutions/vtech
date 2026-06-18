@@ -6,6 +6,8 @@ include_once 'auth.php';
 $user_id = $_SESSION['Admin']['id'];
 $MainPage = "Installation";
 $Page = "Assign-Coordinator";
+
+installationWorkflowBootstrap();
 ?>
 <!DOCTYPE html>
 <html lang="en" class="default-style layout-fixed layout-navbar-fixed">
@@ -36,8 +38,13 @@ $Page = "Assign-Coordinator";
           <?php
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['submit'])) {
 
+    installationWorkflowBootstrap();
+
     $CoordinatorId = intval($_POST['CoordinatorId']);
     $adminId = $_SESSION['Admin']['id'];
+    $assigned = 0;
+    $skipped = 0;
+    $errors = [];
 
     if ($CoordinatorId <= 0) {
         echo "<script>
@@ -51,41 +58,26 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['submit'])) {
 
         foreach ($_POST['selected_sell_ids'] as $sellId) {
 
-            $sellId = intval($sellId);
-
-            $row = getRecord("SELECT CustId FROM tbl_sell WHERE id='$sellId'");
-            if (!$row) continue;
-
-            $custId = intval($row['CustId']);
-
-            $already = getRow("
-                SELECT id FROM tbl_installation_flow
-                WHERE SellId='$sellId'
-                AND is_completed=0
-            ");
-
-            if ($already > 0) continue;
-
-            mysqli_query($conn,"
-                INSERT INTO tbl_installation_flow
-                (
-                    CustId, SellId, current_stage,
-                    assigned_to, assigned_by,
-                    assigned_date, stage_start_date,
-                    allowed_days, status
-                )
-                VALUES
-                (
-                    '$custId','$sellId','COORDINATOR',
-                    '$CoordinatorId','$adminId',
-                    NOW(),NOW(),3,'ACTIVE'
-                )
-            ");
+            $result = installationWorkflowAssignCoordinator((int) $sellId, $CoordinatorId, $adminId);
+            if (!empty($result['ok'])) {
+                $assigned++;
+            } else {
+                $skipped++;
+                if (!empty($result['message'])) {
+                    $errors[] = $result['message'];
+                }
+            }
         }
     }
 
+    $msg = $assigned . ' site(s) assigned successfully.';
+    if ($skipped > 0) {
+        $msg .= ' ' . $skipped . ' skipped.';
+    }
+    $msgEsc = addslashes($msg);
+
     echo "<script>
-        alert('Customer(s) assigned successfully');
+        alert('$msgEsc');
         window.location.href='pending-installations.php';
     </script>";
     exit;

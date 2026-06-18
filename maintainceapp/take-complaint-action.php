@@ -47,12 +47,6 @@ if (isset($_POST['submit'])) {
     $photoDbValue = complaintEnggActionMergePhotos($existingPhotos, $uploadedPhotos);
     $Photo = $conn->real_escape_string($photoDbValue);
 
-    if ($Photo === '') {
-        $_SESSION['complaint_action_error'] = 'Please upload at least one site photo.';
-        header('Location: take-complaint-action.php?id=' . $id);
-        exit;
-    }
-
     $previousPhotoValue = '';
     if ($actionId > 0) {
         $prevAction = getRecord("SELECT Photo FROM tbl_complaint_engg_actions WHERE id='$actionId' AND CompId='$id'");
@@ -540,7 +534,7 @@ $CellNo = $row7['CellNo'] ?? '';
                                         <?php } ?> 
 
                                           <div class="form-group col-md-12">
-                                            <label class="form-label">Photo from site <span id="photoRequiredMark" class="text-danger"<?php if (!empty($savedPhotos)) { ?> style="display:none;"<?php } ?>>*</span></label>
+                                            <label class="form-label">Photo from site</label>
                                             <?php if (!empty($savedPhotos)) { ?>
                                             <div class="mb-2" id="saved-photos-section">
                                                 <small class="text-muted d-block mb-2">Saved photos (click × to remove):</small>
@@ -559,7 +553,7 @@ $CellNo = $row7['CellNo'] ?? '';
                                             <small class="text-muted d-block mb-2">Upload one or more images. Use the button below to add more photo fields.</small>
                                             <div id="photo-inputs">
                                                 <div class="photo-input-row mb-2 d-flex align-items-center">
-                                                    <input type="file" name="Photo[]" accept="image/*" capture="environment" class="form-control site-photo-input" style="opacity: 1;">
+                                                    <input type="file" name="Photo[]" accept="image/jpeg,image/png,image/*,.jpg,.jpeg,.png" capture="environment" class="form-control site-photo-input ignore" style="opacity: 1;">
                                                     <button type="button" class="btn btn-outline-danger btn-sm ml-2 remove-photo-input" style="display:none;">Remove</button>
                                                 </div>
                                             </div>
@@ -657,7 +651,6 @@ $CellNo = $row7['CellNo'] ?? '';
 
     function setOldPhotoList(list) {
         $('#OldPhoto').val(list.join(','));
-        $('#photoRequiredMark').toggle(list.length === 0);
     }
 
     $(document).on('click', '.delete-saved-photo', function(e) {
@@ -685,7 +678,7 @@ $CellNo = $row7['CellNo'] ?? '';
 
     $('#addPhotoBtn').on('click', function() {
         var row = $('<div class="photo-input-row mb-2 d-flex align-items-center">' +
-            '<input type="file" name="Photo[]" accept="image/*" capture="environment" class="form-control site-photo-input" style="opacity: 1;">' +
+            '<input type="file" name="Photo[]" accept="image/jpeg,image/png,image/*,.jpg,.jpeg,.png" capture="environment" class="form-control site-photo-input ignore" style="opacity: 1;">' +
             '<button type="button" class="btn btn-outline-danger btn-sm ml-2 remove-photo-input">Remove</button>' +
             '</div>');
         $('#photo-inputs').append(row);
@@ -697,19 +690,6 @@ $CellNo = $row7['CellNo'] ?? '';
         refreshPhotoRemoveButtons();
     });
 
-    $('#validation-form').on('submit', function(e) {
-        var hasFile = false;
-        $('#photo-inputs .site-photo-input').each(function() {
-            if (this.files && this.files.length > 0) {
-                hasFile = true;
-            }
-        });
-        var hasOldPhoto = $.trim($('#OldPhoto').val()) !== '';
-        if (!hasFile && !hasOldPhoto) {
-            e.preventDefault();
-            alert('Please upload at least one site photo.');
-        }
-    });
 });
 </script>
 </body>

@@ -237,6 +237,377 @@ function upb_fetch_combined_required_lines($conn, array $custIds)
 }
 
 /**
+ * Numeric qty from tbl_common_master.Name (e.g. "67" modules).
+ */
+function upb_common_master_numeric_qty($conn, $masterId)
+{
+    $masterId = (int) $masterId;
+    if ($masterId <= 0) {
+        return 0;
+    }
+    $row = getRecord("SELECT Name FROM tbl_common_master WHERE id='" . $masterId . "' LIMIT 1");
+    $name = trim((string) ($row['Name'] ?? ''));
+    if ($name === '') {
+        return 0;
+    }
+    if (preg_match('/(\d+)/', $name, $m)) {
+        return (int) $m[1];
+    }
+
+    return 0;
+}
+
+/**
+ * Whether a product has (or had) serial-number stock rows in distribute tables.
+ */
+function upb_product_has_serial_inventory($conn, $productId)
+{
+    $productId = (int) $productId;
+    if ($productId <= 0) {
+        return false;
+    }
+    $n = getRow(
+        "SELECT d.id FROM tbl_distibute_item_details d
+         WHERE d.ProductId='" . $productId . "'
+           AND d.ProdType IN (1, 2)
+           AND TRIM(IFNULL(d.SerialNo, '')) <> ''
+           AND UPPER(TRIM(d.SerialNo)) <> 'N/A'
+         LIMIT 1"
+    );
+    if ($n > 0) {
+        return true;
+    }
+
+    return getRow(
+        "SELECT d2.id FROM tbl_distibute_item_details2 d2
+         WHERE d2.ProductId='" . $productId . "'
+           AND d2.ProdType IN (1, 2)
+           AND TRIM(IFNULL(d2.SerialNo, '')) <> ''
+           AND UPPER(TRIM(d2.SerialNo)) <> 'N/A'
+         LIMIT 1"
+    ) > 0;
+}
+
+/**
+ * Serial-no product = Product Type &quot;Serial No Product&quot; on Add Product (tbl_products.Roll = 1).
+ */
+function upb_product_is_serial_for_stock($conn, $productId)
+{
+    return upb_product_is_serial($conn, $productId);
+}
+
+/**
+ * Roll=1 BOS master lines for a customer profile (pump / module / controller).
+ *
+ * @return list<array{ProductId:int,ProductName:string,ReqQty:float}>
+ */
+function upb_fetch_bos_serial_master_lines_for_customer($conn, $custId)
+{
+    $custId = (int) $custId;
+    if ($custId <= 0) {
+        return [];
+    }
+    $cust = getRecord(
+        "SELECT AcDc, Surface, PumpCapacity, WaterSource, BoreDia, PumpHead, AgencyId, PumpOutletSize, ModuleQty
+         FROM tbl_users WHERE id='" . $custId . "' LIMIT 1"
+    );
+    if (!$cust || !is_array($cust)) {
+        return [];
+    }
+    $esc = function ($value) use ($conn) {
+        return $conn->real_escape_string(trim((string) $value));
+    };
+    $filters = [
+        'AcDc' => $esc($cust['AcDc'] ?? ''),
+        'Surface' => $esc($cust['Surface'] ?? ''),
+        'PumpCapacity' => $esc($cust['PumpCapacity'] ?? ''),
+        'WaterSource' => $esc($cust['WaterSource'] ?? ''),
+        'BoreDia' => $esc($cust['BoreDia'] ?? ''),
+        'PumpHead' => $esc($cust['PumpHead'] ?? ''),
+        'AgencyId' => $esc($cust['AgencyId'] ?? ''),
+        'PumpOutletSize' => $esc($cust['PumpOutletSize'] ?? ''),
+    ];
+    $moduleQty = upb_common_master_numeric_qty($conn, $cust['ModuleQty'] ?? 0);
+    if ($moduleQty <= 0) {
+        $moduleQty = 1;
+    }
+
+    $sql = "SELECT tp.id AS ProductId, tp.ProductName,
+                   COALESCE(MAX(CAST(NULLIF(TRIM(tps.Qty), '') AS DECIMAL(12,2))), 0) AS ReqQty
+            FROM tbl_product_specification tps
+            INNER JOIN tbl_products tp ON tps.ProdId = tp.id
+            WHERE tps.Qty > 0 AND tp.Roll = 1 AND tp.Status = 1";
+    foreach ($filters as $column => $value) {
+        if ($value !== '') {
+            $sql .= " AND tps." . $column . " = '" . $value . "'";
+        }
+    }
+    $sql .= " GROUP BY tp.id, tp.ProductName ORDER BY tp.ProductName ASC";
+
+    $out = [];
+    $rows = getList($sql);
+    if (!is_array($rows)) {
+        return [];
+    }
+    foreach ($rows as $row) {
+        $pid = (int) ($row['ProductId'] ?? 0);
+        $qty = (float) ($row['ReqQty'] ?? 0);
+        if ($pid <= 0) {
+            continue;
+        }
+        if ($qty <= 0) {
+            $name = strtoupper((string) ($row['ProductName'] ?? ''));
+            if (preg_match('/MODULE|PV MODULE/i', $name)) {
+                $qty = (float) $moduleQty;
+            } else {
+                $qty = 1.0;
+            }
+        }
+        $out[] = [
+            'ProductId' => $pid,
+            'ProductName' => (string) ($row['ProductName'] ?? ''),
+            'ReqQty' => $qty,
+        ];
+    }
+
+    return $out;
+}
+
+/**
+ * Common Roll=1 lines saved for other customers under the same agency (template).
+ *
+ * @return list<array{ProductId:int,ProductName:string,ReqQty:float}>
+ */
+function upb_fetch_agency_serial_template_lines($conn, $custId)
+{
+    $custId = (int) $custId;
+    if ($custId <= 0) {
+        return [];
+    }
+    $cust = getRecord("SELECT AgencyId, ModuleQty FROM tbl_users WHERE id='" . $custId . "' LIMIT 1");
+    if (!$cust || !is_array($cust)) {
+        return [];
+    }
+    $agencyId = (int) ($cust['AgencyId'] ?? 0);
+    if ($agencyId <= 0) {
+        return [];
+    }
+    $moduleQty = upb_common_master_numeric_qty($conn, $cust['ModuleQty'] ?? 0);
+    if ($moduleQty <= 0) {
+        $moduleQty = 1;
+    }
+
+    $sql = "SELECT cps.ProdId AS ProductId,
+                   MAX(COALESCE(NULLIF(TRIM(tp.ProductName), ''), NULLIF(TRIM(cps.ProdName), ''), CONCAT('Product #', cps.ProdId))) AS ProductName,
+                   MAX(CAST(NULLIF(TRIM(cps.Qty), '') AS DECIMAL(12,2))) AS ReqQty,
+                   COUNT(DISTINCT cps.CustId) AS peer_count
+            FROM tbl_cust_product_specification cps
+            INNER JOIN tbl_products tp ON tp.id = cps.ProdId AND tp.Roll = 1
+            INNER JOIN tbl_users u ON u.id = cps.CustId AND u.AgencyId = '" . $agencyId . "'
+            WHERE cps.CustId != '" . $custId . "'
+            GROUP BY cps.ProdId
+            HAVING MAX(CAST(NULLIF(TRIM(cps.Qty), '') AS DECIMAL(12,2))) > 0
+            ORDER BY peer_count DESC, ProductName ASC";
+    $rows = getList($sql);
+    if (!is_array($rows)) {
+        return [];
+    }
+    $out = [];
+    foreach ($rows as $row) {
+        $pid = (int) ($row['ProductId'] ?? 0);
+        $qty = (float) ($row['ReqQty'] ?? 0);
+        $name = (string) ($row['ProductName'] ?? '');
+        if ($pid <= 0) {
+            continue;
+        }
+        if (preg_match('/MODULE|PV MODULE/i', strtoupper($name)) && $moduleQty > 0) {
+            $qty = (float) $moduleQty;
+        }
+        if ($qty <= 0) {
+            continue;
+        }
+        $out[] = [
+            'ProductId' => $pid,
+            'ProductName' => $name,
+            'ReqQty' => $qty,
+        ];
+    }
+
+    return $out;
+}
+
+/**
+ * Every active Serial No Product in product master (Add Product → Roll = 1).
+ *
+ * @return list<array{ProductId:int,ProductName:string,ReqQty:float}>
+ */
+function upb_fetch_all_serial_product_catalog($conn)
+{
+    $rows = getList(
+        "SELECT id AS ProductId, ProductName
+         FROM tbl_products
+         WHERE Roll = 1 AND Status = 1
+         ORDER BY ProductName ASC"
+    );
+    if (!is_array($rows)) {
+        return [];
+    }
+    $out = [];
+    foreach ($rows as $row) {
+        $pid = (int) ($row['ProductId'] ?? 0);
+        if ($pid <= 0) {
+            continue;
+        }
+        $out[] = [
+            'ProductId' => $pid,
+            'ProductName' => (string) ($row['ProductName'] ?? ('Product #' . $pid)),
+            'ReqQty' => 0.0,
+        ];
+    }
+
+    return $out;
+}
+
+/**
+ * Required qty per serial product id from customer BOM / BOS serial master.
+ *
+ * @param list<array{ProductId:int,ProductName:string,ReqQty:float}> $requiredLines
+ * @return array<int, float>
+ */
+function upb_serial_required_qty_map_for_customer($conn, $custId, array $requiredLines)
+{
+    $map = [];
+    foreach ($requiredLines as $ln) {
+        $pid = (int) ($ln['ProductId'] ?? 0);
+        if ($pid <= 0 || !upb_product_is_serial($conn, $pid)) {
+            continue;
+        }
+        $qty = (float) ($ln['ReqQty'] ?? 0);
+        if ($qty <= 0) {
+            continue;
+        }
+        if (!isset($map[$pid])) {
+            $map[$pid] = 0.0;
+        }
+        $map[$pid] += $qty;
+    }
+    foreach (upb_fetch_bos_serial_master_lines_for_customer($conn, $custId) as $ln) {
+        $pid = (int) ($ln['ProductId'] ?? 0);
+        $qty = (float) ($ln['ReqQty'] ?? 0);
+        if ($pid <= 0 || $qty <= 0 || isset($map[$pid])) {
+            continue;
+        }
+        $map[$pid] = $qty;
+    }
+
+    return $map;
+}
+
+/**
+ * All Serial No Products for required-stock page, with customer required qty when applicable.
+ *
+ * @param list<array{ProductId:int,ProductName:string,ReqQty:float}>|null $requiredLines
+ * @return list<array{ProductId:int,ProductName:string,ReqQty:float}>
+ */
+function upb_fetch_serial_required_lines_for_customer($conn, $custId, array $requiredLines = null)
+{
+    $custId = (int) $custId;
+    if ($custId <= 0) {
+        return [];
+    }
+    if ($requiredLines === null) {
+        $requiredLines = upb_fetch_required_lines_for_customer($conn, $custId);
+    }
+
+    $reqMap = upb_serial_required_qty_map_for_customer($conn, $custId, $requiredLines);
+    $out = [];
+    foreach (upb_fetch_all_serial_product_catalog($conn) as $ln) {
+        $pid = (int) ($ln['ProductId'] ?? 0);
+        if ($pid <= 0) {
+            continue;
+        }
+        $out[] = [
+            'ProductId' => $pid,
+            'ProductName' => (string) ($ln['ProductName'] ?? ''),
+            'ReqQty' => isset($reqMap[$pid]) ? (float) $reqMap[$pid] : 0.0,
+        ];
+    }
+
+    return $out;
+}
+
+/**
+ * Split required lines into bulk vs serial-no sections.
+ *
+ * @param list<array{ProductId:int,ProductName:string,ReqQty:float}> $lines
+ * @return array{bulk:list<array{ProductId:int,ProductName:string,ReqQty:float}>,serial:list<array{ProductId:int,ProductName:string,ReqQty:float}>}
+ */
+function upb_partition_required_lines($conn, array $lines, array $serialLines)
+{
+    $serialIds = [];
+    foreach ($serialLines as $ln) {
+        $pid = (int) ($ln['ProductId'] ?? 0);
+        if ($pid > 0) {
+            $serialIds[$pid] = true;
+        }
+    }
+    $bulk = [];
+    foreach ($lines as $ln) {
+        $pid = (int) ($ln['ProductId'] ?? 0);
+        if ($pid > 0 && (isset($serialIds[$pid]) || upb_product_is_serial($conn, $pid))) {
+            continue;
+        }
+        $bulk[] = $ln;
+    }
+
+    return ['bulk' => $bulk, 'serial' => $serialLines];
+}
+
+/**
+ * All Serial No Products for combined required-stock view.
+ *
+ * @param int[] $custIds
+ * @return list<array{ProductId:int,ProductName:string,ReqQty:float}>
+ */
+function upb_fetch_combined_serial_required_lines($conn, array $custIds)
+{
+    $reqMap = [];
+    foreach ($custIds as $custId) {
+        $custId = (int) $custId;
+        if ($custId <= 0) {
+            continue;
+        }
+        $lines = upb_fetch_required_lines_for_customer($conn, $custId);
+        foreach (upb_serial_required_qty_map_for_customer($conn, $custId, $lines) as $pid => $qty) {
+            $pid = (int) $pid;
+            $qty = (float) $qty;
+            if ($pid <= 0 || $qty <= 0) {
+                continue;
+            }
+            if (!isset($reqMap[$pid])) {
+                $reqMap[$pid] = 0.0;
+            }
+            $reqMap[$pid] += $qty;
+        }
+    }
+
+    $out = [];
+    foreach (upb_fetch_all_serial_product_catalog($conn) as $ln) {
+        $pid = (int) ($ln['ProductId'] ?? 0);
+        if ($pid <= 0) {
+            continue;
+        }
+        $out[] = [
+            'ProductId' => $pid,
+            'ProductName' => (string) ($ln['ProductName'] ?? ''),
+            'ReqQty' => isset($reqMap[$pid]) ? (float) $reqMap[$pid] : 0.0,
+        ];
+    }
+
+    return $out;
+}
+
+/**
  * Unique store columns from customer account BranchId (Add Pump Customer → Store).
  *
  * @param int[] $custIds
@@ -491,6 +862,256 @@ function upb_available_locations($conn, $productId)
         ]);
     }
     return $wrapped;
+}
+
+/**
+ * Open dispatch-to-store transfer metadata (shared by bulk + serial location queries).
+ *
+ * @return array{has_transfer_tbl:bool,has_detail2_col:bool,d2_join_open:string,d2_where_open:string}
+ */
+function upb_dispatch_transfer_meta($conn)
+{
+    $hasTransferTbl = false;
+    $hasDetail2IdCol = false;
+    $t1 = $conn->query("SHOW TABLES LIKE 'tbl_dispatch_to_store_transfer_details'");
+    if ($t1 && $t1->num_rows > 0) {
+        $hasTransferTbl = true;
+        $c = $conn->query("SHOW COLUMNS FROM tbl_dispatch_to_store_transfer_details LIKE 'Detail2Id'");
+        if ($c && $c->num_rows > 0) {
+            $hasDetail2IdCol = true;
+        }
+    }
+    $d2JoinOpen = ($hasTransferTbl && $hasDetail2IdCol)
+        ? "LEFT JOIN (SELECT DISTINCT Detail2Id FROM tbl_dispatch_to_store_transfer_details WHERE Detail2Id IS NOT NULL) td_open ON td_open.Detail2Id = d2.id"
+        : '';
+    $d2WhereOpen = ($hasTransferTbl && $hasDetail2IdCol) ? 'AND td_open.Detail2Id IS NULL' : '';
+
+    return [
+        'has_transfer_tbl' => $hasTransferTbl,
+        'has_detail2_col' => $hasDetail2IdCol,
+        'd2_join_open' => $d2JoinOpen,
+        'd2_where_open' => $d2WhereOpen,
+    ];
+}
+
+/**
+ * ProdType values used in stock tables for a product Roll (1 = serial, 2 = bag serial).
+ *
+ * @return int[]
+ */
+function upb_serial_prod_types_for_roll($roll)
+{
+    $roll = (int) $roll;
+    if ($roll === 2) {
+        return [2];
+    }
+    if ($roll === 1) {
+        return [1];
+    }
+
+    return [];
+}
+
+/**
+ * Whether product is Serial No Product (Add Product → Product Type, tbl_products.Roll = 1).
+ */
+function upb_product_is_serial($conn, $productId)
+{
+    $productId = (int) $productId;
+    if ($productId <= 0) {
+        return false;
+    }
+    $row = getRecord("SELECT Roll FROM tbl_products WHERE id='" . $productId . "' LIMIT 1");
+    $roll = (int) ($row['Roll'] ?? 0);
+
+    return $roll === 1;
+}
+
+/**
+ * Roll value for a product (cached per request in $cache).
+ */
+function upb_product_roll($conn, $productId, array &$cache = [])
+{
+    $productId = (int) $productId;
+    if ($productId <= 0) {
+        return 0;
+    }
+    if (isset($cache[$productId])) {
+        return (int) $cache[$productId];
+    }
+    $row = getRecord("SELECT Roll FROM tbl_products WHERE id='" . $productId . "' LIMIT 1");
+    $cache[$productId] = (int) ($row['Roll'] ?? 0);
+
+    return (int) $cache[$productId];
+}
+
+/**
+ * Count distinct available serial numbers for a product (optionally at one store).
+ */
+function upb_serial_available_count($conn, $productId, $branchId = null)
+{
+    static $memo = [];
+    $productId = (int) $productId;
+    if ($productId <= 0) {
+        return 0;
+    }
+    $branchKey = $branchId === null ? -1 : (int) $branchId;
+    $cacheKey = $productId . ':' . $branchKey;
+    if (isset($memo[$cacheKey])) {
+        return $memo[$cacheKey];
+    }
+    $rollCache = [];
+    $roll = upb_product_roll($conn, $productId, $rollCache);
+    $prodTypes = upb_serial_prod_types_for_roll($roll);
+    if (count($prodTypes) === 0) {
+        $memo[$cacheKey] = 0;
+        return 0;
+    }
+    $prodTypeIn = implode(',', array_map('intval', $prodTypes));
+    $meta = upb_dispatch_transfer_meta($conn);
+    $branchId = $branchId !== null ? (int) $branchId : 0;
+    $branchFilterStore = $branchId > 0 ? " AND d.BranchId='" . $branchId . "'" : '';
+    $branchFilterDisp = $branchId > 0 ? " AND d2.BranchId='" . $branchId . "'" : '';
+
+    $sql = "SELECT COUNT(DISTINCT loc.serial_no) AS cnt
+            FROM (
+                SELECT TRIM(d.SerialNo) AS serial_no
+                FROM tbl_distibute_item_details d
+                WHERE d.ProductId='" . $productId . "'
+                  AND d.ProdType IN (" . $prodTypeIn . ")
+                  AND TRIM(IFNULL(d.SerialNo, '')) <> ''
+                  AND UPPER(TRIM(d.SerialNo)) <> 'N/A'
+                  " . $branchFilterStore . "
+                  AND NOT EXISTS (
+                      SELECT 1 FROM tbl_distibute_item_details2 d2x
+                      WHERE d2x.ProductId = d.ProductId
+                        AND d2x.SerialNo = d.SerialNo
+                        AND d2x.ProdType = d.ProdType
+                        AND d2x.BranchId = d.BranchId
+                  )
+                UNION
+                SELECT TRIM(d2.SerialNo) AS serial_no
+                FROM tbl_distibute_item_details2 d2
+                INNER JOIN tbl_distibute_items2 h ON h.id = d2.DistId AND h.Status = 1
+                " . $meta['d2_join_open'] . "
+                WHERE d2.ProductId='" . $productId . "'
+                  AND d2.ProdType IN (" . $prodTypeIn . ")
+                  AND TRIM(IFNULL(d2.SerialNo, '')) <> ''
+                  AND UPPER(TRIM(d2.SerialNo)) <> 'N/A'
+                  " . $meta['d2_where_open'] . "
+                  " . $branchFilterDisp . "
+            ) loc
+            WHERE NOT EXISTS (
+                SELECT 1 FROM tbl_stocks sx
+                WHERE sx.ProdType IN (" . $prodTypeIn . ")
+                  AND sx.CrDr = 'dr'
+                  AND sx.SerialNo = loc.serial_no
+            )";
+    $row = getRecord($sql);
+
+    $memo[$cacheKey] = (int) ($row['cnt'] ?? 0);
+
+    return $memo[$cacheKey];
+}
+
+/**
+ * Available serial numbers grouped by store / dispatch location (for modal).
+ *
+ * @return list<array{StoreName:string,AvailQty:int,row_kind:string,branch_id:int,store_exe_id:int}>
+ */
+function upb_serial_available_locations($conn, $productId)
+{
+    $productId = (int) $productId;
+    if ($productId <= 0) {
+        return [];
+    }
+    $rollCache = [];
+    $roll = upb_product_roll($conn, $productId, $rollCache);
+    $prodTypes = upb_serial_prod_types_for_roll($roll);
+    if (count($prodTypes) === 0) {
+        return [];
+    }
+    $prodTypeIn = implode(',', array_map('intval', $prodTypes));
+    $meta = upb_dispatch_transfer_meta($conn);
+    $out = [];
+
+    $sqlStore = "SELECT d.BranchId, MAX(b.Name) AS BranchName, COUNT(DISTINCT TRIM(d.SerialNo)) AS AvailQty
+        FROM tbl_distibute_item_details d
+        INNER JOIN tbl_branch b ON b.id = d.BranchId
+        WHERE d.ProductId='" . $productId . "'
+          AND d.ProdType IN (" . $prodTypeIn . ")
+          AND TRIM(IFNULL(d.SerialNo, '')) <> ''
+          AND UPPER(TRIM(d.SerialNo)) <> 'N/A'
+          AND NOT EXISTS (
+              SELECT 1 FROM tbl_distibute_item_details2 d2x
+              WHERE d2x.ProductId = d.ProductId
+                AND d2x.SerialNo = d.SerialNo
+                AND d2x.ProdType = d.ProdType
+                AND d2x.BranchId = d.BranchId
+          )
+          AND NOT EXISTS (
+              SELECT 1 FROM tbl_stocks sx
+              WHERE sx.ProdType IN (" . $prodTypeIn . ")
+                AND sx.CrDr = 'dr'
+                AND sx.SerialNo = d.SerialNo
+          )
+        GROUP BY d.BranchId
+        HAVING AvailQty > 0
+        ORDER BY MAX(b.Name)";
+    foreach (getList($sqlStore) as $r) {
+        $bn = isset($r['BranchName']) ? trim((string) $r['BranchName']) : '';
+        if ($bn === '') {
+            continue;
+        }
+        $out[] = [
+            'StoreName' => 'Store (serial): ' . $bn,
+            'AvailQty' => (int) ($r['AvailQty'] ?? 0),
+            'row_kind' => 'store_serial',
+            'branch_id' => (int) ($r['BranchId'] ?? 0),
+            'store_exe_id' => 0,
+        ];
+    }
+
+    $sqlDisp = "SELECT d2.StoreExeId, d2.BranchId,
+        COALESCE(u.Fname, CONCAT('User #', d2.StoreExeId)) AS officer_name,
+        COALESCE(NULLIF(TRIM(b.Name), ''), 'branch not set') AS assign_branch_name,
+        COUNT(DISTINCT TRIM(d2.SerialNo)) AS AvailQty
+        FROM tbl_distibute_item_details2 d2
+        INNER JOIN tbl_distibute_items2 h ON h.id = d2.DistId AND h.Status = 1
+        LEFT JOIN tbl_users u ON u.id = d2.StoreExeId
+        LEFT JOIN tbl_branch b ON b.id = d2.BranchId
+        " . $meta['d2_join_open'] . "
+        WHERE d2.ProductId='" . $productId . "'
+          AND d2.ProdType IN (" . $prodTypeIn . ")
+          AND d2.StoreExeId > 0
+          AND TRIM(IFNULL(d2.SerialNo, '')) <> ''
+          AND UPPER(TRIM(d2.SerialNo)) <> 'N/A'
+          " . $meta['d2_where_open'] . "
+          AND NOT EXISTS (
+              SELECT 1 FROM tbl_stocks sx
+              WHERE sx.ProdType IN (" . $prodTypeIn . ")
+                AND sx.CrDr = 'dr'
+                AND sx.SerialNo = d2.SerialNo
+          )
+        GROUP BY d2.StoreExeId, d2.BranchId, u.Fname, b.Name
+        HAVING AvailQty > 0
+        ORDER BY officer_name, assign_branch_name";
+    foreach (getList($sqlDisp) as $r) {
+        $on = isset($r['officer_name']) ? trim((string) $r['officer_name']) : '';
+        $br = isset($r['assign_branch_name']) ? trim((string) $r['assign_branch_name']) : '';
+        if ($br === '') {
+            $br = 'branch not set';
+        }
+        $out[] = [
+            'StoreName' => 'Dispatch officer (serial): ' . $on . ' (store: ' . $br . ')',
+            'AvailQty' => (int) ($r['AvailQty'] ?? 0),
+            'row_kind' => 'dispatch_serial',
+            'branch_id' => (int) ($r['BranchId'] ?? 0),
+            'store_exe_id' => (int) ($r['StoreExeId'] ?? 0),
+        ];
+    }
+
+    return $out;
 }
 
 /**

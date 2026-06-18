@@ -2,6 +2,7 @@
 session_start();
 include_once '../config.php';
 include_once '../auth.php';
+require_once dirname(__DIR__) . '/inc-sync-customer-specification.php';
 $user_id = $_SESSION['Admin']['id'];
 $MainPage="Structure-Product-Specification";
 $Page = "Structure-Product-Specification";
@@ -47,6 +48,7 @@ $Page = "Structure-Product-Specification";
 <?php
 $structSpecSaved = false;
 $structSpecError = '';
+$structSpecSyncMessage = '';
 
 if (isset($_POST['submit'])) {
     $AcDc = $conn->real_escape_string(trim((string) ($_POST['AcDc'] ?? '')));
@@ -66,36 +68,63 @@ if (isset($_POST['submit'])) {
     } elseif (empty($_POST['ProdId']) || !is_array($_POST['ProdId'])) {
         $structSpecError = 'Product list not loaded. Change any filter to reload the table, then submit again.';
     } else {
-        $sql = "DELETE FROM tbl_struct_product_specification WHERE Surface='$Surface' AND PumpCapacity='$PumpCapacity' AND ModuleWatt='$ModuleWatt' AND ModuleQty='$ModuleQty' AND Structure='$Structure' AND ModuleMake='$ModuleMake' AND StructureMake='$StructureMake' AND AgencyId='$AgencyId' AND SchemeId='$SchemeId'";
-        if ($AcDc !== '') {
-            $sql .= " AND AcDc='$AcDc'";
-        }
-        $conn->query($sql);
-
-        $savedCount = 0;
-        $number = count($_POST['ProdId']);
-        for ($i = 0; $i < $number; $i++) {
-            $prodId = trim((string) ($_POST['ProdId'][$i] ?? ''));
-            $qty = trim((string) ($_POST['Qty'][$i] ?? ''));
-            if ($prodId === '' || $qty === '' || !is_numeric($qty) || (float) $qty <= 0) {
-                continue;
+        $conn->begin_transaction();
+        try {
+            $sql = "DELETE FROM tbl_struct_product_specification WHERE Surface='$Surface' AND PumpCapacity='$PumpCapacity' AND ModuleWatt='$ModuleWatt' AND ModuleQty='$ModuleQty' AND Structure='$Structure' AND ModuleMake='$ModuleMake' AND StructureMake='$StructureMake' AND AgencyId='$AgencyId' AND SchemeId='$SchemeId'";
+            if ($AcDc !== '') {
+                $sql .= " AND AcDc='$AcDc'";
             }
-            $ProdName = $conn->real_escape_string((string) ($_POST['ProdName'][$i] ?? ''));
-            $Unit = $conn->real_escape_string((string) ($_POST['Unit'][$i] ?? ''));
-            $Qty = $conn->real_escape_string($qty);
+            if (!$conn->query($sql)) {
+                throw new Exception($conn->error);
+            }
 
-            $sql = "INSERT INTO tbl_struct_product_specification SET AcDc='$AcDc',Surface='$Surface',PumpCapacity='$PumpCapacity',ModuleWatt='$ModuleWatt',ModuleQty='$ModuleQty',Structure='$Structure',ProdId='$prodId',ProdName='$ProdName',Unit='$Unit',Qty='$Qty',CreatedBy='$user_id',CreatedDate='$CreatedDate',ModuleMake='$ModuleMake',StructureMake='$StructureMake',AgencyId='$AgencyId',SchemeId='$SchemeId'";
-            if ($conn->query($sql)) {
+            $savedCount = 0;
+            $number = count($_POST['ProdId']);
+            for ($i = 0; $i < $number; $i++) {
+                $prodId = trim((string) ($_POST['ProdId'][$i] ?? ''));
+                $qty = trim((string) ($_POST['Qty'][$i] ?? ''));
+                if ($prodId === '' || $qty === '' || !is_numeric($qty) || (float) $qty <= 0) {
+                    continue;
+                }
+                $ProdName = $conn->real_escape_string((string) ($_POST['ProdName'][$i] ?? ''));
+                $Unit = $conn->real_escape_string((string) ($_POST['Unit'][$i] ?? ''));
+                $Qty = $conn->real_escape_string($qty);
+
+                $sql = "INSERT INTO tbl_struct_product_specification SET AcDc='$AcDc',Surface='$Surface',PumpCapacity='$PumpCapacity',ModuleWatt='$ModuleWatt',ModuleQty='$ModuleQty',Structure='$Structure',ProdId='$prodId',ProdName='$ProdName',Unit='$Unit',Qty='$Qty',CreatedBy='$user_id',CreatedDate='$CreatedDate',ModuleMake='$ModuleMake',StructureMake='$StructureMake',AgencyId='$AgencyId',SchemeId='$SchemeId'";
+                if (!$conn->query($sql)) {
+                    throw new Exception($conn->error);
+                }
                 $savedCount++;
-            } elseif ($structSpecError === '') {
-                $structSpecError = 'Database error: ' . $conn->error;
             }
-        }
-        if ($savedCount > 0) {
+            if ($savedCount <= 0) {
+                throw new Exception('Enter quantity (Qty) for at least one product row, then submit.');
+            }
+
+            $syncResult = syncCustomerStructSpecifications($conn, [
+                'Surface' => $Surface,
+                'PumpCapacity' => $PumpCapacity,
+                'ModuleWatt' => $ModuleWatt,
+                'ModuleQty' => $ModuleQty,
+                'Structure' => $Structure,
+                'ModuleMake' => $ModuleMake,
+                'StructureMake' => $StructureMake,
+                'AgencyId' => $AgencyId,
+                'SchemeId' => $SchemeId,
+            ], $user_id, $CreatedDate);
+            if ($syncResult['error'] !== '') {
+                throw new Exception('Customer specification sync failed: ' . $syncResult['error']);
+            }
+
+            $conn->commit();
             $structSpecSaved = true;
             $structSpecError = '';
-        } elseif ($structSpecError === '') {
-            $structSpecError = 'Enter quantity (Qty) for at least one product row, then submit.';
+            $structSpecSyncMessage = (int) $syncResult['updated'] . ' customer(s) updated';
+            if ((int) $syncResult['skipped'] > 0) {
+                $structSpecSyncMessage .= ', ' . (int) $syncResult['skipped'] . ' skipped (delivery challan exists)';
+            }
+        } catch (Exception $e) {
+            $conn->rollback();
+            $structSpecError = $e->getMessage();
         }
     }
 }
@@ -119,7 +148,7 @@ $structSel = function ($field) use ($row7) {
 <div class="card-body">
 <div id="alert_message"></div>
 <?php if ($structSpecSaved) { ?>
-<div class="alert alert-success">Structure product specification saved successfully.</div>
+<div class="alert alert-success">Structure product specification saved successfully.<?php if ($structSpecSyncMessage !== '') { ?> Customer sync: <?php echo htmlspecialchars($structSpecSyncMessage, ENT_QUOTES, 'UTF-8'); ?>.<?php } ?></div>
 <?php } elseif ($structSpecError !== '') { ?>
 <div class="alert alert-danger"><?php echo htmlspecialchars($structSpecError, ENT_QUOTES, 'UTF-8'); ?></div>
 <?php } ?>
@@ -398,6 +427,7 @@ $structSel = function ($field) use ($row7) {
             $holder.append($('<input type="hidden" name="Qty[]">').val($tr.find('input[name="Qty[]"]').val() || ''));
         });
         $('#custresult tbody input').prop('disabled', true);
+        $('#structSpecSubmit').prop('disabled', true).text('Please wait...');
     });
 
     $(function () {

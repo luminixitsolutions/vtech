@@ -48,6 +48,17 @@ employeeProjectAccessEnforceSubHead($sql77, $subHeadId, 'installation-project-da
                         <div class="text-muted small mt-0 mb-4 d-block breadcrumb">
                         </div>
 <h5 class="card-header" style="text-align:center;"><?php echo strtoupper($_GET['name']);?> PROJECT DASHBOARD</h5>
+                                    <?php
+                                    $dashProjectId = (int) ($_GET['prjid'] ?? 0);
+                                    $dashSubHeadId = (int) ($_GET['id'] ?? 0);
+                                    $dashProjectName = isset($_GET['name']) ? (string) $_GET['name'] : '';
+                                    $importOldDataUrl = 'import-old-installed-data.php?prjid=' . $dashProjectId . '&id=' . $dashSubHeadId . '&name=' . rawurlencode($dashProjectName);
+                                    ?>
+                                    <div class="px-3 pb-2 pt-2 text-right">
+                                        <a href="<?php echo htmlspecialchars($importOldDataUrl, ENT_QUOTES, 'UTF-8'); ?>" class="btn btn-success btn-sm">
+                                            Import Old Installed Data
+                                        </a>
+                                    </div>
                                     <div class="card-body">
                                       
 <?php
