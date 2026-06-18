@@ -473,7 +473,24 @@ function upb_fetch_all_serial_product_catalog($conn)
  */
 function upb_count_serial_product_catalog($conn)
 {
-    return (int) getRow("SELECT COUNT(*) AS c FROM tbl_products WHERE Roll = 1 AND Status = 1");
+    $row = getRecord("SELECT COUNT(*) AS c FROM tbl_products WHERE Roll = 1 AND Status = 1");
+
+    return (int) ($row['c'] ?? 0);
+}
+
+/**
+ * Count serial catalog rows with optional product-name filter.
+ */
+function upb_count_serial_product_catalog_filtered($conn, $search = '')
+{
+    $where = 'Roll = 1 AND Status = 1';
+    $search = trim((string) $search);
+    if ($search !== '') {
+        $where .= " AND ProductName LIKE '%" . $conn->real_escape_string($search) . "%'";
+    }
+    $row = getRecord("SELECT COUNT(*) AS c FROM tbl_products WHERE " . $where);
+
+    return (int) ($row['c'] ?? 0);
 }
 
 /**

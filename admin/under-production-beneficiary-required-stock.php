@@ -158,40 +158,26 @@ if (count($custIds) >= 1) {
         table#tblRequiredStock.table-warning > tbody > tr > td,
         table#tblRequiredSerialStock.table-warning > tbody > tr > td,
         #tblRequiredStock tbody tr.table-warning td,
-        .upb-serial-load-busy {
-            opacity: 0.65;
-            pointer-events: none;
+        #tblRequiredSerialStock tbody tr.table-warning td {
+            color: #212529 !important;
         }
         #upbSerialStockRoot {
             margin-bottom: 2rem;
         }
-        .upb-serial-table-scroll {
-            width: 100%;
-            overflow-x: auto;
-            -webkit-overflow-scrolling: touch;
-            border: 1px solid rgba(0,0,0,.08);
-            border-radius: .25rem;
-            background: #fff;
+        .upb-serial-dt-wrap .dataTables_wrapper .dataTables_paginate {
+            margin-top: 0.75rem;
         }
-        .upb-serial-table-scroll table#tblRequiredSerialStock {
-            min-width: 1100px;
-            margin-bottom: 0;
+        .upb-serial-dt-wrap .dataTables_wrapper .dataTables_paginate .paginate_button {
+            padding: 0.35rem 0.65rem;
+            margin-left: 2px;
+            border-radius: 0.2rem;
         }
-        .upb-serial-table-scroll thead th {
-            position: sticky;
-            top: 0;
-            z-index: 3;
-            background: #f8f9fa !important;
-            box-shadow: 0 1px 0 #dee2e6;
+        .upb-serial-dt-wrap .dataTables_wrapper .dataTables_info {
+            padding-top: 0.75rem;
+            color: #212529;
         }
-        .upb-serial-pager {
-            padding: 12px 14px;
-            border: 1px solid rgba(0,0,0,.08);
-            border-radius: .25rem;
-            background: #f8f9fa;
-        }
-        .upb-serial-pager .btn {
-            min-width: 110px;
+        .upb-serial-dt-wrap .dataTables_processing {
+            z-index: 5;
         }
     </style>
 </head>
@@ -491,199 +477,158 @@ $(document).on('hidden.bs.modal', '#modalAvlByStore', function () {
         });
     }
 
-    function upbBuildSerialRow(row) {
-        var pid = parseInt(row.product_id, 10) || 0;
-        var req = parseInt(row.req_qty, 10) || 0;
-        var total = parseInt(row.total_serials, 10) || 0;
-        var short = !!row.short;
-        var trClass = short ? 'table-warning' : '';
-        var $tr = $('<tr>').addClass(trClass);
-        $tr.append($('<td>').css('color', '#212529').text(row.row_num || ''));
-        $tr.append($('<td>').css('color', '#212529').text(row.product_name || ''));
-        $tr.append($('<td>').addClass('text-right').css('color', '#212529').text(String(req)));
-        (row.store_serials || []).forEach(function (s) {
-            var cnt = parseInt(s.count, 10) || 0;
-            var $td = $('<td>').addClass('text-right').css('color', '#212529').text(pid > 0 ? String(cnt) : '—');
-            if (s.short) {
-                $td.addClass('upb-store-short');
-            }
-            $tr.append($td);
-        });
-        var $totalTd = $('<td>').addClass('text-right font-weight-bold').text(pid > 0 ? String(total) : '—');
-        if (short) {
-            $totalTd.addClass('text-danger').css('color', '#dc3545');
-        } else {
-            $totalTd.css('color', '#212529');
-        }
-        $tr.append($totalTd);
-
-        var $actionTd = $('<td>');
-        if (pid <= 0) {
-            $actionTd.append($('<span>').addClass('text-muted').text('—'));
-        } else if (total <= 0) {
-            $actionTd.append($('<span>').addClass('text-muted').text('0 in stock'));
-        } else {
-            var locJson = JSON.stringify(row.locations || []);
-            $actionTd.append(
-                $('<button type="button" class="btn btn-sm btn-success btn-view-store-avl">')
-                    .attr({
-                        'data-toggle': 'modal',
-                        'data-target': '#modalAvlByStore',
-                        'data-product-id': pid,
-                        'data-item-name': row.product_name || '',
-                        'data-required': req,
-                        'data-total-avail': total,
-                        'data-is-serial': '1',
-                        'data-locations': locJson
-                    })
-                    .text('View serials (' + total + ')')
-            );
-        }
-        $tr.append($actionTd);
-        return $tr;
-    }
-
-    function upbSerialStockLoader() {
+    function upbInitSerialStockTable() {
         var $root = $('#upbSerialStockRoot');
-        var $tbody = $('#upbSerialStockTbody');
-        if (!$root.length || !$tbody.length) {
-            return null;
+        var $tbl = $('#tblRequiredSerialStock');
+        if (!$root.length || !$tbl.length || typeof $.fn.DataTable === 'undefined') {
+            return;
         }
+        if ($.fn.DataTable.isDataTable($tbl)) {
+            $tbl.DataTable().destroy();
+        }
+
         var custIds = [];
         try {
             custIds = JSON.parse($root.attr('data-cust-ids') || '[]');
         } catch (e) {
             custIds = [];
         }
-        var pageSize = parseInt($root.attr('data-page-size'), 10) || 20;
-        var state = {
-            page: 1,
-            totalPages: 1,
-            total: 0,
-            loading: false,
-            pageReq: 0,
-            pageAvail: 0,
-            custIds: Array.isArray(custIds) ? custIds : []
-        };
+        var storeCount = parseInt($root.attr('data-store-count'), 10) || 0;
 
-        function upbColspan() {
-            var n = $('#tblRequiredSerialStock thead th').length;
-            return n > 0 ? n : 99;
+        var columns = [
+            { data: 'row_num', className: 'text-center text-nowrap', width: '56px' },
+            { data: 'product_name', className: 'text-wrap' },
+            { data: 'req_qty', className: 'text-right' }
+        ];
+        var storeColIndex;
+        for (storeColIndex = 0; storeColIndex < storeCount; storeColIndex++) {
+            (function (idx) {
+                columns.push({
+                    data: null,
+                    className: 'text-right',
+                    orderable: false,
+                    searchable: false,
+                    render: function (data, type, row) {
+                        var stores = row.store_serials || [];
+                        var s = stores[idx];
+                        var pid = parseInt(row.product_id, 10) || 0;
+                        var cnt = s ? (parseInt(s.count, 10) || 0) : 0;
+                        if (type !== 'display') {
+                            return cnt;
+                        }
+                        var html = pid > 0 ? String(cnt) : '—';
+                        if (s && s.short) {
+                            return '<span class="upb-store-short d-inline-block px-1">' + html + '</span>';
+                        }
+                        return html;
+                    }
+                });
+            })(storeColIndex);
         }
-
-        function upbUpdateFooter() {
-            $('#upbSerialFootReq').text(state.pageReq);
-            $('#upbSerialFootAvail').text(state.pageAvail);
-        }
-
-        function upbUpdatePager() {
-            $('#upbSerialPageInfo').text('Page ' + state.page + ' of ' + state.totalPages);
-            $('#upbSerialPrev').prop('disabled', state.loading || state.page <= 1);
-            $('#upbSerialNext').prop('disabled', state.loading || state.page >= state.totalPages);
-            var from = state.total > 0 ? ((state.page - 1) * pageSize + 1) : 0;
-            var to = Math.min(state.page * pageSize, state.total);
-            var msg = state.total > 0
-                ? ('Showing ' + from + '–' + to + ' of ' + state.total + ' serial products')
-                : 'No serial products';
-            $('#upbSerialStockStatus').text(msg);
-            $('#upbSerialPageHint').text(pageSize + ' products per page — use Previous / Next to browse');
-        }
-
-        function upbSetBusy(busy) {
-            state.loading = busy;
-            if (busy) {
-                $root.addClass('upb-serial-load-busy');
-            } else {
-                $root.removeClass('upb-serial-load-busy');
-            }
-            upbUpdatePager();
-        }
-
-        function upbShowLoadingRow() {
-            $tbody.html(
-                '<tr id="upbSerialStockLoadingRow"><td colspan="' + upbColspan() + '" class="text-center text-muted py-4" style="color:#212529;">' +
-                '<span class="spinner-border spinner-border-sm mr-2" role="status" aria-hidden="true"></span>Loading page ' + state.page + '…</td></tr>'
-            );
-        }
-
-        function upbLoadPage(targetPage) {
-            if (state.loading) {
-                return;
-            }
-            state.page = Math.max(1, parseInt(targetPage, 10) || 1);
-            upbSetBusy(true);
-            upbShowLoadingRow();
-            $.post('ajax_files/ajax_required_stock_serial_products.php', {
-                cust_ids: state.custIds.join(','),
-                page: state.page,
-                limit: pageSize
-            }).done(function (resp) {
-                $tbody.empty();
-                if (!resp || !resp.ok) {
-                    $tbody.append(
-                        $('<tr>').append(
-                            $('<td>').attr('colspan', upbColspan()).addClass('text-danger text-center py-3')
-                                .text((resp && resp.message) ? resp.message : 'Could not load serial products')
-                        )
-                    );
-                    return;
+        columns.push({
+            data: 'total_serials',
+            className: 'text-right font-weight-bold',
+            render: function (data, type, row) {
+                var pid = parseInt(row.product_id, 10) || 0;
+                var total = parseInt(data, 10) || 0;
+                if (type !== 'display') {
+                    return total;
                 }
-                state.total = parseInt(resp.total, 10) || 0;
-                state.totalPages = Math.max(1, parseInt(resp.total_pages, 10) || 1);
-                if (state.page > state.totalPages) {
-                    state.page = state.totalPages;
-                    upbLoadPage(state.page);
-                    return;
+                var txt = pid > 0 ? String(total) : '—';
+                if (row.short) {
+                    return '<span class="text-danger font-weight-bold">' + txt + '</span>';
                 }
-                state.pageReq = parseInt(resp.page_total_req, 10) || 0;
-                state.pageAvail = parseInt(resp.page_total_avail, 10) || 0;
-                if (!resp.rows || !resp.rows.length) {
-                    $tbody.append(
-                        $('<tr>').append(
-                            $('<td>').attr('colspan', upbColspan()).addClass('text-muted text-center py-3').text('No serial products on this page')
-                        )
-                    );
+                return txt;
+            }
+        });
+        columns.push({
+            data: null,
+            orderable: false,
+            searchable: false,
+            render: function (data, type, row) {
+                if (type !== 'display') {
+                    return '';
+                }
+                var pid = parseInt(row.product_id, 10) || 0;
+                var req = parseInt(row.req_qty, 10) || 0;
+                var total = parseInt(row.total_serials, 10) || 0;
+                if (pid <= 0) {
+                    return '<span class="text-muted">—</span>';
+                }
+                if (total <= 0) {
+                    return '<span class="text-muted">0 in stock</span>';
+                }
+                var locJson = JSON.stringify(row.locations || []).replace(/'/g, '&#39;');
+                var name = String(row.product_name || '').replace(/"/g, '&quot;');
+                return '<button type="button" class="btn btn-sm btn-success btn-view-store-avl" ' +
+                    'data-toggle="modal" data-target="#modalAvlByStore" ' +
+                    'data-product-id="' + pid + '" ' +
+                    'data-item-name="' + name + '" ' +
+                    'data-required="' + req + '" ' +
+                    'data-total-avail="' + total + '" ' +
+                    'data-is-serial="1" ' +
+                    'data-locations=\'' + locJson + '\'>' +
+                    'View serials (' + total + ')</button>';
+            }
+        });
+
+        var lastCol = columns.length - 1;
+        $tbl.DataTable({
+            processing: true,
+            serverSide: true,
+            pageLength: 20,
+            lengthMenu: [[20, 50, 100], [20, 50, 100]],
+            searching: true,
+            ordering: false,
+            order: [],
+            autoWidth: true,
+            scrollX: false,
+            stateSave: false,
+            dom: "<'d-flex flex-wrap justify-content-between align-items-end gap-3 mb-3'lf>rtip",
+            ajax: {
+                url: 'ajax_files/ajax_required_stock_serial_products.php',
+                type: 'POST',
+                data: function (d) {
+                    d.cust_ids = Array.isArray(custIds) ? custIds.join(',') : '';
+                },
+                dataSrc: function (json) {
+                    $('#upbSerialFootReq').text(parseInt(json.page_total_req, 10) || 0);
+                    $('#upbSerialFootAvail').text(parseInt(json.page_total_avail, 10) || 0);
+                    return json.data || [];
+                }
+            },
+            columns: columns,
+            columnDefs: [
+                { targets: 0, className: 'text-center text-nowrap', width: '56px' },
+                { targets: lastCol, orderable: false, searchable: false }
+            ],
+            rowCallback: function (row, data) {
+                if (data && data.short) {
+                    $(row).addClass('table-warning');
                 } else {
-                    resp.rows.forEach(function (row) {
-                        $tbody.append(upbBuildSerialRow(row));
-                    });
+                    $(row).removeClass('table-warning');
                 }
-                upbUpdateFooter();
-                upbUpdatePager();
-                var $scroll = $('.upb-serial-table-scroll');
-                if ($scroll.length) {
-                    $scroll.scrollTop(0);
+            },
+            language: {
+                processing: 'Loading serial products…',
+                emptyTable: 'No serial products',
+                zeroRecords: 'No matching serial products',
+                info: 'Showing _START_ to _END_ of _TOTAL_ serial products',
+                infoEmpty: 'Showing 0 serial products',
+                infoFiltered: '(filtered from _MAX_ total)',
+                paginate: {
+                    first: 'First',
+                    last: 'Last',
+                    next: 'Next',
+                    previous: 'Previous'
                 }
-                $('html, body').animate({ scrollTop: $('#upbSerialStockRoot').offset().top - 80 }, 200);
-            }).fail(function () {
-                $tbody.empty().append(
-                    $('<tr>').append(
-                        $('<td>').attr('colspan', upbColspan()).addClass('text-danger text-center py-3').text('Could not load serial products')
-                    )
-                );
-            }).always(function () {
-                upbSetBusy(false);
-            });
-        }
-
-        $('#upbSerialPrev').on('click', function () {
-            if (state.page > 1) {
-                upbLoadPage(state.page - 1);
             }
         });
-        $('#upbSerialNext').on('click', function () {
-            if (state.page < state.totalPages) {
-                upbLoadPage(state.page + 1);
-            }
-        });
-
-        upbLoadPage(1);
-        return state;
     }
 
     $(function () {
         upbInitStockTable('#tblRequiredStock', true);
-        upbSerialStockLoader();
+        upbInitSerialStockTable();
     });
 })();
 </script>
