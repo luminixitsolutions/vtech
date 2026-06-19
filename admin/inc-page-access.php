@@ -79,6 +79,7 @@ function adminPageAccessBasenameRules()
         'renewed-insurance.php' => [173], 'insurance-dashboard.php' => [168, 121],
         'assign-customers-to-co-ordinator.php' => [55],
         'assign-customers-to-field-survey.php' => [79],
+        'ajax-coordinator-assign-import-excel.php' => [55, 79, 58, 60],
         'bos-tentative-production-plan.php' => [130],
         'stucture-tentative-production-plan.php' => [131],
         'co-ordinator-survey.php' => [80], 'field-survey.php' => [81],
@@ -411,7 +412,7 @@ function adminPageAccessResolveRequiredOptions($relativePath, $basename)
         if (preg_match('/insurance/i', $basename)) {
             return array_merge(getMenuOptionGroups()['Insurance Site'], [121]);
         }
-        if (preg_match('/installation|coordinator-assign/i', $basename)) {
+        if (preg_match('/installation|coordinator-assign/i', $basename) && !preg_match('/coordinator-assign-import-excel/i', $basename)) {
             return getMenuOptionGroups()['Installation Workflow'];
         }
         if (preg_match('/coordinator|distribute|dispatch|assign/i', $basename)) {

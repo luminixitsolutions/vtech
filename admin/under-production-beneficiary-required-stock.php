@@ -88,8 +88,12 @@ if (count($custIds) >= 1) {
             border-radius: .25rem;
         }
         .upb-stock-card-inner table#tblRequiredStock,
-        .upb-stock-main-scroll table#tblRequiredStock,
-        .upb-stock-card-inner table#tblRequiredSerialStock {
+        .upb-stock-main-scroll table#tblRequiredStock {
+            min-width: 1100px;
+            margin-bottom: 0;
+            table-layout: auto;
+        }
+        #upbSerialStockRoot table#tblRequiredSerialStock {
             min-width: 1100px;
             margin-bottom: 0;
             table-layout: auto;
@@ -164,20 +168,138 @@ if (count($custIds) >= 1) {
         #upbSerialStockRoot {
             margin-bottom: 2rem;
         }
-        .upb-serial-dt-wrap .dataTables_wrapper .dataTables_paginate {
-            margin-top: 0.75rem;
+        /* Compact DataTables pagination — same tight spacing as bulk table */
+        .upb-stock-card-inner .dataTables_wrapper,
+        #upbSerialStockRoot .dataTables_wrapper {
+            width: 100% !important;
         }
-        .upb-serial-dt-wrap .dataTables_wrapper .dataTables_paginate .paginate_button {
-            padding: 0.35rem 0.65rem;
-            margin-left: 2px;
-            border-radius: 0.2rem;
-        }
-        .upb-serial-dt-wrap .dataTables_wrapper .dataTables_info {
-            padding-top: 0.75rem;
+        .upb-stock-card-inner .dataTables_wrapper div.dataTables_info,
+        #upbSerialStockRoot .dataTables_wrapper div.dataTables_info {
+            padding-top: 0.85em;
+            white-space: nowrap;
             color: #212529;
         }
-        .upb-serial-dt-wrap .dataTables_processing {
-            z-index: 5;
+        .upb-stock-card-inner .dataTables_wrapper div.dataTables_paginate,
+        #upbSerialStockRoot .dataTables_wrapper div.dataTables_paginate {
+            margin-top: 0.85em;
+            padding-top: 0;
+            white-space: nowrap;
+            text-align: right;
+            width: auto !important;
+            float: right;
+        }
+        .upb-stock-card-inner .dataTables_wrapper div.dataTables_paginate span,
+        .upb-stock-card-inner .dataTables_wrapper div.dataTables_paginate a.paginate_button,
+        #upbSerialStockRoot .dataTables_wrapper div.dataTables_paginate span,
+        #upbSerialStockRoot .dataTables_wrapper div.dataTables_paginate a.paginate_button {
+            display: inline-block !important;
+            float: none !important;
+            min-width: 0 !important;
+            width: auto !important;
+            padding: 0.25rem 0.55rem !important;
+            margin: 0 0 0 2px !important;
+            line-height: 1.25;
+            box-sizing: border-box;
+        }
+        .upb-stock-card-inner .dataTables_wrapper div.dataTables_paginate ul.pagination,
+        #upbSerialStockRoot .dataTables_wrapper div.dataTables_paginate ul.pagination {
+            margin: 2px 0;
+            justify-content: flex-end;
+            flex-wrap: nowrap;
+        }
+        .upb-stock-card-inner .dataTables_wrapper div.dataTables_paginate ul.pagination li.page-item,
+        #upbSerialStockRoot .dataTables_wrapper div.dataTables_paginate ul.pagination li.page-item {
+            margin: 0 1px;
+        }
+        .upb-stock-card-inner .dataTables_wrapper div.dataTables_paginate ul.pagination li.page-item .page-link,
+        #upbSerialStockRoot .dataTables_wrapper div.dataTables_paginate ul.pagination li.page-item .page-link {
+            padding: 0.25rem 0.55rem;
+            min-width: 0;
+            line-height: 1.25;
+        }
+        .upb-stock-card-inner .dataTables_wrapper > .row:last-child,
+        #upbSerialStockRoot .dataTables_wrapper > .row:last-child {
+            margin-left: 0 !important;
+            margin-right: 0 !important;
+            width: 100% !important;
+            max-width: 100% !important;
+            clear: both;
+        }
+        .upb-stock-card-inner .dataTables_wrapper > .row:last-child > [class*='col-'],
+        #upbSerialStockRoot .dataTables_wrapper > .row:last-child > [class*='col-'] {
+            flex: 0 0 auto;
+            width: auto !important;
+            max-width: 100%;
+        }
+        #upbSerialStockRoot .upb-serial-dt-wrap {
+            border: 1px solid rgba(0,0,0,.06);
+            border-radius: .25rem;
+            padding: 0 4px;
+            overflow: visible;
+        }
+        #upbSerialStockRoot .dataTables_scroll {
+            overflow-x: auto;
+            -webkit-overflow-scrolling: touch;
+        }
+        #upbSerialStockRoot .dataTables_processing {
+            display: none !important;
+        }
+        .upb-serial-dt-wrap {
+            position: relative;
+        }
+        .upb-serial-skeleton {
+            position: absolute;
+            top: 48px;
+            left: 0;
+            right: 0;
+            z-index: 12;
+            background: rgba(255, 255, 255, 0.94);
+            padding: 10px 12px 14px;
+            min-height: 260px;
+            border-bottom: 1px solid rgba(0,0,0,.06);
+        }
+        .upb-skeleton-row {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 12px;
+            align-items: center;
+        }
+        .upb-skeleton-block {
+            height: 14px;
+            border-radius: 4px;
+            background: linear-gradient(90deg, #e8e8e8 25%, #f4f4f4 50%, #e8e8e8 75%);
+            background-size: 200% 100%;
+            animation: upbSkeletonShimmer 1.1s ease-in-out infinite;
+        }
+        .upb-skeleton-block.sm { width: 40px; flex-shrink: 0; }
+        .upb-skeleton-block.lg { flex: 1; min-width: 140px; }
+        .upb-skeleton-block.xs { width: 52px; flex-shrink: 0; }
+        .upb-skeleton-block.md { width: 80px; flex-shrink: 0; }
+        @keyframes upbSkeletonShimmer {
+            0% { background-position: 200% 0; }
+            100% { background-position: -200% 0; }
+        }
+        .upb-serial-full-loader {
+            position: fixed;
+            inset: 0;
+            z-index: 10050;
+            background: rgba(255, 255, 255, 0.6);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .upb-serial-full-loader-inner {
+            text-align: center;
+            padding: 1.25rem 2rem;
+            background: #fff;
+            border-radius: 0.5rem;
+            box-shadow: 0 6px 28px rgba(0, 0, 0, 0.12);
+            color: #212529;
+            min-width: 220px;
+        }
+        #upbSerialStockRoot.upb-serial-loading .dataTables_wrapper {
+            opacity: 0.4;
+            pointer-events: none;
         }
     </style>
 </head>
@@ -281,6 +403,14 @@ if (count($custIds) >= 1) {
 </div>
 
 <?php include_once 'footer_script.php'; ?>
+
+<div id="upbSerialFullLoader" class="upb-serial-full-loader d-none" aria-live="polite" aria-busy="false">
+    <div class="upb-serial-full-loader-inner">
+        <div class="spinner-border text-primary mb-2" role="status" style="width:2.5rem;height:2.5rem;"></div>
+        <div class="font-weight-bold">Loading serial products…</div>
+        <div class="small text-muted mt-1">Please wait</div>
+    </div>
+</div>
 
 <div class="modal fade" id="modalAvlByStore" tabindex="-1" role="dialog" aria-labelledby="modalAvlByStoreLabel" aria-hidden="true">
     <div class="modal-dialog modal-xl modal-dialog-scrollable" role="document">
@@ -457,6 +587,7 @@ $(document).on('hidden.bs.modal', '#modalAvlByStore', function () {
         }
         $tbl.DataTable({
             paging: true,
+            pagingType: 'simple_numbers',
             pageLength: 25,
             lengthMenu: [[10, 25, 50, 100, -1], [10, 25, 50, 100, 'All']],
             ordering: true,
@@ -474,6 +605,38 @@ $(document).on('hidden.bs.modal', '#modalAvlByStore', function () {
                 emptyTable: 'No materials',
                 zeroRecords: 'No matching rows'
             }
+        });
+    }
+
+    function upbBindSerialTableLoader($tbl, $root) {
+        var pending = 0;
+
+        function upbShowSerialLoader() {
+            pending++;
+            $root.addClass('upb-serial-loading');
+            $('#upbSerialSkeleton').removeClass('d-none').attr('aria-hidden', 'false');
+            $('#upbSerialFullLoader').removeClass('d-none').attr('aria-busy', 'true');
+        }
+
+        function upbHideSerialLoader() {
+            pending = Math.max(0, pending - 1);
+            if (pending === 0) {
+                $root.removeClass('upb-serial-loading');
+                $('#upbSerialSkeleton').addClass('d-none').attr('aria-hidden', 'true');
+                $('#upbSerialFullLoader').addClass('d-none').attr('aria-busy', 'false');
+            }
+        }
+
+        $tbl.off('.upbSerialLoad');
+        $tbl.on('preXhr.dt.upbSerialLoad', function () {
+            upbShowSerialLoader();
+        });
+        $tbl.on('draw.dt.upbSerialLoad', function () {
+            upbHideSerialLoader();
+        });
+        $tbl.on('error.dt.upbSerialLoad', function () {
+            pending = 0;
+            upbHideSerialLoader();
         });
     }
 
@@ -576,13 +739,16 @@ $(document).on('hidden.bs.modal', '#modalAvlByStore', function () {
         $tbl.DataTable({
             processing: true,
             serverSide: true,
+            paging: true,
+            pagingType: 'simple_numbers',
             pageLength: 20,
             lengthMenu: [[20, 50, 100], [20, 50, 100]],
             searching: true,
             ordering: false,
             order: [],
             autoWidth: true,
-            scrollX: false,
+            scrollX: true,
+            scrollCollapse: true,
             stateSave: false,
             dom: "<'d-flex flex-wrap justify-content-between align-items-end gap-3 mb-3'lf>rtip",
             ajax: {
@@ -609,6 +775,18 @@ $(document).on('hidden.bs.modal', '#modalAvlByStore', function () {
                     $(row).removeClass('table-warning');
                 }
             },
+            drawCallback: function () {
+                var api = this.api();
+                if (api.columns) {
+                    api.columns.adjust();
+                }
+            },
+            initComplete: function () {
+                var api = this.api();
+                if (api.columns) {
+                    api.columns.adjust();
+                }
+            },
             language: {
                 processing: 'Loading serial products…',
                 emptyTable: 'No serial products',
@@ -624,6 +802,7 @@ $(document).on('hidden.bs.modal', '#modalAvlByStore', function () {
                 }
             }
         });
+        upbBindSerialTableLoader($tbl, $root);
     }
 
     $(function () {

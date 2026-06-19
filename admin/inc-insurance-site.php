@@ -50,10 +50,32 @@ function insuranceSiteBaseEligibleSqlCondition()
     return 'tdo.Inst_Dispatcher_Otp_Verify = 1 AND tu.Roll = 5';
 }
 
+/** One sell row per beneficiary (latest verified dispatch); fallback to customer id when beneficiary id is empty. */
+function insuranceSiteDedupSellJoinSql()
+{
+    return "INNER JOIN (
+        SELECT
+            CASE
+                WHEN TRIM(IFNULL(tu_d.BeneficiaryId, '')) != '' THEN TRIM(tu_d.BeneficiaryId)
+                ELSE CONCAT('cust:', tu_d.id)
+            END AS dedup_key,
+            MAX(tdo_d.id) AS sell_id
+        FROM tbl_sell tdo_d
+        INNER JOIN tbl_users tu_d ON tdo_d.CustId = tu_d.id
+        WHERE tdo_d.Inst_Dispatcher_Otp_Verify = 1
+        GROUP BY
+            CASE
+                WHEN TRIM(IFNULL(tu_d.BeneficiaryId, '')) != '' THEN TRIM(tu_d.BeneficiaryId)
+                ELSE CONCAT('cust:', tu_d.id)
+            END
+    ) ins_dedup ON ins_dedup.sell_id = tdo.id";
+}
+
 /** Core FROM/JOIN (sell + customer + tbl_user2). Avoid DATE '' comparisons in WHERE via helpers below. */
 function insuranceSiteInsuranceFromSqlCore()
 {
     return 'FROM tbl_sell tdo
+        ' . insuranceSiteDedupSellJoinSql() . '
         INNER JOIN tbl_users tu ON tdo.CustId = tu.id
         ' . insuranceSiteUser2JoinSql();
 }
@@ -200,6 +222,71 @@ function insuranceSiteRenewedSqlCondition()
       )";
 }
 
+function insuranceSiteEmployeeAccessLoaded()
+{
+    static $loaded = false;
+    if (!$loaded && is_file(__DIR__ . '/inc-employee-project-access.php')) {
+        require_once __DIR__ . '/inc-employee-project-access.php';
+        $loaded = true;
+    }
+
+    return $loaded;
+}
+
+function insuranceSiteLoggedInUserRow()
+{
+    static $row = false;
+    if ($row !== false) {
+        return $row;
+    }
+    if (empty($_SESSION['Admin']['id'])) {
+        $row = [];
+        return $row;
+    }
+    $uid = (int) $_SESSION['Admin']['id'];
+    $row = getRecord("SELECT * FROM tbl_users WHERE id='$uid'");
+    if (!is_array($row)) {
+        $row = [];
+    }
+
+    return $row;
+}
+
+function insuranceSiteSubHeadRowsForProject($projectId, $userRow = null)
+{
+    insuranceSiteEmployeeAccessLoaded();
+    if ($userRow === null) {
+        $userRow = insuranceSiteLoggedInUserRow();
+    }
+    $projectId = (int) $projectId;
+    if ($projectId <= 0) {
+        return [];
+    }
+
+    return employeeProjectAccessAssignedSubHeads($userRow, $projectId);
+}
+
+function insuranceSiteAppendEmployeeAccessFilters($sql, $userRow = null)
+{
+    insuranceSiteEmployeeAccessLoaded();
+    if ($userRow === null) {
+        $userRow = insuranceSiteLoggedInUserRow();
+    }
+    if (!function_exists('employeeProjectAccessBypass') || employeeProjectAccessBypass($userRow)) {
+        return $sql;
+    }
+
+    $projIds = employeeProjectAccessProjectIds($userRow);
+    $subIds = employeeProjectAccessSubHeadIds($userRow);
+    if (!empty($projIds)) {
+        $sql .= ' AND tu.ProjectId IN (' . implode(',', $projIds) . ')';
+    } elseif (!empty($subIds)) {
+        $sql .= ' AND tu.ProjectSubHeadId IN (' . implode(',', $subIds) . ')';
+    }
+
+    return $sql;
+}
+
 function insuranceSiteAppendListFilters($sql, $filters)
 {
     global $conn;
@@ -234,7 +321,7 @@ function insuranceSiteAppendListFilters($sql, $filters)
         $sql .= " AND tu.ProjectSubHeadId = '" . (int) $filters['project_sub_head_id'] . "'";
     }
 
-    return $sql;
+    return insuranceSiteAppendEmployeeAccessFilters($sql);
 }
 
 function insuranceSiteListFiltersFromRequest()
@@ -265,24 +352,24 @@ function insuranceSiteListFiltersFromRequest()
  */
 function insuranceSiteRenderProjectFilterFields($filterProjectId = 'all', $filterProjectSubHeadId = 'all')
 {
-    global $conn;
     $filterProjectId = ($filterProjectId === '' || $filterProjectId === null) ? 'all' : (string) $filterProjectId;
     $filterProjectSubHeadId = ($filterProjectSubHeadId === '' || $filterProjectSubHeadId === null) ? 'all' : (string) $filterProjectSubHeadId;
+    $userRow = insuranceSiteLoggedInUserRow();
+    $projectRows = insuranceSiteEmployeeAccessLoaded()
+        ? employeeProjectAccessAssignedProjects($userRow)
+        : getList("SELECT * FROM tbl_common_master WHERE Status='1' AND Roll=24 ORDER BY Name ASC");
     ?>
                             <div class="form-group col-md-2">
                                 <label class="form-label">Project</label>
                                 <select class="form-control" id="ProjectId" name="ProjectId" onchange="insuranceSiteGetSubHead(this.value)">
                                     <option value="all" <?php if ($filterProjectId === 'all') { ?> selected <?php } ?>>All Project</option>
                                     <?php
-                                    $projectRes = $conn->query("SELECT * FROM tbl_common_master WHERE Status='1' AND Roll=24 ORDER BY Name ASC");
-                                    if ($projectRes) {
-                                        while ($projectRow = $projectRes->fetch_assoc()) {
-                                            ?>
+                                    foreach ($projectRows as $projectRow) {
+                                        ?>
                                             <option <?php if ($filterProjectId === (string) $projectRow['id']) { ?> selected <?php } ?> value="<?php echo (int) $projectRow['id']; ?>">
                                                 <?php echo htmlspecialchars($projectRow['Name']); ?>
                                             </option>
-                                            <?php
-                                        }
+                                        <?php
                                     }
                                     ?>
                                 </select>
@@ -294,16 +381,13 @@ function insuranceSiteRenderProjectFilterFields($filterProjectId = 'all', $filte
                                     <option value="all" <?php if ($filterProjectSubHeadId === 'all') { ?> selected <?php } ?>>All Sub Head</option>
                                     <?php
                                     if ($filterProjectId !== 'all') {
-                                        $projectEsc = $conn->real_escape_string($filterProjectId);
-                                        $subHeadRes = $conn->query("SELECT * FROM tbl_project_sub_head WHERE UnderBy='$projectEsc' AND Status='1' ORDER BY Name ASC");
-                                        if ($subHeadRes) {
-                                            while ($subHeadRow = $subHeadRes->fetch_assoc()) {
-                                                ?>
+                                        $subHeadRows = insuranceSiteSubHeadRowsForProject((int) $filterProjectId, $userRow);
+                                        foreach ($subHeadRows as $subHeadRow) {
+                                            ?>
                                                 <option <?php if ($filterProjectSubHeadId === (string) $subHeadRow['id']) { ?> selected <?php } ?> value="<?php echo (int) $subHeadRow['id']; ?>">
                                                     <?php echo htmlspecialchars($subHeadRow['Name']); ?>
                                                 </option>
-                                                <?php
-                                            }
+                                            <?php
                                         }
                                     }
                                     ?>
@@ -321,7 +405,7 @@ function insuranceSiteRenderProjectFilterScript()
     $loaded = true;
     ?>
 <script type="text/javascript">
-function insuranceSiteGetSubHead(projectId) {
+function insuranceSiteGetSubHead(projectId, selectedSubHeadId) {
     var $sub = $('#ProjectSubHeadId');
     if (!projectId || projectId === 'all') {
         $sub.html('<option value="all">All Sub Head</option>');
@@ -329,34 +413,46 @@ function insuranceSiteGetSubHead(projectId) {
     }
     $.ajax({
         type: 'POST',
-        url: 'ajax_files/ajax_dropdown.php',
-        data: { action: 'getSubHead', id: projectId },
+        url: 'ajax-insurance-sub-head.php',
+        data: { project_id: projectId },
         success: function(data) {
+            $sub.html(data);
+            if (selectedSubHeadId && selectedSubHeadId !== 'all') {
+                $sub.val(String(selectedSubHeadId));
+            }
+        },
+        error: function() {
             $sub.html('<option value="all">All Sub Head</option>');
-            $(data).find('option').each(function() {
-                var val = $(this).attr('value');
-                if (val && val !== '') {
-                    $sub.append($(this).clone());
-                }
-            });
         }
     });
 }
+
+$(function() {
+    var $project = $('#ProjectId');
+    if (!$project.length) {
+        return;
+    }
+    var projectId = $project.val();
+    if (projectId && projectId !== 'all') {
+        insuranceSiteGetSubHead(projectId, $('#ProjectSubHeadId').val());
+    }
+});
 </script>
     <?php
 }
 
 function insuranceSiteCustomerDropdownSql($whereCondition)
 {
-    return "SELECT DISTINCT tu.id, tu.Fname, tu.BeneficiaryId
+    $sql = "SELECT DISTINCT tu.id, tu.Fname, tu.BeneficiaryId
         " . insuranceSiteInsuranceFromSqlCore() . "
-        WHERE $whereCondition
-        ORDER BY tu.Fname ASC";
+        WHERE $whereCondition";
+
+    return insuranceSiteAppendEmployeeAccessFilters($sql) . " ORDER BY tu.Fname ASC";
 }
 
 function insuranceSiteListSelectSql($whereCondition, $filters, $orderBy = 'tdo.Inst_Dispatcher_Date DESC, tdo.id DESC')
 {
-    $sql = "SELECT tdo.*, tu.id AS UserId, tu.BeneficiaryId, tu.Taluka, tu.Village, tu.District, tu.ProjectType,
+    $sql = "SELECT tdo.*, tu.id AS UserId, tu.BeneficiaryId, tu.Taluka, tu.Village, tu.District, tu.Address AS CustomerAddress, tu.ProjectType,
                    tu.InsuranceNumber, tu.InsuranceAgency, tu.InsuranceValidity,
                    tu2.InsuranceIssueDate, tu2.InsuranceYears
             " . insuranceSiteInsuranceFromSqlCore() . "

@@ -599,17 +599,24 @@ if($_POST['action'] == 'get_Areas'){?>
     } 
     
 
-    if($_POST['action'] == 'getSubHead'){?>
-  <option value="" selected="selected" disabled="">Select Sub Head</option>
-<?php 
-    $CatId = $_POST['id'];
-        $q = "select * from tbl_project_sub_head WHERE UnderBy ='$CatId' AND Status='1'";
-        $r = $conn->query($q);
-        while($rw = $r->fetch_assoc())
-    {
+    if($_POST['action'] == 'getSubHead'){
+        require_once dirname(__DIR__) . '/inc-employee-project-access.php';
+        $CatId = (int) ($_POST['id'] ?? 0);
+        $userRow = [];
+        if (!empty($_SESSION['Admin']['id'])) {
+            $uid = (int) $_SESSION['Admin']['id'];
+            $userRow = getRecord("SELECT * FROM tbl_users WHERE id='$uid'") ?: [];
+        }
+        $rows = employeeProjectAccessAssignedSubHeads($userRow, $CatId);
 ?>
-                <option value="<?php echo $rw['id']; ?>"><?php echo $rw['Name']; ?></option>
-<?php } }
+  <option value="" selected="selected" disabled="">Select Sub Head</option>
+<?php
+        foreach ($rows as $rw) {
+?>
+                <option value="<?php echo (int) $rw['id']; ?>"><?php echo htmlspecialchars($rw['Name']); ?></option>
+<?php
+        }
+    }
 
     if ($_POST['action'] === 'getSubHeadsMulti') {
         header('Content-Type: application/json; charset=utf-8');

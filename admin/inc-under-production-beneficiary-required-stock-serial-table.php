@@ -18,19 +18,23 @@ $upbSerialCustIdsJson = htmlspecialchars(json_encode(array_values(array_map('int
     data-cust-ids="<?php echo $upbSerialCustIdsJson; ?>"
     data-store-count="<?php echo (int) $storeColCount; ?>">
     <h5 class="mb-2" style="font-size: 18px; color: #212529;">Serial No Products</h5>
-    <p class="text-muted small mb-3">
-        All products with <strong>Product Type = Serial No Product</strong> on <em>Add Product</em> (<code>tbl_products.Roll = 1</code>) — shown for every customer.
-        <strong><?php echo htmlspecialchars($reqQtyLabel); ?></strong> is filled when the item is on this customer&apos;s BOM; otherwise <strong>0</strong>.
-        <strong>Avail serials</strong> is how many serial numbers are in stock for that product.
-        <?php if ($serialCatalogCount > 0) { ?>
-            <span class="d-block mt-1"><strong><?php echo (int) $serialCatalogCount; ?></strong> serial products in master — loaded <strong>20 per page</strong> via DataTables AJAX.</span>
-        <?php } ?>
-    </p>
 
     <?php if ($serialCatalogCount === 0) { ?>
         <div class="alert alert-info mb-0">No active Serial No Product records in product master. Add products with Product Type <strong>Serial No Product</strong> on Add Product.</div>
     <?php } else { ?>
-    <div class="upb-stock-card-inner upb-serial-dt-wrap">
+    <div class="upb-serial-dt-wrap">
+        <div id="upbSerialSkeleton" class="upb-serial-skeleton d-none" aria-hidden="true">
+            <?php for ($sk = 0; $sk < 10; $sk++) { ?>
+            <div class="upb-skeleton-row">
+                <span class="upb-skeleton-block sm"></span>
+                <span class="upb-skeleton-block lg"></span>
+                <span class="upb-skeleton-block xs"></span>
+                <span class="upb-skeleton-block xs"></span>
+                <span class="upb-skeleton-block md"></span>
+                <span class="upb-skeleton-block md"></span>
+            </div>
+            <?php } ?>
+        </div>
         <table id="tblRequiredSerialStock" class="table table-striped table-bordered table-sm nowrap" style="width:100%" cellspacing="0">
             <thead class="thead-light">
                 <tr>

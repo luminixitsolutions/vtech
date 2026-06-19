@@ -198,12 +198,12 @@ $pendingInsuranceCustomerSql = insuranceSiteCustomerDropdownSql(insuranceSitePen
                             <td><?php echo htmlspecialchars($row['Taluka']); ?></td>
                             <td><?php echo htmlspecialchars($row['Village']); ?></td>
                             <td><?php echo htmlspecialchars($row['District']); ?></td>
-                            <td><?php echo htmlspecialchars($row['Address']); ?></td>
-                            <td><?php echo htmlspecialchars($row['InsuranceAgency']); ?></td>
-                            <td><?php echo htmlspecialchars($row['InsuranceNumber']); ?></td>
-                            <td><?php echo htmlspecialchars(formatInsuranceDate($row['InsuranceIssueDate'])); ?></td>
-                            <td><?php echo htmlspecialchars(formatInsuranceDate($row['InsuranceValidity'])); ?></td>
-                            <td><?php echo htmlspecialchars(getInsuranceYears($row['InsuranceIssueDate'], $row['InsuranceValidity'], $row['InsuranceYears'])); ?></td>
+                            <td><?php echo htmlspecialchars($row['CustomerAddress'] ?? ''); ?></td>
+                            <td></td>
+                            <td></td>
+                            <td></td>
+                            <td></td>
+                            <td></td>
                             <td>Pending</td>
                             <td><?php echo $dispatchDate; ?></td>
                             <td>
@@ -249,6 +249,7 @@ function showInsuranceImportAlert(type, message) {
 $(document).ready(function() {
     $('#example').DataTable({
         scrollX: true,
+        autoWidth: false,
         dom: 'Bfrtip',
         buttons: [{
             extend: 'excelHtml5',
