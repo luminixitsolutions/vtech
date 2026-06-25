@@ -100,7 +100,11 @@ function stock_report2_format_date($d)
             $refId = (int) ($row['DistId'] ?? 0);
             $vdt = stock_report2_format_date($row['VehicalDate'] ?? '');
             $ldt = stock_report2_format_date($row['CreatedDate'] ?? '');
-            $batchLink = ($refId > 0) ? '../view-assigning-items.php?id=' . $refId : '';
+            $batchLink = trim((string) ($row['BatchLink'] ?? ''));
+            $batchLabel = trim((string) ($row['BatchLabel'] ?? 'Open batch'));
+            if ($batchLink === '' && $refId > 0) {
+                $batchLink = '../view-assigning-items.php?id=' . $refId;
+            }
             ?>
         <tr>
             <td><?php echo $i++; ?></td>
@@ -114,7 +118,7 @@ function stock_report2_format_date($d)
             <td><?php echo htmlspecialchars(trim((string) ($row['VehicalNo'] ?? '') . ($vdt ? ' / ' . $vdt : ''))); ?></td>
             <td><?php echo htmlspecialchars((string) ($row['HeaderNarration'] ?? '')); ?></td>
             <td><?php if ($batchLink !== '') { ?>
-                <a href="<?php echo htmlspecialchars($batchLink); ?>" target="_blank" rel="noopener">Open batch</a>
+                <a href="<?php echo htmlspecialchars($batchLink); ?>" target="_blank" rel="noopener"><?php echo htmlspecialchars($batchLabel); ?></a>
             <?php } else { echo '—'; } ?></td>
         </tr>
         <?php } ?>
@@ -122,6 +126,15 @@ function stock_report2_format_date($d)
         <tr><td colspan="11" class="text-center text-muted">No inward lines found.</td></tr>
         <?php } ?>
     </tbody>
+    <?php if (!empty($rows)) { ?>
+    <tfoot>
+        <tr class="table-active">
+            <th colspan="3" class="text-right">Total</th>
+            <th><?php echo htmlspecialchars(mobileStockFormatQty($sumQty)); ?></th>
+            <th colspan="7"></th>
+        </tr>
+    </tfoot>
+    <?php } ?>
 </table>
 </div>
 </div>

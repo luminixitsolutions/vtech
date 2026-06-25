@@ -50,6 +50,9 @@ $Page = "Add-Drivers";
 $id = $_GET['id'];
 $sql7 = "SELECT * FROM tbl_users WHERE id='$id'";
 $row7 = getRecord($sql7);
+if (!is_array($row7)) {
+    $row7 = array();
+}
 ?>
 
                 <div class="layout-content">
@@ -94,13 +97,22 @@ $row7 = getRecord($sql7);
   $sql12 = "SELECT * FROM tbl_branch WHERE Status='1'";
 }
 else{
-  $sql12 = "SELECT * FROM tbl_branch WHERE Status='1' AND id='$BranchId'";
+  $allowedBranchIds = array_filter(array_map('intval', explode(',', (string) ($MulBranchId ?? ''))));
+  if ((int) $BranchId > 0) {
+      $allowedBranchIds[] = (int) $BranchId;
+  }
+  $allowedBranchIds = array_values(array_unique(array_filter($allowedBranchIds)));
+  if (!empty($allowedBranchIds)) {
+      $sql12 = "SELECT * FROM tbl_branch WHERE Status='1' AND id IN (" . implode(',', $allowedBranchIds) . ")";
+  } else {
+      $sql12 = "SELECT * FROM tbl_branch WHERE Status='1' AND 1=0";
+  }
 }
 
   $row12 = getList($sql12);
   foreach($row12 as $result){
      ?>
-  <option <?php if($row7["BranchId"] == $result['id']) {?> selected <?php } ?> value="<?php echo $result['id'];?>">
+  <option <?php if(($row7["BranchId"] ?? '') == $result['id']) {?> selected <?php } ?> value="<?php echo $result['id'];?>">
     <?php echo $result['Name']; ?></option>
 <?php } ?>
 </select>
@@ -119,13 +131,22 @@ else{
   $sql12 = "SELECT * FROM tbl_rooftop_branch WHERE Status='1'";
 }
 else{
-  $sql12 = "SELECT * FROM tbl_rooftop_branch WHERE Status='1' AND id='$BranchId'";
+  $allowedRooftopBranchIds = array_filter(array_map('intval', explode(',', (string) ($MulRooftopBranchId ?? ''))));
+  if ((int) ($RooftopBranchId ?? 0) > 0) {
+      $allowedRooftopBranchIds[] = (int) $RooftopBranchId;
+  }
+  $allowedRooftopBranchIds = array_values(array_unique(array_filter($allowedRooftopBranchIds)));
+  if (!empty($allowedRooftopBranchIds)) {
+      $sql12 = "SELECT * FROM tbl_rooftop_branch WHERE Status='1' AND id IN (" . implode(',', $allowedRooftopBranchIds) . ")";
+  } else {
+      $sql12 = "SELECT * FROM tbl_rooftop_branch WHERE Status='1' AND 1=0";
+  }
 }
 
   $row12 = getList($sql12);
   foreach($row12 as $result){
      ?>
-  <option <?php if($row7["RooftopBranchId"] == $result['id']) {?> selected <?php } ?> value="<?php echo $result['id'];?>">
+  <option <?php if(($row7["RooftopBranchId"] ?? '') == $result['id']) {?> selected <?php } ?> value="<?php echo $result['id'];?>">
     <?php echo $result['Name']; ?></option>
 <?php } ?>
 </select>

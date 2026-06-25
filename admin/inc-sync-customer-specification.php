@@ -89,7 +89,7 @@ function custSpecFetchMasterBosLines($conn, array $filters)
         }
     }
 
-    $sql .= " GROUP BY tps.ProdId ORDER BY tp.ProductName ASC";
+    $sql .= " ORDER BY tp.ProductName ASC";
     $rows = getList($sql);
 
     return is_array($rows) ? $rows : [];
@@ -139,7 +139,7 @@ function custSpecFetchMasterStructLinesForCustomer($conn, array $cust)
                 $sql .= " AND tps." . $column . " = '" . $value . "'";
             }
         }
-        $sql .= " GROUP BY tp.id, tps.Structure ORDER BY tp.ProductName ASC";
+        $sql .= " ORDER BY tp.ProductName ASC";
 
         $rows = getList($sql);
         if (!is_array($rows)) {

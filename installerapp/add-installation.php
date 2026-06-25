@@ -64,6 +64,9 @@ $CellNo = $row7['Phone'];
 $CustName = $row7['Fname'];
 $Address = $row7['Address'];
 $ProjectType = $row7['ProjectType'];
+$instRow = getRecord("SELECT WaterOutputPhotoDate, InstallationPhotoDate FROM tbl_installations WHERE CustId='$id' LIMIT 1");
+$installationPhotoDateVal = is_array($instRow) ? ($instRow['InstallationPhotoDate'] ?? '') : '';
+$waterOutputPhotoDateVal = is_array($instRow) ? ($instRow['WaterOutputPhotoDate'] ?? '') : '';
 if($ProjectType == 1){
     $Type=2;
 }
@@ -117,10 +120,10 @@ else{
 // $Photo2 = getImage(2,$user_id);
 
 $ProjType = $_POST['Type'];
-$sql = "UPDATE tbl_users SET WaterOutputPhotoDate='$WaterOutputPhotoDate',InstallationPhotoDate='$InstallationPhotoDate',InstPhoto1='$Photo',InstPhoto2='$Photo2',InstallationDate='$InstallationDate',InstMoney='$Money',InstSpecify='$Specify',InstalledBy='$user_id',InstLattitude='$Lattitude',InstLongitude='$Longitude',InstOtpVerify=0 WHERE id='$id'";
+$sql = "UPDATE tbl_users SET InstPhoto1='$Photo',InstPhoto2='$Photo2',InstallationDate='$InstallationDate',InstMoney='$Money',InstSpecify='$Specify',InstalledBy='$user_id',InstLattitude='$Lattitude',InstLongitude='$Longitude',InstOtpVerify=0 WHERE id='$id'";
 $conn->query($sql);
 
- $sql = "INSERT INTO tbl_installations SET WaterOutputPhotoDate='$WaterOutputPhotoDate',InstallationPhotoDate='$InstallationPhotoDate',CustId='$id',CellNo='$CellNo',CustName='$CustName',Address='$Address',Lattitude='$Lattitude',Longitude='$Longitude',InstStatus='Installation',Status=1,CreatedBy='$user_id',CreatedDate='$CreatedDate',Type='$ProjType',Photo13='$Photo2',Photo1='$Photo'";
+ $sql = "INSERT INTO tbl_installations SET WaterOutputPhotoDate='$WaterOutputPhotoDate',InstallationPhotoDate='$InstallationPhotoDate',CustId='$id',CellNo='$CellNo',CustName='$CustName',Address='$Address',Lattitude='$Lattitude',Longitude='$Longitude',InstStatus='Installation',Status=1,CreatedBy='$user_id',CreatedDate='$CreatedDate',ModifiedBy='0',Type='$ProjType',Photo13='$Photo2',Photo1='$Photo',InstallationDate='$InstallationDate',FoundationContractorId='0',DocumentationContractorId='0',PaymentStatus='0',ProjectId='0',ProjectSubHeadId='0',AssignPendingFileSubmissionTo='0'";
     $conn->query($sql);
     
   $sql = "DELETE FROM tbl_crop_image WHERE UserId='$user_id'";
@@ -182,7 +185,7 @@ echo "<script>window.location.href='installation-otp-verify.php?id=$id&phone=$Ce
                                             <label class="form-label">Date of System Installed Photo sent on Whatsapp <span
                                                     class="text-danger">*</span></label>
                                             <input type="date" name="InstallationPhotoDate" id="InstallationPhotoDate" class="form-control"
-                                                placeholder="" value="<?php echo $row7['InstallationPhotoDate']; ?>"
+                                                placeholder="" value="<?php echo htmlspecialchars((string) $installationPhotoDateVal); ?>"
                                                 autocomplete="off" required>
                                             <div class="clearfix"></div>
                                         </div> 
@@ -191,7 +194,7 @@ echo "<script>window.location.href='installation-otp-verify.php?id=$id&phone=$Ce
                                             <label class="form-label">Date of Water Output Photo sent on Whatsapp <span
                                                     class="text-danger">*</span></label>
                                             <input type="date" name="WaterOutputPhotoDate" id="WaterOutputPhotoDate" class="form-control"
-                                                placeholder="" value="<?php echo $row7['WaterOutputPhotoDate']; ?>"
+                                                placeholder="" value="<?php echo htmlspecialchars((string) $waterOutputPhotoDateVal); ?>"
                                                 autocomplete="off" required>
                                             <div class="clearfix"></div>
                                         </div> 
@@ -374,11 +377,29 @@ $(document).ready(function() {
                         $('#submit').text('Please Wait...');
                     },
                     success: function(data) {
-                        var res = JSON.parse(data);
+                        var res = typeof data === 'string' ? JSON.parse(data) : data;
+                        if (res.error) {
+                            alert(res.error);
+                            $('#submit').prop('disabled', false).text('Submit');
+                            return;
+                        }
                         var id = res.id;
                         var phone = res.phone;
                         var instid = res.InstId;
                         window.location.href='installation-otp-verify.php?id='+id+'&phone='+phone+'&instid='+instid;
+                    },
+                    error: function(xhr) {
+                        var msg = 'Failed to save installation. Please try again.';
+                        if (xhr.responseText) {
+                            try {
+                                var errRes = JSON.parse(xhr.responseText);
+                                if (errRes.error) {
+                                    msg = errRes.error;
+                                }
+                            } catch (e) {}
+                        }
+                        alert(msg);
+                        $('#submit').prop('disabled', false).text('Submit');
                     }
                 });
         });

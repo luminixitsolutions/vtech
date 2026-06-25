@@ -2,7 +2,6 @@
 session_start();
 include_once '../config.php';
 include_once '../auth.php';
-require_once dirname(__DIR__) . '/inc-sync-customer-specification.php';
 $user_id = $_SESSION['Admin']['id'];
 $MainPage="Product-Specification";
 $Page = "Product-Specification";
@@ -50,97 +49,14 @@ $productSpecSaved = false;
 $productSpecError = '';
 $productSpecSyncMessage = '';
 
-if (isset($_POST['submit'])) {
-    $AcDc = $conn->real_escape_string(trim((string) ($_POST['AcDc'] ?? '')));
-    $Surface = $conn->real_escape_string(trim((string) ($_POST['Surface'] ?? '')));
-    $PumpCapacity = $conn->real_escape_string(trim((string) ($_POST['PumpCapacity'] ?? '')));
-    $WaterSource = $conn->real_escape_string(trim((string) ($_POST['WaterSource'] ?? '')));
-    $BoreDia = $conn->real_escape_string(trim((string) ($_POST['BoreDia'] ?? '')));
-    $PumpHead = $conn->real_escape_string(trim((string) ($_POST['PumpHead'] ?? '')));
-    $AgencyId = $conn->real_escape_string(trim((string) ($_POST['AgencyId'] ?? '')));
-    $PumpOutletSize = $conn->real_escape_string(trim((string) ($_POST['PumpOutletSize'] ?? '')));
-    $CreatedDate = date('Y-m-d');
-
-    if ($AcDc === '' || $Surface === '' || $PumpCapacity === '' || $WaterSource === '' || $PumpHead === '' || $AgencyId === '') {
-        $productSpecError = 'Please fill all required dropdown fields before submit.';
-    } elseif (empty($_POST['ProdId']) || !is_array($_POST['ProdId'])) {
-        $productSpecError = 'Product list not loaded. Change any filter to reload the table, then submit again.';
-    } else {
-        $conn->begin_transaction();
-        try {
-            $sql = "DELETE FROM tbl_product_specification WHERE AcDc='$AcDc'";
-            if ($Surface !== '') {
-                $sql .= " AND Surface='$Surface'";
-            }
-            if ($PumpCapacity !== '') {
-                $sql .= " AND PumpCapacity='$PumpCapacity'";
-            }
-            if ($WaterSource !== '') {
-                $sql .= " AND WaterSource='$WaterSource'";
-            }
-            if ($BoreDia !== '') {
-                $sql .= " AND BoreDia='$BoreDia'";
-            }
-            if ($PumpHead !== '') {
-                $sql .= " AND PumpHead='$PumpHead'";
-            }
-            if ($AgencyId !== '') {
-                $sql .= " AND AgencyId='$AgencyId'";
-            }
-            if ($PumpOutletSize !== '') {
-                $sql .= " AND PumpOutletSize='$PumpOutletSize'";
-            }
-            if (!$conn->query($sql)) {
-                throw new Exception($conn->error);
-            }
-
-            $savedCount = 0;
-            $number = count($_POST['ProdId']);
-            for ($i = 0; $i < $number; $i++) {
-                $prodId = trim((string) ($_POST['ProdId'][$i] ?? ''));
-                $qty = trim((string) ($_POST['Qty'][$i] ?? ''));
-                if ($prodId === '' || $qty === '' || !is_numeric($qty) || (float) $qty <= 0) {
-                    continue;
-                }
-                $ProdName = $conn->real_escape_string((string) ($_POST['ProdName'][$i] ?? ''));
-                $Unit = $conn->real_escape_string((string) ($_POST['Unit'][$i] ?? ''));
-                $Qty = $conn->real_escape_string($qty);
-
-                $sql = "INSERT INTO tbl_product_specification SET AcDc='$AcDc',Surface='$Surface',PumpCapacity='$PumpCapacity',WaterSource='$WaterSource',BoreDia='$BoreDia',PumpHead='$PumpHead',ProdId='$prodId',ProdName='$ProdName',Unit='$Unit',Qty='$Qty',CreatedBy='$user_id',CreatedDate='$CreatedDate',AgencyId='$AgencyId',PumpOutletSize='$PumpOutletSize'";
-                if (!$conn->query($sql)) {
-                    throw new Exception($conn->error);
-                }
-                $savedCount++;
-            }
-            if ($savedCount <= 0) {
-                throw new Exception('Enter quantity (Qty) for at least one product row, then submit.');
-            }
-
-            $syncResult = syncCustomerBosSpecifications($conn, [
-                'AcDc' => $AcDc,
-                'Surface' => $Surface,
-                'PumpCapacity' => $PumpCapacity,
-                'WaterSource' => $WaterSource,
-                'BoreDia' => $BoreDia,
-                'PumpHead' => $PumpHead,
-                'AgencyId' => $AgencyId,
-                'PumpOutletSize' => $PumpOutletSize,
-            ], $user_id, $CreatedDate);
-            if ($syncResult['error'] !== '') {
-                throw new Exception('Customer specification sync failed: ' . $syncResult['error']);
-            }
-
-            $conn->commit();
-            $productSpecSaved = true;
-            $productSpecSyncMessage = (int) $syncResult['updated'] . ' customer(s) updated';
-            if ((int) $syncResult['skipped'] > 0) {
-                $productSpecSyncMessage .= ', ' . (int) $syncResult['skipped'] . ' skipped (delivery challan exists)';
-            }
-        } catch (Exception $e) {
-            $conn->rollback();
-            $productSpecError = $e->getMessage();
-        }
-    }
+if (!isset($row7) || !is_array($row7)) {
+    $row7 = [];
+}
+$specSel = function ($field) use ($row7) {
+    return (string) ($_GET[$field] ?? $_POST[$field] ?? ($row7[$field] ?? ''));
+};
+if (isset($_GET['saved']) && (string) $_GET['saved'] === '1') {
+    $productSpecSaved = true;
 }
 ?>
 
@@ -155,7 +71,7 @@ if (isset($_POST['submit'])) {
 <div class="card-body">
 <div id="alert_message"></div>
 <?php if ($productSpecSaved) { ?>
-<div class="alert alert-success">Product specification saved successfully.<?php if ($productSpecSyncMessage !== '') { ?> Customer sync: <?php echo htmlspecialchars($productSpecSyncMessage, ENT_QUOTES, 'UTF-8'); ?>.<?php } ?></div>
+<div class="alert alert-success">Product specification saved successfully.<?php if ($productSpecSyncMessage !== '') { ?> <?php echo htmlspecialchars($productSpecSyncMessage, ENT_QUOTES, 'UTF-8'); ?><?php } ?></div>
 <?php } elseif ($productSpecError !== '') { ?>
 <div class="alert alert-danger"><?php echo htmlspecialchars($productSpecError, ENT_QUOTES, 'UTF-8'); ?></div>
 <?php } ?>
@@ -168,13 +84,12 @@ if (isset($_POST['submit'])) {
 <select class="form-control" id="AgencyId" name="AgencyId" required>
 <option value="" selected disabled>Select Agency</option>
   <?php 
- $StateId = $row7['StateId'];
         $q = "select Fname,id from tbl_users WHERE Roll=11 ORDER BY Fname ASC";
         $r = $conn->query($q);
         while($rw = $r->fetch_assoc())
     {
 ?>
-                <option <?php if($row7['SchemeId']==$rw['id']){ ?> selected <?php } ?> 
+                <option <?php if((string)$specSel('AgencyId')===(string)$rw['id']){ ?> selected <?php } ?> 
                 value="<?php echo $rw['id']; ?>"><?php echo $rw['Fname']; ?></option>
               <?php } ?>
 </select>
@@ -185,9 +100,9 @@ if (isset($_POST['submit'])) {
                                                     class="text-danger">*</span></label>
                                             <select class="form-control" id="AcDc" name="AcDc" required>
                                                
-                                                <option value="AC" <?php if($row7["AcDc"]=='AC') {?> selected
+                                                <option value="AC" <?php if($specSel('AcDc')=='AC') {?> selected
                                                     <?php } ?>>AC</option>
-                                                <option value="DC" <?php if($row7["AcDc"]=='DC') {?> selected
+                                                <option value="DC" <?php if($specSel('AcDc')=='DC') {?> selected
                                                     <?php } ?>>DC</option>
                                             </select>
                                             <div class="clearfix"></div>
@@ -205,7 +120,7 @@ if (isset($_POST['submit'])) {
         while($rw = $r->fetch_assoc())
     {
 ?>
-                <option <?php if($row7['Surface']==$rw['id']){ ?> selected <?php } ?> value="<?php echo $rw['id']; ?>"><?php echo $rw['Name']; ?></option>
+                <option <?php if($specSel('Surface')==$rw['id']){ ?> selected <?php } ?> value="<?php echo $rw['id']; ?>"><?php echo $rw['Name']; ?></option>
               <?php } ?>
 </select>
 
@@ -225,7 +140,7 @@ if (isset($_POST['submit'])) {
         while($rw = $r->fetch_assoc())
     {
 ?>
-                <option <?php if($row7['PumpCapacity']==$rw['id']){ ?> selected <?php } ?> value="<?php echo $rw['id']; ?>"><?php echo $rw['Name']; ?></option>
+                <option <?php if($specSel('PumpOutletSize')==$rw['id']){ ?> selected <?php } ?> value="<?php echo $rw['id']; ?>"><?php echo $rw['Name']; ?></option>
               <?php } ?>
 </select>
 
@@ -245,7 +160,7 @@ if (isset($_POST['submit'])) {
         while($rw = $r->fetch_assoc())
     {
 ?>
-                <option <?php if($row7['PumpCapacity']==$rw['id']){ ?> selected <?php } ?> value="<?php echo $rw['id']; ?>"><?php echo $rw['Name']; ?></option>
+                <option <?php if($specSel('PumpCapacity')==$rw['id']){ ?> selected <?php } ?> value="<?php echo $rw['id']; ?>"><?php echo $rw['Name']; ?></option>
               <?php } ?>
 </select>
 
@@ -265,7 +180,7 @@ if (isset($_POST['submit'])) {
         while($rw = $r->fetch_assoc())
     {
 ?>
-                <option <?php if($row7['WaterSource']==$rw['id']){ ?> selected <?php } ?> value="<?php echo $rw['id']; ?>"><?php echo $rw['Name']; ?></option>
+                <option <?php if($specSel('WaterSource')==$rw['id']){ ?> selected <?php } ?> value="<?php echo $rw['id']; ?>"><?php echo $rw['Name']; ?></option>
               <?php } ?>
 </select>
                                            
@@ -282,7 +197,7 @@ if (isset($_POST['submit'])) {
         while($rw = $r->fetch_assoc())
     {
 ?>
-                <option <?php if($row7['BoreDia']==$rw['id']){ ?> selected <?php } ?> value="<?php echo $rw['id']; ?>"><?php echo $rw['Name']; ?></option>
+                <option <?php if($specSel('BoreDia')==$rw['id']){ ?> selected <?php } ?> value="<?php echo $rw['id']; ?>"><?php echo $rw['Name']; ?></option>
               <?php } ?>
 </select>
                                            
@@ -301,7 +216,7 @@ if (isset($_POST['submit'])) {
         while($rw = $r->fetch_assoc())
     {
 ?>
-                <option <?php if($row7['PumpHead']==$rw['id']){ ?> selected <?php } ?> value="<?php echo $rw['id']; ?>"><?php echo $rw['Name']; ?></option>
+                <option <?php if($specSel('PumpHead')==$rw['id']){ ?> selected <?php } ?> value="<?php echo $rw['id']; ?>"><?php echo $rw['Name']; ?></option>
               <?php } ?>
 </select>
                                            
@@ -379,23 +294,119 @@ if (isset($_POST['submit'])) {
 
     function reloadProductSpecList() {
         var f = productSpecFilterValues();
+        if (!f.AgencyId || !f.AcDc || !f.Surface || !f.PumpCapacity || !f.WaterSource || !f.PumpHead || !f.PumpOutletSize) {
+            return;
+        }
         getProdList(f.AcDc, f.Surface, f.PumpCapacity, f.WaterSource, f.BoreDia, f.PumpHead, f.AgencyId, f.PumpOutletSize);
     }
 
     $(document).on('change', '#AgencyId,#AcDc,#Surface,#PumpOutletSize,#PumpCapacity,#WaterSource,#BoreDia,#PumpHead', reloadProductSpecList);
 
-    $('#validation-form').on('submit', function () {
-        $('#productSpecSubmit').prop('disabled', true).text('Please wait...');
+    function showProductSpecAlert(type, message) {
+        var cls = type === 'success' ? 'alert-success' : 'alert-danger';
+        $('#alert_message').html('<div class="alert ' + cls + '">' + $('<div>').text(message).html() + '</div>');
+        $('html, body').animate({ scrollTop: $('#alert_message').offset().top - 80 }, 200);
+    }
+
+    function collectProductSpecLines() {
+        var lines = { ProdId: [], ProdName: [], Unit: [], Qty: [] };
+        $('#custresult tbody tr').each(function () {
+            var $tr = $(this);
+            var prodId = ($tr.find('input[name="ProdId[]"]').val() || '').trim();
+            if (!prodId) {
+                return;
+            }
+            lines.ProdId.push(prodId);
+            lines.ProdName.push($tr.find('input[name="ProdName[]"]').val() || '');
+            lines.Unit.push($tr.find('input[name="Unit[]"]').val() || '');
+            lines.Qty.push($tr.find('input[name="Qty[]"]').val() || '');
+        });
+        return lines;
+    }
+
+    function hasProductSpecQty(lines) {
+        for (var i = 0; i < lines.Qty.length; i++) {
+            var qty = (lines.Qty[i] || '').trim();
+            if (qty !== '' && !isNaN(qty) && parseFloat(qty) > 0) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    $('#validation-form').on('submit', function (e) {
+        e.preventDefault();
+
+        var f = productSpecFilterValues();
+        if (!f.AgencyId || !f.AcDc || !f.Surface || !f.PumpCapacity || !f.WaterSource || !f.PumpHead || !f.PumpOutletSize) {
+            showProductSpecAlert('danger', 'Please fill all required dropdown fields before submit.');
+            return;
+        }
+
+        var lines = collectProductSpecLines();
+        if (lines.ProdId.length === 0) {
+            showProductSpecAlert('danger', 'Product list not loaded. Wait for the table to load, then submit again.');
+            return;
+        }
+        if (!hasProductSpecQty(lines)) {
+            showProductSpecAlert('danger', 'Enter quantity (Qty) for at least one product row, then submit.');
+            return;
+        }
+
+        var $btn = $('#productSpecSubmit');
+        $btn.prop('disabled', true).text('Please wait...');
+
+        $.ajax({
+            type: 'POST',
+            url: '../ajax_files/ajax_product_specification.php',
+            dataType: 'json',
+            data: {
+                action: 'save',
+                AcDc: f.AcDc,
+                Surface: f.Surface,
+                PumpCapacity: f.PumpCapacity,
+                WaterSource: f.WaterSource,
+                BoreDia: f.BoreDia,
+                PumpHead: f.PumpHead,
+                AgencyId: f.AgencyId,
+                PumpOutletSize: f.PumpOutletSize,
+                'ProdId[]': lines.ProdId,
+                'ProdName[]': lines.ProdName,
+                'Unit[]': lines.Unit,
+                'Qty[]': lines.Qty
+            },
+            success: function (res) {
+                if (res && res.ok) {
+                    var msg = res.message || 'Product specification saved successfully.';
+                    if (res.sync) {
+                        msg += ' ' + res.sync;
+                    }
+                    showProductSpecAlert('success', msg);
+                    reloadProductSpecList();
+                } else {
+                    showProductSpecAlert('danger', (res && res.error) ? res.error : 'Save failed. Please try again.');
+                }
+            },
+            error: function (xhr) {
+                var msg = 'Save failed. Please try again.';
+                if (xhr.responseText) {
+                    try {
+                        var res = JSON.parse(xhr.responseText);
+                        if (res.error) {
+                            msg = res.error;
+                        }
+                    } catch (ignore) {}
+                }
+                showProductSpecAlert('danger', msg);
+            },
+            complete: function () {
+                $btn.prop('disabled', false).text('Submit');
+            }
+        });
     });
 
     $(function () {
-        var agency = document.getElementById('AgencyId');
-        if (agency && agency.value) {
-            reloadProductSpecList();
-        }
-        <?php if ($productSpecSaved || $productSpecError !== '' || !empty($_POST['submit'])) { ?>
         reloadProductSpecList();
-        <?php } ?>
     });
     </script>
 

@@ -10,43 +10,7 @@ if (!isset($_SESSION['Admin']['id'])) {
 }
 
 $headers = pumpInstallImportSampleHeaders();
-$sampleRow = array(
-    'BEN123456',
-    'Sample Farmer Name',
-    '9876543210',
-    'farmer@example.com',
-    'Village Address Line',
-    '18.5204',
-    '73.8567',
-    'Sample Taluka',
-    'Sample Village',
-    'Sample District',
-    '5 HP',
-    'https://drive.google.com/sample',
-    date('Y-m-d'),
-    '123456789012345',
-    'Yes',
-    'Yes',
-    'Yes',
-    'Yes',
-    'Yes',
-    'No',
-    'No',
-    'No',
-    'Yes',
-    'Yes',
-    'Yes',
-    'No',
-    'JV-001',
-    date('Y-m-d'),
-    'Yes',
-    'No',
-    'No',
-    'No',
-    'No',
-    'No',
-    'No',
-);
+$sampleRow = pumpInstallImportSampleRow();
 
 $filename = 'pump-installation-import-sample.csv';
 header('Content-Type: text/csv; charset=utf-8');

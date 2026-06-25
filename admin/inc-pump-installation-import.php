@@ -2,6 +2,7 @@
 
 require_once __DIR__ . '/inc-work-order-customer.php';
 require_once __DIR__ . '/inc-insurance-site.php';
+require_once __DIR__ . '/inc-sync-customer-specification.php';
 
 function pumpInstallImportMaxFileBytes()
 {
@@ -25,6 +26,23 @@ function pumpInstallImportSampleHeaders()
         'Google Drive Link',
         'Installation Date',
         'IMEI No',
+        'Pump No',
+        'Controller No',
+        'Panel No 1',
+        'Panel No 2',
+        'Panel No 3',
+        'Panel No 4',
+        'Panel No 5',
+        'Panel No 6',
+        'Panel No 7',
+        'Panel No 8',
+        'Panel No 9',
+        'Panel No 10',
+        'Panel No 11',
+        'Panel No 12',
+        'Panel No 13',
+        'Panel No 14',
+        'Panel No 15',
         'Water Outflow',
         'Farmer NOC',
         'Farmer Video',
@@ -81,6 +99,8 @@ function pumpInstallImportNormalizeHeader($header)
         'installation date' => 'installation_date',
         'imei no' => 'imei_no',
         'imei' => 'imei_no',
+        'pump no' => 'pump_no',
+        'controller no' => 'controller_no',
         'water outflow' => 'water_outflow',
         'farmer noc' => 'farmer_noc',
         'farmer video' => 'farmer_video',
@@ -117,7 +137,488 @@ function pumpInstallImportNormalizeHeader($header)
         'warranty till date' => 'warranty_reg_date',
     );
 
+    if (preg_match('/^panel no (\d{1,2})$/', $header, $matches)) {
+        $panelNo = (int) $matches[1];
+        if ($panelNo >= 1 && $panelNo <= 15) {
+            return 'panel_no_' . $panelNo;
+        }
+    }
+
     return isset($map[$header]) ? $map[$header] : null;
+}
+
+function pumpInstallImportSampleRow()
+{
+    $row = array(
+        'BEN123456',
+        'Sample Farmer Name',
+        '9876543210',
+        'farmer@example.com',
+        'Village Address Line',
+        '18.5204',
+        '73.8567',
+        'Sample Taluka',
+        'Sample Village',
+        'Sample District',
+        '5 HP',
+        'https://drive.google.com/sample',
+        date('Y-m-d'),
+        '123456789012345',
+        'PUMP-SERIAL-001',
+        'CTRL-SERIAL-001',
+        'PANEL-SERIAL-001',
+        'PANEL-SERIAL-002',
+        'PANEL-SERIAL-003',
+        'PANEL-SERIAL-004',
+        'PANEL-SERIAL-005',
+        'PANEL-SERIAL-006',
+        'PANEL-SERIAL-007',
+        'PANEL-SERIAL-008',
+        'PANEL-SERIAL-009',
+        '',
+        '',
+        '',
+        '',
+        '',
+        '',
+        'Yes',
+        'Yes',
+        'Yes',
+        'Yes',
+        'Yes',
+        'No',
+        'No',
+        'No',
+        'Yes',
+        'Yes',
+        'Yes',
+        'No',
+        'JV-001',
+        date('Y-m-d'),
+        'Yes',
+        'No',
+        'No',
+        'No',
+        'No',
+        'No',
+        'No',
+    );
+
+    $headers = pumpInstallImportSampleHeaders();
+    if (count($row) < count($headers)) {
+        $row = array_merge($row, array_fill(0, count($headers) - count($row), ''));
+    }
+
+    return array_slice($row, 0, count($headers));
+}
+
+function pumpInstallImportNormalizeSerialValue($value)
+{
+    $value = trim((string) $value);
+    if ($value === '' || $value === '-' || strcasecmp($value, 'n/a') === 0 || $value === '0') {
+        return '';
+    }
+
+    return $value;
+}
+
+function pumpInstallImportPanelSerialsFromParsed(array $parsed)
+{
+    $serials = array();
+    for ($i = 1; $i <= 15; $i++) {
+        $key = 'panel_no_' . $i;
+        $serial = pumpInstallImportNormalizeSerialValue($parsed[$key] ?? '');
+        if ($serial !== '') {
+            $serials[] = $serial;
+        }
+    }
+
+    return $serials;
+}
+
+function pumpInstallImportHasChallanPayload(array $parsed)
+{
+    if (pumpInstallImportNormalizeSerialValue($parsed['pump_no'] ?? '') !== '') {
+        return true;
+    }
+    if (pumpInstallImportNormalizeSerialValue($parsed['controller_no'] ?? '') !== '') {
+        return true;
+    }
+
+    return count(pumpInstallImportPanelSerialsFromParsed($parsed)) > 0;
+}
+
+function pumpInstallImportCustomerSpecLines($conn, $custId)
+{
+    $custId = (int) $custId;
+    if ($custId <= 0) {
+        return array();
+    }
+
+    $rows = getList(
+        "SELECT tcp.ProdId, tcp.ProdName, tcp.Qty, tcp.Unit, tp.Roll, IFNULL(tp.ModelNo, '') AS ModelNo
+         FROM tbl_cust_product_specification tcp
+         INNER JOIN tbl_products tp ON tp.id = tcp.ProdId
+         WHERE tcp.CustId='$custId'
+         ORDER BY tp.Roll ASC, tcp.ProdName ASC"
+    );
+
+    return is_array($rows) ? $rows : array();
+}
+
+function pumpInstallImportProductMatchesPattern($productName, $pattern)
+{
+    $productName = strtoupper((string) $productName);
+    $pattern = strtoupper((string) $pattern);
+
+    if ($pattern === 'PUMPSET') {
+        return strpos($productName, 'PUMPSET') !== false;
+    }
+    if ($pattern === 'CONTROLLER') {
+        return strpos($productName, 'CONTROLLER') !== false
+            && strpos($productName, 'CLAMP') === false
+            && strpos($productName, 'BLADE') === false;
+    }
+    if ($pattern === 'PANEL') {
+        return strpos($productName, 'PV MODULE') !== false
+            || (strpos($productName, 'MODULE') !== false && strpos($productName, 'PUMP') === false);
+    }
+
+    return false;
+}
+
+function pumpInstallImportResolveSerialProduct($conn, $custId, $pattern)
+{
+    $custId = (int) $custId;
+    foreach (pumpInstallImportCustomerSpecLines($conn, $custId) as $line) {
+        if ((int) ($line['Roll'] ?? 0) !== 1) {
+            continue;
+        }
+        if (pumpInstallImportProductMatchesPattern($line['ProdName'] ?? '', $pattern)) {
+            return array(
+                'ProdId' => (int) ($line['ProdId'] ?? 0),
+                'ProdName' => (string) ($line['ProdName'] ?? ''),
+                'Unit' => (string) ($line['Unit'] ?? 'Nos'),
+                'ModelNo' => (string) ($line['ModelNo'] ?? ''),
+            );
+        }
+    }
+
+    $sql = "SELECT id AS ProdId, ProductName AS ProdName, IFNULL(Unit, 'Nos') AS Unit, IFNULL(ModelNo, '') AS ModelNo
+            FROM tbl_products
+            WHERE Status=1 AND Roll=1";
+    if ($pattern === 'PUMPSET') {
+        $sql .= " AND ProductName LIKE '%PUMPSET%'";
+    } elseif ($pattern === 'CONTROLLER') {
+        $sql .= " AND ProductName LIKE '%CONTROLLER%' AND ProductName NOT LIKE '%CLAMP%' AND ProductName NOT LIKE '%BLADE%'";
+    } else {
+        $sql .= " AND (ProductName LIKE '%PV MODULE%' OR ProductName LIKE '%MODULE%')";
+    }
+    $sql .= ' ORDER BY id ASC LIMIT 1';
+
+    $row = getRecord($sql);
+
+    return is_array($row) ? $row : null;
+}
+
+function pumpInstallImportNextChallanInvoiceNo($conn)
+{
+    $row = getRecord('SELECT MAX(SrNo) AS MaxId FROM tbl_sell');
+    $maxId = (int) ($row['MaxId'] ?? 0) + 1;
+
+    return array($maxId, '00' . $maxId);
+}
+
+function pumpInstallImportInsertChallanProduct(
+    $conn,
+    $custId,
+    $sellId,
+    $branchId,
+    $invoiceDate,
+    $userId,
+    $narration,
+    array $product,
+    $serialNo,
+    $qty,
+    $prodType
+) {
+    $custId = (int) $custId;
+    $sellId = (int) $sellId;
+    $branchId = (int) $branchId;
+    $userId = (int) $userId;
+    $productId = (int) ($product['ProdId'] ?? 0);
+    $productName = (string) ($product['ProdName'] ?? '');
+    $unit = (string) ($product['Unit'] ?? 'Nos');
+    $modelNo = (string) ($product['ModelNo'] ?? '');
+    $serialNo = pumpInstallImportNormalizeSerialValue($serialNo);
+    if ($serialNo === '') {
+        $serialNo = 'N/A';
+    }
+    $qty = max(1, (int) $qty);
+    $prodType = (int) $prodType;
+
+    if ($productId <= 0 || $productName === '') {
+        return false;
+    }
+
+    $stmt = $conn->prepare(
+        'INSERT INTO tbl_sell_products
+            (UserId, SellId, ProductId, ProductName, Purity, Weight, Price, Making, HmCharge, Qty, TotalRate, ModelNo, SellDate, SerialNo, BranchId, ProdType, Status, Dispatch, DispatchBy, CustDispatch, CustDispatchBy, BagId, Structure)
+         VALUES (?, ?, ?, ?, ?, \'0\', \'0\', \'0\', \'0\', ?, \'0\', ?, ?, ?, ?, ?, 1, 0, 0, 0, 0, 0, 0)'
+    );
+    if (!$stmt) {
+        return false;
+    }
+    $stmt->bind_param(
+        'iiississii',
+        $custId,
+        $sellId,
+        $productId,
+        $productName,
+        $unit,
+        $qty,
+        $modelNo,
+        $invoiceDate,
+        $serialNo,
+        $branchId,
+        $prodType
+    );
+    if (!$stmt->execute()) {
+        $stmt->close();
+        return false;
+    }
+    $postId = (int) $stmt->insert_id;
+    $stmt->close();
+
+    $stmtStock = $conn->prepare(
+        'INSERT INTO tbl_stocks
+            (SellId, ProductId, ProductName, Qty, Status, CrDr, CreatedBy, CreatedDate, Narration, PostId, BranchId, SellType, SerialNo, ModelNo, ProdType)
+         VALUES (?, ?, ?, ?, 1, \'dr\', ?, ?, ?, ?, ?, \'Challan\', ?, ?, ?)'
+    );
+    if (!$stmtStock) {
+        return false;
+    }
+    $stmtStock->bind_param(
+        'iisiissiissi',
+        $sellId,
+        $productId,
+        $productName,
+        $qty,
+        $userId,
+        $invoiceDate,
+        $narration,
+        $postId,
+        $branchId,
+        $serialNo,
+        $modelNo,
+        $prodType
+    );
+    $ok = $stmtStock->execute();
+    $stmtStock->close();
+
+    return $ok;
+}
+
+function pumpInstallImportCreateDeliveryChallan($conn, $custId, array $parsed, $userId, $createdDate)
+{
+    $custId = (int) $custId;
+    $userId = (int) $userId;
+    $createdDate = trim((string) $createdDate);
+    if ($createdDate === '') {
+        $createdDate = date('Y-m-d');
+    }
+
+    if ($custId <= 0) {
+        return array('created' => false, 'sell_id' => 0, 'reason' => 'Invalid customer.');
+    }
+    if (custSpecCustomerHasDeliveryChallan($conn, $custId)) {
+        return array('created' => false, 'sell_id' => 0, 'reason' => 'Delivery challan already exists.');
+    }
+
+    $specLines = pumpInstallImportCustomerSpecLines($conn, $custId);
+    $hasSerialPayload = pumpInstallImportHasChallanPayload($parsed);
+    if (!$hasSerialPayload && empty($specLines)) {
+        return array('created' => false, 'sell_id' => 0, 'reason' => 'No serial numbers or customer specification found.');
+    }
+
+    $cust = getRecord("SELECT * FROM tbl_users WHERE id='$custId' AND Roll=5 LIMIT 1");
+    if (!$cust) {
+        return array('created' => false, 'sell_id' => 0, 'reason' => 'Customer not found.');
+    }
+
+    $custName = trim((string) ($parsed['customer_name'] ?? $cust['Fname'] ?? ''));
+    $cellNo = preg_replace('/\s+/', '', trim((string) ($parsed['contact_no'] ?? $cust['Phone'] ?? '')));
+    $address = trim((string) ($parsed['address'] ?? $cust['Address'] ?? ''));
+    $branchId = (int) ($cust['BranchId'] ?? 0);
+    if ($branchId <= 0) {
+        $branchId = 4;
+    }
+    $agencyId = (int) ($cust['AgencyId'] ?? 0);
+    $compId = 3;
+    $pumpCapacity = (int) ($cust['PumpCapacity'] ?? 0);
+    $dispatchDate = trim((string) ($parsed['installation_date'] ?? ''));
+    if ($dispatchDate === '' || $dispatchDate === '0000-00-00') {
+        $dispatchDate = $createdDate;
+    }
+
+    list($srNo, $invoiceNo) = pumpInstallImportNextChallanInvoiceNo($conn);
+    $createdTime = date('h:i a');
+    $narration = 'Old installed data import';
+
+    $stmt = $conn->prepare(
+        'INSERT INTO tbl_sell SET
+            ProjectCode=\'\', CompId=?, AgencyId=?, SrNo=?, CustId=?, PumpCapacity=?, CustName=?, CellNo=?, Address=?,
+            InvoiceNo=?, InvoiceDate=?, PayType=\'\', Narration=?, ProdType=1, PayMode=\'\', DeliveryDate=?,
+            GrossAmt=0, CgstPer=0, CgstAmt=0, SgstPer=0, SgstAmt=0, IgstPer=0, IgstAmt=0, SubTotal=0, UcdAmt=0,
+            Status=1, CreatedBy=?, CreatedDate=?, Discount=0, Total=0, ChequeNo=\'\', ChqDate=NULL, BankName=\'\', UpiNo=\'\',
+            CreatedTime=?, BranchId=?, SellType=\'Challan\', WarrantyPeriod=\'\', PayStatus=\'\', LrNo=\'\', LrDate=NULL,
+            Transport=\'\', ConsigneeName=\'\', ConsigneeAddress=\'\', SiteEngineerName=\'\', SiteEngineerContactNo=\'\',
+            SiteManagerName=\'\', SiteManagerContactNo=\'\', Weight=\'\', DriverId=0, MaterialDispatchStatus=1,
+            ChallanType=1, Inst_Dispatcher_Date=?, Inst_Dispatcher_By=?, Inst_Dispatcher_Otp_Verify=1'
+    );
+    if (!$stmt) {
+        return array('created' => false, 'sell_id' => 0, 'reason' => 'Could not prepare challan header.');
+    }
+
+    $stmt->bind_param(
+        'iiiiissssssisissii',
+        $compId,
+        $agencyId,
+        $srNo,
+        $custId,
+        $pumpCapacity,
+        $custName,
+        $cellNo,
+        $address,
+        $invoiceNo,
+        $createdDate,
+        $narration,
+        $dispatchDate,
+        $userId,
+        $createdDate,
+        $createdTime,
+        $branchId,
+        $dispatchDate,
+        $userId
+    );
+    if (!$stmt->execute()) {
+        $stmt->close();
+        return array('created' => false, 'sell_id' => 0, 'reason' => 'Could not create delivery challan.');
+    }
+    $sellId = (int) $stmt->insert_id;
+    $stmt->close();
+
+    if ($sellId <= 0) {
+        return array('created' => false, 'sell_id' => 0, 'reason' => 'Could not create delivery challan.');
+    }
+
+    $itemsAdded = 0;
+
+    foreach ($specLines as $line) {
+        if ((int) ($line['Roll'] ?? 0) === 1) {
+            continue;
+        }
+        $qty = (int) ($line['Qty'] ?? 0);
+        if ($qty <= 0) {
+            $qty = 1;
+        }
+        if (pumpInstallImportInsertChallanProduct(
+            $conn,
+            $custId,
+            $sellId,
+            $branchId,
+            $createdDate,
+            $userId,
+            $narration,
+            $line,
+            'N/A',
+            $qty,
+            0
+        )) {
+            $itemsAdded++;
+        }
+    }
+
+    $pumpSerial = pumpInstallImportNormalizeSerialValue($parsed['pump_no'] ?? '');
+    if ($pumpSerial !== '') {
+        $pumpProduct = pumpInstallImportResolveSerialProduct($conn, $custId, 'PUMPSET');
+        if ($pumpProduct && pumpInstallImportInsertChallanProduct(
+            $conn,
+            $custId,
+            $sellId,
+            $branchId,
+            $createdDate,
+            $userId,
+            $narration,
+            $pumpProduct,
+            $pumpSerial,
+            1,
+            1
+        )) {
+            $itemsAdded++;
+        }
+    }
+
+    $controllerSerial = pumpInstallImportNormalizeSerialValue($parsed['controller_no'] ?? '');
+    if ($controllerSerial !== '') {
+        $controllerProduct = pumpInstallImportResolveSerialProduct($conn, $custId, 'CONTROLLER');
+        if ($controllerProduct && pumpInstallImportInsertChallanProduct(
+            $conn,
+            $custId,
+            $sellId,
+            $branchId,
+            $createdDate,
+            $userId,
+            $narration,
+            $controllerProduct,
+            $controllerSerial,
+            1,
+            1
+        )) {
+            $itemsAdded++;
+        }
+    }
+
+    $panelProduct = pumpInstallImportResolveSerialProduct($conn, $custId, 'PANEL');
+    foreach (pumpInstallImportPanelSerialsFromParsed($parsed) as $panelSerial) {
+        if (!$panelProduct) {
+            break;
+        }
+        if (pumpInstallImportInsertChallanProduct(
+            $conn,
+            $custId,
+            $sellId,
+            $branchId,
+            $createdDate,
+            $userId,
+            $narration,
+            $panelProduct,
+            $panelSerial,
+            1,
+            1
+        )) {
+            $itemsAdded++;
+        }
+    }
+
+    if ($itemsAdded <= 0) {
+        $conn->query("DELETE FROM tbl_sell WHERE id='$sellId' LIMIT 1");
+        return array('created' => false, 'sell_id' => 0, 'reason' => 'No challan line items could be created.');
+    }
+
+    $steps = 'Delivery Challan Created & Order Dispatch Successfully';
+    $stepRow = getRecord("SELECT id FROM tbl_steps WHERE CustId='$custId' AND SrNo='4' LIMIT 1");
+    if ($stepRow) {
+        $conn->query("UPDATE tbl_steps SET Steps='$steps' WHERE CustId='$custId' AND SrNo='4'");
+    } else {
+        $conn->query(
+            "INSERT INTO tbl_steps SET SrNo=4,CustId='$custId',Steps='$steps',CreatedDate='$createdDate',CreatedTime='" . date('h:i a') . "',
+             CustName='" . $conn->real_escape_string($custName) . "',Address='" . $conn->real_escape_string($address) . "',
+             Phone='" . $conn->real_escape_string($cellNo) . "',LeadId='0',LeadActId='0'"
+        );
+    }
+
+    return array('created' => true, 'sell_id' => $sellId, 'reason' => '');
 }
 
 function pumpInstallImportBuildColumnMap($row)
@@ -696,7 +1197,7 @@ function pumpInstallImportInsertInstallation($conn, $custId, $data, $userId, $cr
 
 function pumpInstallImportRowFromSheet($row, $columnMap)
 {
-    return array(
+    $parsed = array(
         'beneficiary_id' => insuranceImportNormalizeBeneficiaryId(
             pumpInstallImportFieldValue($row, $columnMap, 'beneficiary_id')
         ),
@@ -713,6 +1214,12 @@ function pumpInstallImportRowFromSheet($row, $columnMap)
         'drive_link' => pumpInstallImportFieldValue($row, $columnMap, 'drive_link'),
         'installation_date' => pumpInstallImportDateValue($row, $columnMap, 'installation_date'),
         'imei_no' => pumpInstallImportFieldValue($row, $columnMap, 'imei_no'),
+        'pump_no' => pumpInstallImportNormalizeSerialValue(
+            pumpInstallImportFieldValue($row, $columnMap, 'pump_no')
+        ),
+        'controller_no' => pumpInstallImportNormalizeSerialValue(
+            pumpInstallImportFieldValue($row, $columnMap, 'controller_no')
+        ),
         'water_outflow' => pumpInstallImportFieldValue($row, $columnMap, 'water_outflow'),
         'farmer_noc' => pumpInstallImportFieldValue($row, $columnMap, 'farmer_noc'),
         'farmer_noc_date' => pumpInstallImportDateValue($row, $columnMap, 'farmer_noc_date'),
@@ -748,6 +1255,14 @@ function pumpInstallImportRowFromSheet($row, $columnMap)
         'forward_to_payment' => pumpInstallImportFieldValue($row, $columnMap, 'forward_to_payment'),
         'payment_date' => pumpInstallImportDateValue($row, $columnMap, 'payment_date'),
     );
+
+    for ($panelNo = 1; $panelNo <= 15; $panelNo++) {
+        $parsed['panel_no_' . $panelNo] = pumpInstallImportNormalizeSerialValue(
+            pumpInstallImportFieldValue($row, $columnMap, 'panel_no_' . $panelNo)
+        );
+    }
+
+    return $parsed;
 }
 
 function pumpInstallImportProcessSpreadsheet($targetPath, $originalName, $fileType, $projectId, $subHeadId, $userId)
@@ -769,6 +1284,8 @@ function pumpInstallImportProcessSpreadsheet($targetPath, $originalName, $fileTy
         'customers_created' => 0,
         'customers_matched' => 0,
         'installations_inserted' => 0,
+        'challans_created' => 0,
+        'challans_skipped' => 0,
         'skipped' => 0,
         'errors' => array(),
     );
@@ -886,6 +1403,19 @@ function pumpInstallImportProcessSpreadsheet($targetPath, $originalName, $fileTy
         }
 
         $summary['installations_inserted']++;
+
+        $challanResult = pumpInstallImportCreateDeliveryChallan($conn, $custId, $parsed, $userId, $createdDate);
+        if (!empty($challanResult['created'])) {
+            $summary['challans_created']++;
+        } else {
+            $summary['challans_skipped']++;
+            if (!empty($challanResult['reason']) && $challanResult['reason'] !== 'Delivery challan already exists.') {
+                $summary['errors'][] = array(
+                    'row' => $rowNumber,
+                    'reason' => 'Challan not created for Beneficiary ID ' . $beneficiaryId . ': ' . $challanResult['reason'],
+                );
+            }
+        }
     }
 
     $summary['success'] = true;

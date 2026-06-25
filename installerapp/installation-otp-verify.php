@@ -2,6 +2,10 @@
 require_once 'config.php';
 $PageName = "OTP Verify";
 $UserId = $_SESSION['User']['id'];
+if (empty($_SESSION['otp'])) {
+    $_SESSION['otp'] = rand(1000, 9999);
+}
+$sessionOtp = (string) $_SESSION['otp'];
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -57,10 +61,10 @@ $UserId = $_SESSION['User']['id'];
                            <div class="alert alert-success" role="alert" id="success_message" style="display: none;"></div>
                         <div class="input-group form-item input-select">
                                 
-                            <input type="number" name="YourOtp" id="YourOtp" class="form-control" placeholder="Enter OTP" maxlength="4" value="<?php echo $_SESSION['otp'];?>" required>
+                            <input type="number" name="YourOtp" id="YourOtp" class="form-control" placeholder="Enter OTP" maxlength="4" value="<?php echo htmlspecialchars($sessionOtp); ?>" required>
                         </div>
                         
-                         <input class="form-control" type="hidden" autocomplete="off" name="GetOtp" placeholder="Phone No" id="GetOtp" value="<?php echo $_SESSION['otp'];?>">
+                         <input class="form-control" type="hidden" autocomplete="off" name="GetOtp" placeholder="Phone No" id="GetOtp" value="<?php echo htmlspecialchars($sessionOtp); ?>">
                         
                     <input class="form-control" type="hidden" autocomplete="off" name="Phone" placeholder="Phone No" id="Phone" value="<?php echo $_REQUEST['phone'];?>">
                     

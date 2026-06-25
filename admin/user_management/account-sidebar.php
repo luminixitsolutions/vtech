@@ -9,6 +9,8 @@
 	$MenuOptions = adminUserRawMenuOptions($row77);
 	$BranchId = $row77['BranchId'];
 	$MulBranchId = $row77['MulBranchId'];
+	$RooftopBranchId = $row77['RooftopBranchId'];
+	$MulRooftopBranchId = $row77['MulRooftopBranchId'];
  ?>
 <div class="page-loader">
     <div class="bg-primary"></div>

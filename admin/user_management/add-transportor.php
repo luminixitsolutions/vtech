@@ -55,7 +55,18 @@ $Page = 'Add-Transportor';
                                             <select class="form-control" name="BranchId" id="BranchId">
                                                 <?php if ($Roll == 1 || $Roll == 7) { ?><option selected="" value="">Select Store</option><?php } ?>
                                                 <?php
-                                                $sql12 = ($Roll == 1 || $Roll == 7) ? "SELECT * FROM tbl_branch WHERE Status='1'" : "SELECT * FROM tbl_branch WHERE Status='1' AND id='$BranchId'";
+                                                if ($Roll == 1 || $Roll == 7) {
+                                                    $sql12 = "SELECT * FROM tbl_branch WHERE Status='1'";
+                                                } else {
+                                                    $allowedBranchIds = array_filter(array_map('intval', explode(',', (string) ($MulBranchId ?? ''))));
+                                                    if ((int) $BranchId > 0) {
+                                                        $allowedBranchIds[] = (int) $BranchId;
+                                                    }
+                                                    $allowedBranchIds = array_values(array_unique(array_filter($allowedBranchIds)));
+                                                    $sql12 = !empty($allowedBranchIds)
+                                                        ? "SELECT * FROM tbl_branch WHERE Status='1' AND id IN (" . implode(',', $allowedBranchIds) . ")"
+                                                        : "SELECT * FROM tbl_branch WHERE Status='1' AND 1=0";
+                                                }
                                                 foreach (getList($sql12) as $result) {
                                                 ?>
                                                 <option <?php if (($row7['BranchId'] ?? '') == $result['id']) { ?> selected <?php } ?> value="<?php echo $result['id']; ?>"><?php echo $result['Name']; ?></option>
@@ -67,7 +78,18 @@ $Page = 'Add-Transportor';
                                             <select class="form-control" name="RooftopBranchId" id="RooftopBranchId">
                                                 <?php if ($Roll == 1 || $Roll == 7) { ?><option selected="" value="">Select Store</option><?php } ?>
                                                 <?php
-                                                $sql12 = ($Roll == 1 || $Roll == 7) ? "SELECT * FROM tbl_rooftop_branch WHERE Status='1'" : "SELECT * FROM tbl_rooftop_branch WHERE Status='1' AND id='$BranchId'";
+                                                if ($Roll == 1 || $Roll == 7) {
+                                                    $sql12 = "SELECT * FROM tbl_rooftop_branch WHERE Status='1'";
+                                                } else {
+                                                    $allowedRooftopBranchIds = array_filter(array_map('intval', explode(',', (string) ($MulRooftopBranchId ?? ''))));
+                                                    if ((int) ($RooftopBranchId ?? 0) > 0) {
+                                                        $allowedRooftopBranchIds[] = (int) $RooftopBranchId;
+                                                    }
+                                                    $allowedRooftopBranchIds = array_values(array_unique(array_filter($allowedRooftopBranchIds)));
+                                                    $sql12 = !empty($allowedRooftopBranchIds)
+                                                        ? "SELECT * FROM tbl_rooftop_branch WHERE Status='1' AND id IN (" . implode(',', $allowedRooftopBranchIds) . ")"
+                                                        : "SELECT * FROM tbl_rooftop_branch WHERE Status='1' AND 1=0";
+                                                }
                                                 foreach (getList($sql12) as $result) {
                                                 ?>
                                                 <option <?php if (($row7['RooftopBranchId'] ?? '') == $result['id']) { ?> selected <?php } ?> value="<?php echo $result['id']; ?>"><?php echo $result['Name']; ?></option>

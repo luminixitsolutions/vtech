@@ -103,19 +103,10 @@ $Page = "View-Assign-Order";
 <?php include_once 'top_header.php'; ?>
 
 <?php
-$canAssignDispatch = ($Roll == 1 || $Roll == 7 || in_array('10', $Options) || in_array('11', $Options));
+$canAssignDispatch = storeDistUserCanAssignDispatch($Roll, $Options);
 $dispatchOfficers = [];
 if ($canAssignDispatch) {
-    if ($Roll == 1 || $Roll == 7) {
-        $sqlDo = "SELECT id, Fname, Phone FROM tbl_users WHERE Status='1' AND Roll=26 ORDER BY Fname ASC";
-    } else {
-        $bid = (int) $BranchId;
-        $sqlDo = "SELECT id, Fname, Phone FROM tbl_users WHERE Status='1' AND Roll=26 AND (BranchId='$bid' OR FIND_IN_SET('$bid', REPLACE(MulBranchId,' ',''))) ORDER BY Fname ASC";
-    }
-    $dispatchOfficers = getList($sqlDo);
-    if (!is_array($dispatchOfficers)) {
-        $dispatchOfficers = [];
-    }
+    $dispatchOfficers = storeDistLoadDispatchOfficers($conn, $Roll, $BranchId, $MulBranchId);
 }
 
 if($_REQUEST["action"]=="delete")
@@ -162,7 +153,12 @@ if($_REQUEST["action"]=="delete")
   $sql12 = "SELECT * FROM tbl_branch WHERE Status='1'";
 }
 else{
-  $sql12 = "SELECT * FROM tbl_branch WHERE Status='1' AND id='$BranchId'";
+  $allowedBranchIds = storeDistUserBranchIdList($BranchId, $MulBranchId);
+  if (!empty($allowedBranchIds)) {
+      $sql12 = "SELECT * FROM tbl_branch WHERE Status='1' AND id IN (" . implode(',', $allowedBranchIds) . ")";
+  } else {
+      $sql12 = "SELECT * FROM tbl_branch WHERE Status='1' AND 1=0";
+  }
 }
 
   $row12 = getList($sql12);
@@ -252,6 +248,7 @@ $numColIdx = $colOff;
                     LEFT JOIN tbl_branch tb ON ts.BranchId=tb.id 
                     LEFT JOIN tbl_users tu ON ts.StoreInchId=tu.id WHERE ts.Status=1 
                     ";
+            $sql .= storeDistSqlBranchFilterForUser($Roll, $BranchId, $MulBranchId, 'ts.BranchId');
              
             if($_POST['BranchId']){
                 $BranchId = $_POST['BranchId'];

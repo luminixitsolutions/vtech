@@ -107,6 +107,15 @@ function stock_report2_outward_format_date($d)
         <tr><td colspan="6" class="text-center text-muted">No outward lines found.</td></tr>
         <?php } ?>
     </tbody>
+    <?php if (!empty($rows)) { ?>
+    <tfoot>
+        <tr class="table-active">
+            <th colspan="2" class="text-right">Total</th>
+            <th><?php echo htmlspecialchars(mobileStockFormatQty($sumQty)); ?></th>
+            <th colspan="3"></th>
+        </tr>
+    </tfoot>
+    <?php } ?>
 </table>
 </div>
 </div>

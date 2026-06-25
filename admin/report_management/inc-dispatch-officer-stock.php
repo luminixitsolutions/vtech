@@ -126,3 +126,45 @@ function dispatch_officer_product_balance($conn, $branchId, $storeExeId, $produc
 
     return max(0, (int) round($credit - $debit));
 }
+
+/**
+ * Live stock qty for add-sell (matches Stock Qty column on the form).
+ */
+function add_sell_product_stock_qty($conn, $branchId, $productId, $roll, $userId, $dispatchOfficerId = 0)
+{
+    $branchId = (int) $branchId;
+    $productId = (int) $productId;
+    $roll = (int) $roll;
+    $userId = (int) $userId;
+    $dispatchOfficerId = (int) $dispatchOfficerId;
+
+    if ($branchId < 1 || $productId < 1) {
+        return 0;
+    }
+
+    $storeExeId = 0;
+    if ($roll === 26) {
+        $storeExeId = $userId;
+    } elseif ($dispatchOfficerId > 0) {
+        $storeExeId = $dispatchOfficerId;
+    }
+
+    if ($storeExeId > 0) {
+        return dispatch_officer_product_balance($conn, $branchId, $storeExeId, $productId);
+    }
+
+    $creditRow = getRecord(
+        "SELECT SUM(Qty) AS CrQty FROM tbl_distibute_item_details2
+         WHERE ProductId='$productId' AND BranchId='$branchId'"
+    );
+    $debitRow = getRecord(
+        "SELECT SUM(Qty) AS DrQty FROM tbl_stocks
+         WHERE CrDr='dr' AND ProductId='$productId' AND BranchId='$branchId'"
+    );
+    $credit = isset($creditRow['CrQty']) && $creditRow['CrQty'] !== '' && $creditRow['CrQty'] !== null
+        ? (float) $creditRow['CrQty'] : 0;
+    $debit = isset($debitRow['DrQty']) && $debitRow['DrQty'] !== '' && $debitRow['DrQty'] !== null
+        ? (float) $debitRow['DrQty'] : 0;
+
+    return max(0, (int) round($credit - $debit));
+}

@@ -100,6 +100,10 @@ $sampleUrl = 'download-pump-installation-import-sample.php?prjid=' . $projectId 
                                 &nbsp;|&nbsp; Project ID: <strong><?php echo (int) $projectId; ?></strong>
                                 &nbsp;|&nbsp; Sub Head ID: <strong><?php echo (int) $subHeadId; ?></strong>
                             </p>
+                            <p class="text-muted mb-3">
+                                Excel may include <strong>Pump No</strong>, <strong>Controller No</strong>, and <strong>Panel No 1&ndash;15</strong>.
+                                On import, a delivery challan is created automatically for each customer when serial numbers or customer specification items are available.
+                            </p>
 
                             <?php if ($importError !== '') { ?>
                                 <div class="alert alert-danger"><?php echo htmlspecialchars($importError, ENT_QUOTES, 'UTF-8'); ?></div>
@@ -114,6 +118,8 @@ $sampleUrl = 'download-pump-installation-import-sample.php?prjid=' . $projectId 
                                             <tr><th>Customers created</th><td><?php echo (int) $importSummary['customers_created']; ?></td></tr>
                                             <tr><th>Existing customers matched</th><td><?php echo (int) $importSummary['customers_matched']; ?></td></tr>
                                             <tr><th>Installations inserted</th><td><?php echo (int) $importSummary['installations_inserted']; ?></td></tr>
+                                            <tr><th>Delivery challans created</th><td><?php echo (int) ($importSummary['challans_created'] ?? 0); ?></td></tr>
+                                            <tr><th>Delivery challans skipped</th><td><?php echo (int) ($importSummary['challans_skipped'] ?? 0); ?></td></tr>
                                             <tr><th>Skipped rows</th><td><?php echo (int) $importSummary['skipped']; ?></td></tr>
                                         </tbody>
                                     </table>

@@ -2,13 +2,14 @@
 session_start();
 include_once 'config.php';
 include_once 'auth.php';
+include_once 'inc-store-dist-dispatch-status.php';
 require_once __DIR__ . '/inc-po-assignment-activity-log.php';
 
 $user_id = $_SESSION['Admin']['id'];
 $row77 = getRecord("SELECT Roll, Options, BranchId FROM tbl_users WHERE id='$user_id'");
 $Roll = isset($row77['Roll']) ? (int) $row77['Roll'] : 0;
 $Options = isset($row77['Options']) ? explode(',', $row77['Options']) : [];
-$canRevertPo = ($Roll == 1 || $Roll == 7 || in_array('10', $Options) || in_array('11', $Options));
+$canRevertPo = storeDistUserCanAssignDispatch($Roll, $Options);
 if (!$canRevertPo) {
     echo "<script>alert('Access denied.');window.location.href='view-distribute-item-store.php';</script>";
     exit;

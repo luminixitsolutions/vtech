@@ -97,6 +97,19 @@ foreach ($row as $result) {
                             div.dataTables_wrapper div.dataTables_paginate {
                                 margin-top: 1px;
                             }
+
+                            .add-sell-qty-input.is-invalid {
+                                border-color: #dc3545;
+                            }
+
+                            .add-sell-qty-error {
+                                display: block;
+                                font-size: 11px;
+                                line-height: 1.3;
+                                margin-top: 4px;
+                                max-width: 140px;
+                                white-space: normal;
+                            }
                         </style>
 
                         <?php
@@ -170,6 +183,59 @@ foreach ($row as $result) {
                             }
                             $CreatedDate = date('Y-m-d');
                             $CreatedTime = date('h:i a');
+
+                            $branchIdInt = (int) $BranchId;
+                            $custDispatchOfficerId = 0;
+                            if ($CustId !== '') {
+                                $custDispatchRow = getRecord("SELECT DispatchOfficerId FROM tbl_users WHERE id='" . (int) $CustId . "' LIMIT 1");
+                                $custDispatchOfficerId = (int) ($custDispatchRow['DispatchOfficerId'] ?? 0);
+                            }
+
+                            $stockErrors = array();
+                            $checkCount = isset($_POST['CheckId']) ? count($_POST['CheckId']) : 0;
+                            if ($checkCount > 0) {
+                                for ($si = 0; $si < $checkCount; $si++) {
+                                    if ((string) trim($_POST['CheckId'][$si] ?? '') !== '1') {
+                                        continue;
+                                    }
+                                    $checkProductId = (int) ($_POST['ProductId'][$si] ?? 0);
+                                    $requestQty = (float) ($_POST['Qty'][$si] ?? 0);
+                                    $checkProductName = trim((string) ($_POST['ProductName'][$si] ?? ''));
+                                    if ($checkProductId < 1 || $requestQty <= 0) {
+                                        continue;
+                                    }
+                                    $liveStockQty = add_sell_product_stock_qty(
+                                        $conn,
+                                        $branchIdInt,
+                                        $checkProductId,
+                                        (int) $Roll,
+                                        (int) $user_id,
+                                        $custDispatchOfficerId
+                                    );
+                                    if ($requestQty > $liveStockQty + 0.0001) {
+                                        $stockErrors[] = $checkProductName !== ''
+                                            ? $checkProductName . ' (need ' . $requestQty . ', have ' . $liveStockQty . ')'
+                                            : ('Product #' . $checkProductId . ' (need ' . $requestQty . ', have ' . $liveStockQty . ')');
+                                    }
+                                }
+                            }
+
+                            if (!empty($stockErrors)) {
+                                $redirectParams = array(
+                                    'action' => 'search',
+                                    'BranchId' => $branchIdInt,
+                                    'CustId' => (int) $CustId,
+                                    'CompId' => isset($_POST['CompId']) ? trim((string) $_POST['CompId']) : '',
+                                    'AgencyId' => isset($_POST['AgencyId']) ? trim((string) $_POST['AgencyId']) : '',
+                                );
+                                $redirectUrl = 'add-sell.php?' . http_build_query($redirectParams);
+                                $stockMsg = 'Insufficient stock. Challan not saved.\n\n' . implode("\n", array_slice($stockErrors, 0, 8));
+                                if (count($stockErrors) > 8) {
+                                    $stockMsg .= '\n(+' . (count($stockErrors) - 8) . ' more)';
+                                }
+                                echo '<script>alert(' . json_encode($stockMsg) . ');window.location.href=' . json_encode($redirectUrl) . ';</script>';
+                                exit;
+                            }
 
                             $sql8 = "SELECT MAX(SrNo) AS MaxId FROM tbl_sell";
                             $row8 = getRecord($sql8);
@@ -495,24 +561,14 @@ foreach ($row as $result) {
                                                                 $row12 = getList($sql12);
                                                                 foreach ($row12 as $result) {
 
-                                                                    if ($stockStoreExeId > 0 && $stockBranchId > 0) {
-                                                                        $BalQty = dispatch_officer_product_balance(
-                                                                            $conn,
-                                                                            $stockBranchId,
-                                                                            $stockStoreExeId,
-                                                                            (int) $result['ProdId']
-                                                                        );
-                                                                    } else {
-                                                                        $sql11 = "SELECT SUM(Qty) AS CrQty FROM tbl_distibute_item_details2 WHERE ProductId='" . $result['ProdId'] . "' AND BranchId='" . $_REQUEST["BranchId"] . "'";
-                                                                        $row11 = getRecord($sql11);
-                                                                        $CrQty = (float) ($row11['CrQty'] ?? 0);
-
-                                                                        $sqlDr = "SELECT SUM(Qty) AS DrQty FROM tbl_stocks WHERE CrDr='dr' AND ProductId='" . $result['ProdId'] . "' AND BranchId='" . $_REQUEST["BranchId"] . "'";
-                                                                        $rowDr = getRecord($sqlDr);
-                                                                        $DrQty = (float) ($rowDr['DrQty'] ?? 0);
-
-                                                                        $BalQty = max(0, (int) round($CrQty - $DrQty));
-                                                                    }
+                                                                    $BalQty = add_sell_product_stock_qty(
+                                                                        $conn,
+                                                                        $stockBranchId,
+                                                                        (int) $result['ProdId'],
+                                                                        (int) $Roll,
+                                                                        (int) $user_id,
+                                                                        $stockStoreExeId
+                                                                    );
                                                                     $Qty = $result['Qty'];
                                                                     if ($BalQty >= $Qty) {
                                                                         $bgcolor = "";
@@ -550,8 +606,11 @@ foreach ($row as $result) {
                                                                             <input type="hidden" name="ProductName[]" id="ProductName1" value='<?php echo $result['ProdName']; ?>'>
                                                                             <input type="hidden" name="SerialNo[]" id="SerialNo1" value='N/A'>
                                                                             <input type="hidden" name="ModelNo[]" id="ModelNo1" value="<?php echo $result['Model_No']; ?>">
-                                                                            <td><input type="text" name="BalQty[]" id="BalQty1" class="form-control" placeholder="e.g.,1" value="<?php echo $BalQty; ?>" autocomplete="off" readonly style="width:100px;"></td>
-                                                                            <td><input type="number" name="Qty[]" id="Qty1" class="form-control" placeholder="e.g.,1" value="<?php echo $result['Qty']; ?>" autocomplete="off" min="0" style="width:100px;"></td>
+                                                                            <td><input type="text" name="BalQty[]" id="BalQty<?php echo $result['ProdId']; ?>" class="form-control add-sell-stock-qty" data-prod-id="<?php echo $result['ProdId']; ?>" placeholder="e.g.,1" value="<?php echo $BalQty; ?>" autocomplete="off" readonly style="width:100px;"></td>
+                                                                            <td>
+                                                                                <input type="number" name="Qty[]" id="Qty<?php echo $result['ProdId']; ?>" class="form-control add-sell-qty-input" data-prod-id="<?php echo $result['ProdId']; ?>" placeholder="e.g.,1" value="<?php echo $result['Qty']; ?>" autocomplete="off" min="0" style="width:100px;">
+                                                                                <small class="text-danger add-sell-qty-error d-none" id="QtyError<?php echo $result['ProdId']; ?>"></small>
+                                                                            </td>
                                                                             <td><input type="text" name="Purity[]" id="Purity1" class="form-control" placeholder="" value="<?php echo $result['Unit']; ?>" autocomplete="off" style="width:100px;"></td>
 
 
@@ -895,15 +954,75 @@ foreach ($row as $result) {
             });
         }
 
-        function featured2(id){
-if($('#Check_Id'+id).prop('checked') == true) {
-            $('#CheckId'+id).val(1);
-            //saveCart(id);
+        function parseAddSellQty(val) {
+            var n = parseFloat(val);
+            return isNaN(n) ? 0 : n;
         }
-        else{
-           $('#CheckId'+id).val(0);
-           //delete_prod(id);
+
+        function validateAddSellProductRow(prodId) {
+            var stock = parseAddSellQty($('#BalQty' + prodId).val());
+            var qty = parseAddSellQty($('#Qty' + prodId).val());
+            var checked = $('#Check_Id' + prodId).prop('checked');
+            var $qtyInput = $('#Qty' + prodId);
+            var $error = $('#QtyError' + prodId);
+            var $row = $qtyInput.closest('tr');
+
+            if (!$qtyInput.length) {
+                return true;
             }
+
+            if (!checked) {
+                $qtyInput.removeClass('is-invalid');
+                $error.addClass('d-none').text('');
+                if (!$row.find('input[type=checkbox]').prop('disabled')) {
+                    $row.css('background-color', '');
+                }
+                return true;
+            }
+
+            if (qty > stock) {
+                $qtyInput.addClass('is-invalid');
+                $error.removeClass('d-none').text('Qty (' + qty + ') exceeds stock (' + stock + ')');
+                $row.css('background-color', '#fbe9e9');
+                return false;
+            }
+
+            $qtyInput.removeClass('is-invalid');
+            $error.addClass('d-none').text('');
+            $row.css('background-color', '');
+            return true;
+        }
+
+        function validateAddSellCheckedProducts(showAlert) {
+            var ok = true;
+            var firstBad = null;
+            $('.add-sell-qty-input').each(function() {
+                var prodId = $(this).data('prod-id');
+                if (!validateAddSellProductRow(prodId)) {
+                    ok = false;
+                    if (!firstBad) {
+                        firstBad = prodId;
+                    }
+                }
+            });
+            if (!ok) {
+                if (showAlert !== false) {
+                    alert('Qty cannot be greater than Stock Qty for selected product(s).');
+                }
+                if (firstBad) {
+                    $('#Qty' + firstBad).focus();
+                }
+            }
+            return ok;
+        }
+
+        function featured2(id){
+            if ($('#Check_Id' + id).prop('checked') == true) {
+                $('#CheckId' + id).val(1);
+            } else {
+                $('#CheckId' + id).val(0);
+            }
+            validateAddSellProductRow(id);
         }
 
         function featured(id) {
@@ -949,6 +1068,21 @@ if($('#Check_Id'+id).prop('checked') == true) {
         
         
         $(document).ready(function() {
+        $(document).on('input change', '.add-sell-qty-input', function() {
+            validateAddSellProductRow($(this).data('prod-id'));
+        });
+
+        $('#validation-form').on('submit', function(e) {
+            if ($('.add-sell-qty-input').length && !validateAddSellCheckedProducts(true)) {
+                e.preventDefault();
+                return false;
+            }
+        });
+
+        $('.add-sell-qty-input').each(function() {
+            validateAddSellProductRow($(this).data('prod-id'));
+        });
+
         $(document).on('click', '#viewCartBtn', function (e) {
     e.preventDefault();
     $('#cartContent').html('<div class="text-center py-3"><div class="spinner-border text-primary"></div><p class="mt-2">Loading...</p></div>');

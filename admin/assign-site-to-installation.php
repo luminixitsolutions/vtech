@@ -6,6 +6,12 @@ include_once 'auth.php';
 $user_id = $_SESSION['Admin']['id'];
 $MainPage = "Assign-Site-Installation";
 $Page = "Assign-Site-Installation";
+
+$assignStatus = (string) ($_GET['AssignStatus'] ?? 'unassign');
+if (!in_array($assignStatus, ['all', 'assign', 'unassign'], true)) {
+    $assignStatus = 'unassign';
+}
+$returnQs = http_build_query(['AssignStatus' => $assignStatus]);
 ?>
 <!DOCTYPE html>
 <html lang="en" class="default-style layout-fixed layout-navbar-fixed">
@@ -32,6 +38,24 @@ $Page = "Assign-Site-Installation";
 <?php include_once 'top_header.php'; ?>
 
 <?php
+
+require_once __DIR__ . '/inc-menu-option-groups.php';
+$currentUserRoll = (int) ($_SESSION['Admin']['Roll'] ?? 0);
+$isAdmin = adminUserHasFullMenuAccess($currentUserRoll);
+
+if (isset($_POST['unassign_site'])) {
+    if (!$isAdmin) {
+        echo "<script>alert('Only admin can unassign site.');window.location.href='assign-site-to-installation.php';</script>";
+        exit;
+    }
+    $custId = (int) ($_POST['unassign_cust_id'] ?? 0);
+    if ($custId > 0) {
+        $conn->query("UPDATE tbl_users SET ContractorInstallerStatus='0', ContractorInstallerId=NULL, ContractorInstallerDate=NULL WHERE id='$custId' AND ContractorInstallerStatus='1'");
+        $conn->query("DELETE FROM tbl_made_contractor_commision WHERE CustId='$custId' AND Roll=5");
+    }
+    echo "<script>alert('Site unassigned from contractor');window.location.href=" . json_encode('assign-site-to-installation.php?' . $returnQs) . ";</script>";
+    exit;
+}
 
 if(isset($_POST['submit'])){
 
@@ -71,7 +95,7 @@ if(isset($_POST['submit'])){
         }
         
    
-        echo "<script>alert('Site Assign To Contractor');window.location.href='assign-site-to-installation.php';</script>";
+        echo "<script>alert('Site Assign To Contractor');window.location.href='assign-site-to-installation.php?AssignStatus=unassign';</script>";
 }
 ?>
 
@@ -83,7 +107,26 @@ if(isset($_POST['submit'])){
 <a href="add-sell.php" class="btn btn-secondary btn-round"><i class="ion ion-md-add mr-2"></i> Add New Sell</a></span> -->
 </h4>
 
+<form method="get" action="assign-site-to-installation.php" class="mb-3">
+<div class="form-row align-items-end">
+<div class="form-group col-lg-3 col-md-4 mb-0">
+<label class="form-label">Status</label>
+<select class="form-control" name="AssignStatus" onchange="this.form.submit()">
+<option value="unassign" <?php if ($assignStatus === 'unassign') { ?>selected<?php } ?>>Unassign</option>
+<option value="assign" <?php if ($assignStatus === 'assign') { ?>selected<?php } ?>>Assign</option>
+<option value="all" <?php if ($assignStatus === 'all') { ?>selected<?php } ?>>All</option>
+</select>
+</div>
+</div>
+</form>
+
 <div class="card" style="padding: 10px;">
+<?php if ($isAdmin) { ?>
+<form id="unassign-site-form" method="post" action="" style="display:none;">
+    <input type="hidden" name="unassign_cust_id" id="unassign_cust_id" value="">
+    <input type="hidden" name="unassign_site" value="1">
+</form>
+<?php } ?>
     <form id="validation-form" method="post" enctype="multipart/form-data" action="">
      <div id="accordion2">
 <div class="card mb-2">
@@ -92,12 +135,12 @@ if(isset($_POST['submit'])){
                                             <div class="" style="padding:5px;">
                                                 
 <div class="form-row">
+<?php if ($assignStatus !== 'assign') { ?>
  <div class="form-group col-lg-4">
 <label class="form-label"> Contractor<span class="text-danger">*</span></label>
  <select class="select2-demo form-control" name="InstallerId" id="InstallerId" required>
 <option selected="" value="">Select</option>
  <?php 
-//   $sql12 = "SELECT * FROM tbl_users WHERE Status='1' AND Roll IN(34,35,36,37) AND Options LIKE '%86%'";
 $sql12 = "SELECT * FROM tbl_users WHERE Status='1' AND Roll IN(40)";
   $row12 = getList($sql12);
   foreach($row12 as $result){
@@ -108,6 +151,7 @@ $sql12 = "SELECT * FROM tbl_users WHERE Status='1' AND Roll IN(40)";
 </select>
 <div class="clearfix"></div>
 </div>
+<?php } ?>
 
 
 </div>
@@ -134,64 +178,83 @@ $sql12 = "SELECT * FROM tbl_users WHERE Status='1' AND Roll IN(40)";
                 <th>Contractor</th>
                 
                 <th>Assign Date</th>
+                <th>Action</th>
                 
             </tr>
         </thead>
         <tbody>
             <?php 
-            $i=1;
-           
-            $sql = "SELECT ts.* FROM tbl_sell ts WHERE ts.Status=1";
-            $sql.=" GROUP BY ts.CustId ORDER BY ts.id DESC";    
-            //echo $sql;
-            $res = $conn->query($sql);
-            while($row = $res->fetch_assoc())
-            {
-               
-                $sql22 = "SELECT tu2.Fname As CoName,tu.ContractorInstallerDate FROM tbl_users tu 
-                          LEFT JOIN tbl_users tu2 ON tu2.id=tu.ContractorInstallerId 
-                          WHERE tu.ContractorInstallerStatus=1 AND tu.id='".$row['CustId']."'";
-                 $row22 = getRecord($sql22);         
-                $rncnt22 = getRow($sql22);
-                if($rncnt22 > 0){
-                     $bcolor = "background-color: #b9efb9;";
-                }
-                else{
-                    $bcolor = "";
-                }
-                
+            $i = 1;
 
+            $sql = "SELECT ts.CustId, ts.CustName, ts.CellNo, ts.Address,
+                           IFNULL(tu.ContractorInstallerStatus, '0') AS ContractorInstallerStatus,
+                           tu.ContractorInstallerDate,
+                           tu2.Fname AS CoName
+                    FROM tbl_sell ts
+                    INNER JOIN (
+                        SELECT CustId, MAX(id) AS max_id
+                        FROM tbl_sell
+                        WHERE Status = 1
+                        GROUP BY CustId
+                    ) latest ON ts.id = latest.max_id
+                    INNER JOIN tbl_users tu ON tu.id = ts.CustId
+                    LEFT JOIN tbl_users tu2 ON tu2.id = tu.ContractorInstallerId AND tu.ContractorInstallerStatus = '1'
+                    WHERE 1=1";
+
+            if ($assignStatus === 'assign') {
+                $sql .= " AND tu.ContractorInstallerStatus = '1'";
+            } elseif ($assignStatus === 'unassign') {
+                $sql .= " AND IFNULL(tu.ContractorInstallerStatus, '0') != '1'";
+            }
+
+            $sql .= " ORDER BY (tu.ContractorInstallerStatus = '1') ASC, ts.id DESC";
+
+            $siteRows = getList($sql);
+            if (!is_array($siteRows)) {
+                $siteRows = [];
+            }
+
+            foreach ($siteRows as $row) {
+                $isAssigned = ((int) $row['ContractorInstallerStatus'] === 1);
+                $bcolor = $isAssigned ? 'background-color: #b9efb9;' : '';
              ?>
-            <tr style="<?php echo $bcolor;?>">
-                <td><?php if($rncnt22 > 0){} else{?>
+            <tr style="<?php echo $bcolor; ?>">
+                <td><?php if (!$isAssigned) { ?>
                     <label class="custom-control custom-checkbox">
-                    <input type="checkbox" id="Check_Id<?php echo $row['CustId']; ?>" value="0" class="custom-control-input is-valid" onclick="featured(<?php echo $row['CustId']; ?>)">
+                    <input type="checkbox" id="Check_Id<?php echo (int) $row['CustId']; ?>" value="0" class="custom-control-input is-valid" onclick="featured(<?php echo (int) $row['CustId']; ?>)">
                     <span class="custom-control-label">&nbsp;</span>
                  </label><?php } ?> </td>
-                 <input type="hidden" value="0" name="CheckId[]" id="CheckId<?php echo $row['CustId']; ?>">
-                 <input type="hidden" value="<?php echo $row['CustId']; ?>" name="CustId[]">
-               <input type="hidden" value="<?php echo $row['Fname']; ?>" name="CustName[]">
-               <input type="hidden" value="<?php echo $row['Phone']; ?>" name="CellNo[]">
-               <input type="hidden" value="<?php echo $row['Address']; ?>" name="Address[]">
+                 <?php if (!$isAssigned) { ?>
+                 <input type="hidden" value="0" name="CheckId[]" id="CheckId<?php echo (int) $row['CustId']; ?>">
+                 <input type="hidden" value="<?php echo (int) $row['CustId']; ?>" name="CustId[]">
+                 <input type="hidden" value="<?php echo htmlspecialchars($row['CustName'], ENT_QUOTES, 'UTF-8'); ?>" name="CustName[]">
+                 <input type="hidden" value="<?php echo htmlspecialchars($row['CellNo'], ENT_QUOTES, 'UTF-8'); ?>" name="CellNo[]">
+                 <input type="hidden" value="<?php echo htmlspecialchars($row['Address'], ENT_QUOTES, 'UTF-8'); ?>" name="Address[]">
+                 <?php } ?>
                
-              <td><?php echo $row['CustName']; ?></td>
-              <td><?php echo $row['CellNo']; ?></td>
-               <td><?php echo $row['Address']; ?></td>
-              <td><?php echo $row22['CoName']; ?></td>
-               <td><?php if($row22['ContractorInstallerDate']==''){echo "";} else { echo date("d/m/Y", strtotime(str_replace('-', '/',$row22['ContractorInstallerDate']))); } ?></td>  
-          
-             
-          
-           
-              
+              <td><?php echo htmlspecialchars($row['CustName'], ENT_QUOTES, 'UTF-8'); ?></td>
+              <td><?php echo htmlspecialchars($row['CellNo'], ENT_QUOTES, 'UTF-8'); ?></td>
+               <td><?php echo htmlspecialchars($row['Address'], ENT_QUOTES, 'UTF-8'); ?></td>
+              <td><?php echo htmlspecialchars((string) ($row['CoName'] ?? ''), ENT_QUOTES, 'UTF-8'); ?></td>
+               <td><?php if (empty($row['ContractorInstallerDate'])) { echo ''; } else { echo date('d/m/Y', strtotime(str_replace('-', '/', $row['ContractorInstallerDate']))); } ?></td>
+               <td>
+                <?php if ($isAssigned && $isAdmin) { ?>
+                    <button type="submit" class="btn btn-sm btn-outline-warning" form="unassign-site-form"
+                        onclick="document.getElementById('unassign_cust_id').value='<?php echo (int) $row['CustId']; ?>'; return confirm('Unassign this site from the contractor?');">Unassign</button>
+                <?php } else { ?>
+                    <span class="text-muted">—</span>
+                <?php } ?>
+               </td>
             </tr>
-           <?php  $i++;} ?>
+           <?php $i++; } ?>
         </tbody>
     </table>
 </div>
 
 <div class="form-group col-md-1" style="padding-top:20px;">
+<?php if ($assignStatus !== 'assign') { ?>
 <button type="submit" name="submit" class="btn btn-primary btn-finish">Assign</button>
+<?php } ?>
 </div>
 </form>
 </div>
@@ -224,7 +287,9 @@ $sql12 = "SELECT * FROM tbl_users WHERE Status='1' AND Roll IN(40)";
 
     $(document).ready(function() {
     $('#example').DataTable({
-        "scrollX": true
+        "scrollX": true,
+        "pageLength": 25,
+        "order": []
     });
 });
 </script>

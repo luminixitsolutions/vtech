@@ -248,3 +248,73 @@ function isStoreDistAssignedToDispatch($conn, $storeDistId)
 {
     return getStoreDistDispatchAssignment($conn, $storeDistId) !== null;
 }
+
+/** Whether user may assign / revert store batches to dispatch (View Assign Items To Store, etc.). */
+function storeDistUserCanAssignDispatch($roll, array $options)
+{
+    $roll = (int) $roll;
+    if ($roll === 1 || $roll === 7) {
+        return true;
+    }
+    if (in_array('10', $options, true) || in_array('11', $options, true)) {
+        return true;
+    }
+    if (!function_exists('menuAccessShowStoreViewAssignItemsLink')) {
+        require_once __DIR__ . '/inc-menu-access-granular-options.php';
+    }
+
+    return menuAccessShowStoreViewAssignItemsLink($options)
+        || menuAccessShowStoreAssignItemsLink($options);
+}
+
+/** @return int[] */
+function storeDistUserBranchIdList($branchId, $mulBranchId)
+{
+    $ids = array_filter(array_map('intval', explode(',', (string) $mulBranchId)));
+    if ((int) $branchId > 0) {
+        $ids[] = (int) $branchId;
+    }
+
+    return array_values(array_unique(array_filter($ids)));
+}
+
+function storeDistLoadDispatchOfficers($conn, $roll, $branchId, $mulBranchId)
+{
+    $roll = (int) $roll;
+    if ($roll === 1 || $roll === 7) {
+        $list = getList("SELECT id, Fname, Phone FROM tbl_users WHERE Status='1' AND Roll=26 ORDER BY Fname ASC");
+
+        return is_array($list) ? $list : [];
+    }
+
+    $branchIds = storeDistUserBranchIdList($branchId, $mulBranchId);
+    if (empty($branchIds)) {
+        return [];
+    }
+
+    $conds = [];
+    foreach ($branchIds as $bid) {
+        $bid = (int) $bid;
+        $conds[] = "BranchId='$bid' OR FIND_IN_SET('$bid', REPLACE(IFNULL(MulBranchId,''),' ',''))";
+    }
+
+    $sql = "SELECT id, Fname, Phone FROM tbl_users WHERE Status='1' AND Roll=26 AND ("
+        . implode(' OR ', $conds) . ") ORDER BY Fname ASC";
+    $list = getList($sql);
+
+    return is_array($list) ? $list : [];
+}
+
+function storeDistSqlBranchFilterForUser($roll, $branchId, $mulBranchId, $column = 'ts.BranchId')
+{
+    if ((int) $roll === 1 || (int) $roll === 7) {
+        return '';
+    }
+
+    $branchIds = storeDistUserBranchIdList($branchId, $mulBranchId);
+    if (empty($branchIds)) {
+        return " AND 1=0";
+    }
+
+    return ' AND ' . $column . ' IN (' . implode(',', $branchIds) . ')';
+}
