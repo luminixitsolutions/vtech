@@ -120,17 +120,17 @@ function serial_report_fetch_rows($conn, $branchId, $serialQ, $locationFilter)
         SELECT d2.* FROM tbl_distibute_item_details2 d2
         $d2Join
         INNER JOIN (
-            SELECT SerialNo, MAX(id) AS max_id FROM tbl_distibute_item_details2
-            WHERE ProdType IN (1,2) AND StoreExeId > 0 AND SerialNo IS NOT NULL AND TRIM(SerialNo) <> ''
+            SELECT TRIM(SerialNo) AS sn, MAX(id) AS max_id FROM tbl_distibute_item_details2
+            WHERE ProdType IN (1,2) AND StoreExeId > 0 AND SerialNo IS NOT NULL AND TRIM(SerialNo) <> '' AND SerialNo <> 'N/A'
             " . ($branchId > 0 ? " AND BranchId='" . $branchId . "' " : '') . "
-            GROUP BY SerialNo
+            GROUP BY TRIM(SerialNo)
         ) om ON om.max_id = d2.id
         WHERE 1=1 $d2WhereOpen
         AND NOT EXISTS (
             SELECT 1 FROM tbl_stocks sx
             WHERE sx.CrDr='dr' AND sx.ProdType=1 AND sx.SerialNo = d2.SerialNo
         )
-    ) off_ln ON off_ln.SerialNo = u.serial_no $serialJoinOff
+    ) off_ln ON TRIM(off_ln.SerialNo) = TRIM(u.serial_no)
     LEFT JOIN tbl_distibute_items2 off_dist ON off_dist.id = off_ln.DistId
     LEFT JOIN tbl_users u_off ON u_off.id = off_ln.StoreExeId
     LEFT JOIN tbl_branch b_off ON b_off.id = off_ln.BranchId

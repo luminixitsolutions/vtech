@@ -69,8 +69,12 @@ $Page = "View-PDI-Verification";
                                                 <td><?php echo $row['ProjName']; ?></td>
                                                 <td><?php echo $row['ProjSubHeadName']; ?></td>
                                                 <td><?php echo date("d/m/Y", strtotime(str_replace('-', '/', $row['pdidate']))); ?></td>
-                                                <td><?php echo $row['report_no']; ?></td>
-                                                <td><?php echo $row['pdi_qty']; ?></td>
+                                                <td><?php echo htmlspecialchars($row['report_no']); ?></td>
+                                                <td>
+                                                    <a href="pdi-serial-no-list.php?id=<?php echo (int) $row['id']; ?>" class="font-weight-bold">
+                                                        <?php echo (int) $row['pdi_qty']; ?>
+                                                    </a>
+                                                </td>
                                             </tr>
                                         <?php $i++;
                                         } ?>

@@ -3,6 +3,7 @@ session_start();
 include_once '../config.php';
 include_once '../auth.php';
 require_once __DIR__ . '/../inc-item-transfer-workflow-access.php';
+require_once __DIR__ . '/../inc-item-transfer-stock.php';
 $user_id = $_SESSION['Admin']['id'];
 $MainPage = "Item-Transfer-Workflow";
 $Page = "Dispatch-To-Store-Transfer";
@@ -14,19 +15,10 @@ $Options = $workflowUser['options'];
 if (!itemTransferWorkflowCanAccessDispatch($Roll, $Options)) {
     itemTransferWorkflowDeny('Access denied.');
 }
-$hasDetail2IdTd = false;
-$chkTd = $conn->query("SHOW COLUMNS FROM tbl_dispatch_to_store_transfer_details LIKE 'Detail2Id'");
-if ($chkTd && $chkTd->num_rows > 0) {
-    $hasDetail2IdTd = true;
-}
-// Lines still linked in tbl_dispatch_to_store_transfer_details must be hidden from dispatch qty.
-// LEFT JOIN + IS NULL is reliable across MySQL versions; DISTINCT avoids duplicate join rows.
-$d2JoinOpenTransfer = $hasDetail2IdTd
-    ? "LEFT JOIN (SELECT DISTINCT Detail2Id FROM tbl_dispatch_to_store_transfer_details WHERE Detail2Id IS NOT NULL) td_open ON td_open.Detail2Id = d2.id"
-    : "";
-$d2WhereNotOpenTransfer = $hasDetail2IdTd
-    ? "AND td_open.Detail2Id IS NULL"
-    : "";
+$transferStockMeta = itemTransferStockMeta($conn);
+$hasDetail2IdTd = !empty($transferStockMeta['has_detail2_col']);
+$d2JoinOpenTransfer = itemTransferOpenTransferJoinSql($transferStockMeta, 'd2');
+$d2WhereNotOpenTransfer = itemTransferOpenTransferWhereSql($transferStockMeta);
 $Created_Date = isset($_REQUEST['TransferDate']) ? $_REQUEST['TransferDate'] : date('Y-m-d');
 $ToBranchId = isset($_REQUEST['ToBranchId']) ? (int) $_REQUEST['ToBranchId'] : 0;
 if (itemTransferWorkflowIsDispatchOfficerSelf($Roll)) {
@@ -159,20 +151,31 @@ $dispatchOfficerRow = $DispatchOfficerId > 0
                                     </table>
                                     <div id="paginationQty" class="mt-2 mb-3"></div>
 
+                                    <?php
+                                    $reservedSerialCount = itemTransferDispatchReservedSerialCount($conn, $stockExeId);
+                                    if ($reservedSerialCount > 0) {
+                                        echo '<div class="alert alert-info small">'
+                                            . (int) $reservedSerialCount . ' serial item(s) are already in a <strong>pending transfer to store</strong> and are hidden here. '
+                                            . 'Open <a href="item_transfer_workflow/view-dispatch-to-store-transfers.php">View My Transfers</a> to review or revert.</div>';
+                                    }
+                                    ?>
                                     <div class="form-row mt-3">
                                         <label class="form-label font-weight-bold" style="font-size: 16px; color: #0dc30d;">Serial No Products</label>
                                     </div>
                                     <div class="form-group mb-2">
                                         <input type="text" id="searchSerial" class="form-control" placeholder="Search by product name or serial no... (filter only; checked items stay checked)">
-                                        <small class="text-muted">Search, check items, search another product and check more. Submit transfers all checked items.</small>
+                                        <small class="text-muted">Search, check items, search another product and check more. Submit transfers all checked items. Only serials currently on <strong>your</strong> dispatch stock appear here (not another officer's stock).</small>
                                     </div>
                                     <table class="table table-bordered table-sm" id="tblSerial">
                                         <thead><tr><th><input type="checkbox" id="chkAllSerial"></th><th>Product</th><th>Serial No</th></tr></thead>
                                         <tbody>
                                         <?php
-                                        $ss = "SELECT d2.id, d2.ProductName, d2.SerialNo FROM tbl_distibute_item_details2 d2 $d2JoinOpenTransfer WHERE d2.StoreExeId='$stockExeId' AND d2.ProdType IN (1,2) AND d2.SerialNo!='' $d2WhereNotOpenTransfer ORDER BY d2.ProductName, d2.SerialNo";
+                                        $ss = itemTransferDispatchSerialListSql($stockExeId, $transferStockMeta);
                                         $rs = $conn->query($ss);
                                         $has_serial = false;
+                                        if (!$rs) {
+                                            echo '<tr class="serial-msg-row" data-msg="1"><td colspan="3" class="text-danger">Could not load serial stock.</td></tr>';
+                                        }
                                         if ($rs) while ($sr = $rs->fetch_assoc()) {
                                             $has_serial = true;
                                             ?>
