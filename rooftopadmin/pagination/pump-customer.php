@@ -19,18 +19,21 @@ $searchValue = mysqli_real_escape_string($conn,$_POST['search']['value']); // Se
 ## Search 
 $searchQuery = " ";
 if($searchValue != ''){
-	$searchQuery = " and (Fname like '%".$searchValue."%' or 
-        Phone like '%".$searchValue."%' or 
-        Taluka like'%".$searchValue."%' or 
-    	Village like'%".$searchValue."%' or 
-    	District like'%".$searchValue."%' or 
-    	Address like'%".$searchValue."%' or 
-    	BeneficiaryId like'%".$searchValue."%') ";
+	$searchQuery = " and (tu.Fname like '%".$searchValue."%' or 
+        tu.Phone like '%".$searchValue."%' or 
+        tu.Taluka like'%".$searchValue."%' or 
+    	tu.Village like'%".$searchValue."%' or 
+    	tu.District like'%".$searchValue."%' or 
+    	tu.Address like'%".$searchValue."%' or 
+    	tu.BeneficiaryId like'%".$searchValue."%' or 
+    	tu2.ConsumerNo like'%".$searchValue."%') ";
 }
 
-$sql = "SELECT tu.*,tut.Name As User_Type,ts.Name As StateName FROM tbl_users tu 
+$sql = "SELECT tu.*, tut.Name As User_Type, ts.Name As StateName, tu2.ConsumerNo FROM tbl_users tu 
                     LEFT JOIN tbl_user_type tut ON tu.UserType=tut.id 
-                     LEFT JOIN tbl_state ts ON tu.StateId=ts.id WHERE tu.Roll=5 AND tu.LeadCust=0  ";
+                     LEFT JOIN tbl_state ts ON tu.StateId=ts.id 
+                     LEFT JOIN tbl_user2 tu2 ON tu2.id=tu.id 
+                     WHERE tu.Roll=5 AND tu.LeadCust=0  ";
  		if ($_POST['ProjectType']) {
             $ProjectType = $_POST['ProjectType'];
             if ($ProjectType == 'all') {
@@ -114,8 +117,22 @@ $totalRecords = getRow($sql);
 //$records = mysqli_fetch_assoc($sel);
 $totalRecordwithFilter = getRow($sql." ".$searchQuery);
 
+$orderMap = array(
+    'BeneficiaryId' => 'tu.BeneficiaryId',
+    'ConsumerNo' => 'tu2.ConsumerNo',
+    'Fname' => 'tu.Fname',
+    'Phone' => 'tu.Phone',
+    'State' => 'ts.Name',
+    'Taluka' => 'tu.Taluka',
+    'Village' => 'tu.Village',
+    'District' => 'tu.District',
+    'Address' => 'tu.Address',
+    'CreatedDate' => 'tu.CreatedDate',
+);
+$orderColumn = isset($orderMap[$columnName]) ? $orderMap[$columnName] : 'tu.id';
+
 ## Fetch records
-$empQuery = $sql." ".$searchQuery." order by ".$columnName." ".$columnSortOrder." limit ".$row.",".$rowperpage;
+$empQuery = $sql." ".$searchQuery." order by ".$orderColumn." ".$columnSortOrder." limit ".$row.",".$rowperpage;
 $empRecords = mysqli_query($conn, $empQuery);
 $data = array();
 
@@ -165,9 +182,9 @@ else{
     $data[] = array(
     		"SurveyDetails"=>$SurveyDetails,
     		"FieldSurveyDetails"=>$FieldSurveyDetails,
-    		
-    		"BeneficiaryId"=>$row['BeneficiaryId'],
     		"CheckStatus"=>'<a href="rooftop-customer-profile.php?id='.$row['id'].'" target="_new">Check Status</a>',
+    		"BeneficiaryId"=>$row['BeneficiaryId'],
+    		"ConsumerNo"=>$row['ConsumerNo'] ?? '',
     		"Fname"=>'<a href="'.$profileurl.'?id='.$row['id'].'" target="_new">'.$row['Fname'] . " " . $row['Lname'].'</a>',
     		"Phone"=>$row['Phone'],
     			"State"=>$row['StateName'],

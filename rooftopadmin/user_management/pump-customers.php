@@ -187,6 +187,7 @@ $Page = "Pump-Customers";
                     <th>Field Survey Details</th>
                     
                     <th>Solar Status</th>
+                    <th>Beneficiary ID</th>
                     <th>Consumer No</th>
                     <th>Customer Name</th>
                     <th>Contact No</th>
@@ -268,6 +269,7 @@ function deleteCust(id){
                     { data: 'FieldSurveyDetails' },
                     { data: 'CheckStatus' },
                     { data: 'BeneficiaryId' },
+                    { data: 'ConsumerNo' },
                     { data: 'Fname' },
                     { data: 'Phone' },
                     { data: 'State' },

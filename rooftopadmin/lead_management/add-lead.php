@@ -1,10 +1,77 @@
-<?php 
+<?php
 session_start();
 include_once '../config.php';
 include_once '../auth.php';
-$user_id = $_SESSION['Admin']['id'];
-$MainPage = "Lead";
-$Page = "Add-Lead";
+
+$user_id = (int) $_SESSION['Admin']['id'];
+$rowUser = getRecord("SELECT * FROM tbl_users WHERE id='$user_id' LIMIT 1");
+$defaultBranchId = (int) ($rowUser['RooftopBranchId'] ?? $rowUser['BranchId'] ?? 0);
+
+$id = isset($_GET['id']) ? (int) $_GET['id'] : 0;
+$row7 = [];
+$saveError = '';
+
+if ($id > 0) {
+    $row7 = getRecord("SELECT * FROM tbl_rooftop_leads WHERE id='$id' LIMIT 1");
+}
+
+if (isset($_POST['submit'])) {
+    mysqli_report(MYSQLI_REPORT_OFF);
+
+    $CustId = (int) trim((string) ($_POST['CustId'] ?? ''));
+    $CellNo = addslashes(trim((string) ($_POST['CellNo'] ?? '')));
+    $CustName = addslashes(trim((string) ($_POST['CustName'] ?? '')));
+    $Status = (int) trim((string) ($_POST['Status'] ?? '1'));
+    $Address = addslashes(trim((string) ($_POST['Address'] ?? '')));
+    $DocumentsStatus = addslashes(trim((string) ($_POST['DocumentsStatus'] ?? '')));
+    $ClainReason = addslashes(trim((string) ($_POST['ClainReason'] ?? '')));
+    $ClainStatus = addslashes(trim((string) ($_POST['ClainStatus'] ?? '')));
+    $BranchId = (int) trim((string) ($_POST['BranchId'] ?? '0'));
+    if ($BranchId <= 0) {
+        $BranchId = $defaultBranchId;
+    }
+
+    $CreatedDate = date('Y-m-d');
+    $ModifiedDate = date('Y-m-d');
+    $CreatedTime = date('h:i a');
+    $postId = (int) trim((string) ($_POST['id'] ?? ''));
+
+    if ($postId <= 0) {
+        $qx = "INSERT INTO tbl_rooftop_leads SET CustId='$CustId',CellNo='$CellNo',CustName='$CustName',Status='$Status',Address='$Address',DocumentsStatus='$DocumentsStatus',ClainReason='$ClainReason',ClainStatus='$ClainStatus',CreatedDate='$CreatedDate',CreatedBy='$user_id',BranchId='$BranchId',ModifiedDate='$CreatedDate',ModifiedBy='0',AllocateId='0',OppConverted='0',customer_id='0',DoneBy='0'";
+
+        if ($conn->query($qx)) {
+            $PostId = (int) mysqli_insert_id($conn);
+            $TicketNo = '#' . rand(1000, 9999);
+            $conn->query("UPDATE tbl_rooftop_leads SET TicketNo='$TicketNo' WHERE id='$PostId'");
+
+            $codeSeed = substr(str_shuffle('abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890'), 0, 10);
+            $Code = addslashes($codeSeed . $PostId);
+            $conn->query("UPDATE tbl_rooftop_leads SET code='$Code' WHERE id='$PostId'");
+
+            $Steps = 'Customer In Leads';
+            $conn->query("INSERT INTO tbl_steps SET CustId='0',Steps='$Steps',CreatedDate='$CreatedDate',CreatedTime='$CreatedTime',CustName='$CustName',Address='$Address',Phone='$CellNo',LeadSource='$ClainReason',EmpId='$CustId',LeadId='$PostId'");
+
+            echo "<script>alert('Lead Record Saved Successfully!');window.location.href='view-leads.php';</script>";
+            exit;
+        }
+
+        $saveError = $conn->error ?: 'Unable to save lead. Please try again.';
+    } else {
+        $query2 = "UPDATE tbl_rooftop_leads SET CustId='$CustId',CellNo='$CellNo',CustName='$CustName',Status='$Status',Address='$Address',DocumentsStatus='$DocumentsStatus',ClainReason='$ClainReason',ClainStatus='$ClainStatus',ModifiedDate='$ModifiedDate',ModifiedBy='$user_id',BranchId='$BranchId' WHERE id='$postId'";
+
+        if ($conn->query($query2)) {
+            echo "<script>alert('Lead Record Updated Successfully!');window.location.href='view-leads.php';</script>";
+            exit;
+        }
+
+        $saveError = $conn->error ?: 'Unable to update lead. Please try again.';
+        $id = $postId;
+        $row7 = getRecord("SELECT * FROM tbl_rooftop_leads WHERE id='$postId' LIMIT 1");
+    }
+}
+
+$MainPage = 'Lead';
+$Page = 'Add-Lead';
 ?>
 <!DOCTYPE html>
 <html lang="en" class="default-style layout-fixed layout-navbar-fixed">
@@ -59,56 +126,18 @@ $Page = "Add-Lead";
                     <div class="container flex-grow-1 container-p-y">
                         <h5 class="font-weight-bold py-3 mb-0">Add Lead</h5>
                         
- <?php 
-$id = $_GET['id'];
-$sql7 = "SELECT * FROM tbl_rooftop_leads WHERE id='$id'";
-$row7 = getRecord($sql7);
-if(isset($_POST['submit'])){
-    $CustId = addslashes(trim($_POST["CustId"]));
-     $CellNo = addslashes(trim($_POST["CellNo"]));
-    $CustName = addslashes(trim($_POST["CustName"]));
-$Status = 1;
-$Address = addslashes(trim($_POST["Address"]));
-$DocumentsStatus = addslashes(trim($_POST['DocumentsStatus']));
-$ClainReason = addslashes(trim($_POST["ClainReason"]));
-$ClainStatus = addslashes(trim($_POST["ClainStatus"]));
-$BranchId = addslashes(trim($_POST["BranchId"]));
-$CreatedDate = date('Y-m-d');
-$ModifiedDate = date('Y-m-d');
-$CreatedTime = date('h:i a');
-
-if($_GET['id']==''){
-     $qx = "INSERT INTO tbl_rooftop_leads SET CustId='$CustId',CellNo='$CellNo',CustName = '$CustName',Status='$Status',Address='$Address',DocumentsStatus='$DocumentsStatus',ClainReason = '$ClainReason',ClainStatus='$ClainStatus',CreatedDate='$CreatedDate',CreatedBy='$user_id',BranchId='$BranchId'";
-  $conn->query($qx);
-   $PostId = mysqli_insert_id($conn);
-  $TicketNo= "#".rand(1000,9999);
-  $sql = "UPDATE tbl_rooftop_leads SET TicketNo='$TicketNo' WHERE id='$PostId'";
-  $conn->query($sql);
-
-  echo "<script>alert('Lead Record Saved Successfully!');window.location.href='view-leads.php';</script>";
-}
-else{
- 
-    $query2 = "UPDATE tbl_rooftop_leads SET CustId='$CustId',CellNo='$CellNo',CustName = '$CustName',Status='$Status',Address='$Address',DocumentsStatus='$DocumentsStatus',ClainReason = '$ClainReason',ClainStatus='$ClainStatus',ModifiedDate='$ModifiedDate',ModifiedBy='$user_id',BranchId='$BranchId' WHERE id = '$id'";
-  $conn->query($query2);
-  
-  echo "<script>alert('Lead Record Updated Successfully!');window.location.href='view-leads.php';</script>";
-
-}
-    //header('Location:courses.php'); 
-
-  }
-?>
-
 <div class="card mb-4">
                             <div class="card-body">
                                  <form id="validation-form" method="post" autocomplete="off">
                                 <div class="row">
 
                                     <div class="col-lg-12">
+                                <?php if ($saveError !== '') { ?>
+                                <div class="alert alert-danger"><?php echo htmlspecialchars($saveError, ENT_QUOTES, 'UTF-8'); ?></div>
+                                <?php } ?>
                                 <div id="alert_message"></div>
                                
-                                    <input type="hidden" name="id" value="<?php echo $_GET['id']; ?>" id="userid">
+                                    <input type="hidden" name="id" value="<?php echo (int) $id; ?>" id="userid">
                                     <input type="hidden" name="action" value="Save" id="action">
                                     <div class="form-row">
                                     
@@ -117,7 +146,7 @@ else{
         <div class="form-group col-md-8">
    <label class="form-label">Customer Name <span class="text-danger">*</span></label>
      <input type="text" name="CustName" id="CustName" class="form-control"
-                                                placeholder="" value="<?php echo $row7["CustName"]; ?>"
+                                                placeholder="" value="<?php echo htmlspecialchars($row7['CustName'] ?? '', ENT_QUOTES, 'UTF-8'); ?>"
                                                 autocomplete="off" required>
     <div class="clearfix"></div>
  </div> 
@@ -126,7 +155,7 @@ else{
 <div class="form-group col-md-4">
                                             <label class="form-label">Contact No <span class="text-danger">*</span></label>
                                             <input type="text" name="CellNo" id="CellNo" class="form-control"
-                                                placeholder="" value="<?php echo $row7["CellNo"]; ?>"
+                                                placeholder="" value="<?php echo htmlspecialchars($row7['CellNo'] ?? '', ENT_QUOTES, 'UTF-8'); ?>"
                                                 autocomplete="off" oninput="getUserDetails()" required>
                                             <div class="clearfix"></div>
                                         </div>
@@ -135,7 +164,7 @@ else{
  <div class="form-group col-md-12">
    <label class="form-label">Address</label>
      <textarea name="Address" id="Address" class="form-control"  
-                                                ><?php echo $row7['Address']; ?></textarea>
+                                                ><?php echo htmlspecialchars($row7['Address'] ?? '', ENT_QUOTES, 'UTF-8'); ?></textarea>
     <div class="clearfix"></div>
  </div>   
 

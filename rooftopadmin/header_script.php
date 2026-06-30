@@ -17,6 +17,7 @@
 <link rel="stylesheet" href="<?php echo $SiteUrl;?>/assets/libs/select2/select2.css">
 <link rel="stylesheet" href="<?php echo $SiteUrl;?>/assets/libs/growl/growl.css">
     <link rel="stylesheet" href="<?php echo $SiteUrl;?>/assets/libs/toastr/toastr.css">
-        <link rel="stylesheet" href="https://cdn.datatables.net/buttons/1.6.2/css/buttons.dataTables.min.css">
+    <link rel="stylesheet" href="https://cdn.datatables.net/buttons/1.6.2/css/buttons.dataTables.min.css">
+<link rel="stylesheet" href="<?php echo $SiteUrl; ?>css/top-header-bar.css">
 
   

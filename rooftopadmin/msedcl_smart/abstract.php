@@ -5,6 +5,7 @@ $Page = 'MSEDCL-Smart-Abstract';
 msedclSmartRequireOption(MSEDCL_SMART_OPT_ABSTRACT);
 
 msedclSmartEnsureTables();
+msedclSmartSyncAllSurveyDoneStatuses(isset($_SESSION['Admin']['id']) ? (int) $_SESSION['Admin']['id'] : 0);
 
 $meta = msedclSmartAbstractFiltersFromRequest();
 $filters = $meta['filters'];

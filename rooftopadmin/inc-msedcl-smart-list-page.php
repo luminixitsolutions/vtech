@@ -9,6 +9,11 @@ function msedclSmartRenderListPage($listType, array $config)
 {
     global $conn;
 
+    msedclSmartEnsureTables();
+    if ($listType === 'survey_pending') {
+        msedclSmartSyncAllSurveyDoneStatuses(isset($_SESSION['Admin']['id']) ? (int) $_SESSION['Admin']['id'] : 0);
+    }
+
     $filterDistrict = isset($_REQUEST['District']) ? trim((string) $_REQUEST['District']) : '';
     $filterSearch = isset($_REQUEST['Search']) ? trim((string) $_REQUEST['Search']) : '';
     $isSearch = isset($_REQUEST['Search']) || isset($_REQUEST['submit']);
@@ -213,14 +218,14 @@ function msedclSmartRenderListPage($listType, array $config)
                         </td>
                         <?php } ?>
                         <?php if ($showActionCol) { ?>
-                        <td>
+                        <td class="text-nowrap">
                             <?php if ($showMahadiscomBtn && (int) $row['MahadiscomApplied'] === 0) { ?>
                             <button type="button" class="btn btn-sm btn-primary msedcl-smart-action-btn"
                                 data-customer-id="<?php echo (int) $row['id']; ?>"
                                 data-action="mahadiscom"
                                 data-confirm="Mark this customer as applied on Mahadiscom portal?">Mark Mahadiscom</button>
                             <?php } elseif ($showMahadiscomBtn && (int) $row['MahadiscomApplied'] === 1) { ?>
-                            <span class="text-success small">Done as Mahadiscom<?php echo !empty($row['MahadiscomAppliedDate']) ? ' ' . date('d/m/Y', strtotime($row['MahadiscomAppliedDate'])) : ''; ?></span>
+                            <span class="text-success small d-block">Done as Mahadiscom<?php echo !empty($row['MahadiscomAppliedDate']) ? ' ' . date('d/m/Y', strtotime($row['MahadiscomAppliedDate'])) : ''; ?></span>
                             <?php } ?>
                             <?php if ($showPaymentBtn && (int) $row['MahadiscomApplied'] === 1 && (int) $row['PaymentDone'] === 0) { ?>
                             <button type="button" class="btn btn-sm btn-success msedcl-smart-action-btn"
@@ -228,7 +233,7 @@ function msedclSmartRenderListPage($listType, array $config)
                                 data-action="payment"
                                 data-confirm="Mark payment as done? Customer will move to Survey Pending.">Payment Yes</button>
                             <?php } elseif ($showPaymentBtn && (int) $row['PaymentDone'] === 1) { ?>
-                            <span class="text-success small">Payment Done<?php echo !empty($row['PaymentDoneDate']) ? ' ' . date('d/m/Y', strtotime($row['PaymentDoneDate'])) : ''; ?></span>
+                            <span class="text-success small d-block">Payment Done<?php echo !empty($row['PaymentDoneDate']) ? ' ' . date('d/m/Y', strtotime($row['PaymentDoneDate'])) : ''; ?></span>
                             <?php } ?>
                             <?php if ($canDelete) {
                                 $deleteConfirm = 'Delete this customer record? This cannot be undone.';
@@ -238,13 +243,13 @@ function msedclSmartRenderListPage($listType, array $config)
                                     $deleteConfirm = 'Delete this customer from payment done list? They will move back to Mahadiscom portal.';
                                 }
                                 ?>
-                            <button type="button" class="btn btn-sm btn-danger msedcl-smart-delete-btn ml-1"
+                            <button type="button" class="btn btn-sm btn-danger msedcl-smart-delete-btn<?php echo ($showMahadiscomBtn || $showPaymentBtn) ? ' ml-1 mt-1' : ''; ?>"
                                 data-customer-id="<?php echo (int) $row['id']; ?>"
                                 data-list-type="<?php echo htmlspecialchars($listType); ?>"
                                 data-label="<?php echo htmlspecialchars((string) $row['BeneficiaryId']); ?>"
                                 data-confirm="<?php echo htmlspecialchars($deleteConfirm); ?>">Delete</button>
                             <?php } elseif ($showDeleteBtn && msedclSmartIsForwardedToCoordinator($row)) { ?>
-                            <span class="text-muted small">Forwarded</span>
+                            <span class="text-muted small d-block">Forwarded to Co-ordinator</span>
                             <?php } ?>
                         </td>
                         <?php } ?>

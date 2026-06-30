@@ -26,6 +26,8 @@
 
         $table.DataTable({
             scrollX: true,
+            responsive: false,
+            autoWidth: false,
             dom: 'Bfrtip',
             buttons: [{
                 extend: 'excelHtml5',

@@ -915,17 +915,17 @@ function msedclSmartIsForwardedToCoordinator(array $row)
     if ($custUserId < 1) {
         return false;
     }
-    $user = getRecord("SELECT id FROM tbl_users WHERE id='$custUserId' AND Roll=5 AND ProjectType=2 AND Status=1 LIMIT 1");
+    $user = getRecord("SELECT CoordinatorStatus FROM tbl_users WHERE id='$custUserId' AND Roll=5 AND ProjectType=2 AND Status=1 LIMIT 1");
+    if (!is_array($user)) {
+        return false;
+    }
 
-    return is_array($user);
+    return (int) ($user['CoordinatorStatus'] ?? 0) === 1;
 }
 
 function msedclSmartCanDeleteCustomer(array $row)
 {
     if ((int) ($row['Status'] ?? 1) !== 1) {
-        return false;
-    }
-    if ((int) ($row['CustUserId'] ?? 0) > 0) {
         return false;
     }
     if (msedclSmartIsForwardedToCoordinator($row)) {
@@ -1075,6 +1075,10 @@ function msedclSmartDeleteCustomer($customerId, $userId, $listType = '', $remark
 
     $now = date('Y-m-d H:i:s');
     $label = trim((string) ($row['BeneficiaryId'] ?? ''));
+    $custUserId = (int) ($row['CustUserId'] ?? 0);
+    if ($custUserId > 0) {
+        $conn->query("UPDATE tbl_users SET Status=0 WHERE id='$custUserId' AND Roll=5 AND ProjectType=2 LIMIT 1");
+    }
     if (!$conn->query("UPDATE tbl_rooftop_msedcl_smart_customers SET Status=0, UpdatedDateTime='$now', UpdatedBy='$userId' WHERE id='$customerId' LIMIT 1")) {
         return ['ok' => false, 'message' => 'Delete failed.'];
     }
@@ -1457,6 +1461,156 @@ function msedclSmartLoadUserSurveyMap(array $rows)
     return $map;
 }
 
+function msedclSmartUserSurveysComplete($surveyDetails, $fieldSurveyDetails)
+{
+    return (int) $surveyDetails === 1 && (int) $fieldSurveyDetails === 1;
+}
+
+/**
+ * SQL condition: smart customer survey complete (flag set or both rooftop surveys done on linked user).
+ */
+function msedclSmartSurveyDoneSqlCondition($tableAlias = '')
+{
+    $prefix = $tableAlias !== '' ? rtrim($tableAlias, '.') . '.' : '';
+    $surveyDoneCol = $prefix . 'SurveyDone';
+    $custCol = $prefix . 'CustUserId';
+
+    return "($surveyDoneCol=1 OR ($custCol>0 AND EXISTS (
+        SELECT 1 FROM tbl_users u
+        WHERE u.id = $custCol
+          AND u.Roll=5 AND u.ProjectType=2 AND u.Status=1
+          AND u.SurveyDetails=1 AND u.FieldSurveyDetails=1
+    )))";
+}
+
+function msedclSmartMarkSurveyDoneBySmartId($smartCustomerId, $userId = 0, $surveyDoneDate = '')
+{
+    msedclSmartEnsureTables();
+    global $conn;
+
+    $smartCustomerId = (int) $smartCustomerId;
+    $userId = (int) $userId;
+    if ($smartCustomerId < 1) {
+        return ['ok' => false, 'message' => 'Invalid smart customer.'];
+    }
+
+    $row = getRecord("SELECT * FROM tbl_rooftop_msedcl_smart_customers WHERE id='$smartCustomerId' AND Status=1 LIMIT 1");
+    if (!is_array($row)) {
+        return ['ok' => false, 'message' => 'Smart customer not found.'];
+    }
+    if ((int) ($row['SurveyDone'] ?? 0) === 1) {
+        return ['ok' => true, 'already' => true];
+    }
+
+    $today = date('Y-m-d');
+    $now = date('Y-m-d H:i:s');
+    if ($surveyDoneDate === '' || $surveyDoneDate === '0000-00-00') {
+        $surveyDoneDate = $today;
+    }
+    $escDate = mysqli_real_escape_string($conn, $surveyDoneDate);
+    $oldStage = (string) ($row['CurrentStage'] ?? '');
+    $sql = "UPDATE tbl_rooftop_msedcl_smart_customers SET
+        SurveyDone=1,
+        SurveyDoneDate='$escDate',
+        CurrentStage='" . MSEDCL_SMART_STAGE_SURVEY_DONE . "',
+        UpdatedDateTime='$now',
+        UpdatedBy='$userId'
+        WHERE id='$smartCustomerId' LIMIT 1";
+    if (!$conn->query($sql)) {
+        return ['ok' => false, 'message' => 'Could not mark survey done.'];
+    }
+
+    msedclSmartLogHistory(
+        $smartCustomerId,
+        $row['BeneficiaryId'],
+        'survey_done',
+        $oldStage,
+        MSEDCL_SMART_STAGE_SURVEY_DONE,
+        $userId,
+        msedclSmartPerformerName($userId),
+        '',
+        'Telephonic and field survey completed'
+    );
+
+    return ['ok' => true];
+}
+
+function msedclSmartSyncSurveyDoneForUser($custUserId, $userId = 0)
+{
+    msedclSmartEnsureTables();
+
+    $custUserId = (int) $custUserId;
+    if ($custUserId < 1) {
+        return ['ok' => false, 'message' => 'Invalid customer user.'];
+    }
+
+    $user = getRecord("SELECT SurveyDetails, FieldSurveyDetails, TelSurveyDate, FieldSurveyDate FROM tbl_users WHERE id='$custUserId' AND Roll=5 AND ProjectType=2 AND Status=1 LIMIT 1");
+    if (!is_array($user) || !msedclSmartUserSurveysComplete($user['SurveyDetails'] ?? 0, $user['FieldSurveyDetails'] ?? 0)) {
+        return ['ok' => false, 'message' => 'Surveys not complete.'];
+    }
+
+    $smartRow = getRecord("SELECT id FROM tbl_rooftop_msedcl_smart_customers WHERE CustUserId='$custUserId' AND Status=1 ORDER BY id DESC LIMIT 1");
+    if (!is_array($smartRow) || empty($smartRow['id'])) {
+        return ['ok' => false, 'message' => 'Smart customer not linked.'];
+    }
+
+    $doneDate = $today = date('Y-m-d');
+    $telDate = trim((string) ($user['TelSurveyDate'] ?? ''));
+    $fieldDate = trim((string) ($user['FieldSurveyDate'] ?? ''));
+    if ($fieldDate !== '' && $fieldDate !== '0000-00-00') {
+        $doneDate = $fieldDate;
+    } elseif ($telDate !== '' && $telDate !== '0000-00-00') {
+        $doneDate = $telDate;
+    }
+
+    return msedclSmartMarkSurveyDoneBySmartId((int) $smartRow['id'], $userId, $doneDate);
+}
+
+function msedclSmartSyncAllSurveyDoneStatuses($userId = 0)
+{
+    msedclSmartEnsureTables();
+
+    $rows = getList("SELECT sc.id, sc.CustUserId, u.TelSurveyDate, u.FieldSurveyDate
+        FROM tbl_rooftop_msedcl_smart_customers sc
+        INNER JOIN tbl_users u ON u.id = sc.CustUserId
+        WHERE sc.Status=1 AND sc.SurveyDone=0 AND sc.CustUserId>0
+          AND u.Roll=5 AND u.ProjectType=2 AND u.Status=1
+          AND u.SurveyDetails=1 AND u.FieldSurveyDetails=1");
+    if (!is_array($rows)) {
+        return 0;
+    }
+
+    $synced = 0;
+    foreach ($rows as $row) {
+        $doneDate = date('Y-m-d');
+        $fieldDate = trim((string) ($row['FieldSurveyDate'] ?? ''));
+        $telDate = trim((string) ($row['TelSurveyDate'] ?? ''));
+        if ($fieldDate !== '' && $fieldDate !== '0000-00-00') {
+            $doneDate = $fieldDate;
+        } elseif ($telDate !== '' && $telDate !== '0000-00-00') {
+            $doneDate = $telDate;
+        }
+        $res = msedclSmartMarkSurveyDoneBySmartId((int) $row['id'], $userId, $doneDate);
+        if (!empty($res['ok'])) {
+            $synced++;
+        }
+    }
+
+    return $synced;
+}
+
+function msedclSmartCountSurveyDone($extraWhere = '')
+{
+    msedclSmartEnsureTables();
+    $cond = msedclSmartSurveyDoneSqlCondition();
+    $extraWhere = trim((string) $extraWhere);
+    if ($extraWhere !== '') {
+        $extraWhere = ' AND ' . $extraWhere;
+    }
+
+    return (int) getRow("SELECT id FROM tbl_rooftop_msedcl_smart_customers WHERE Status=1 AND ($cond)$extraWhere");
+}
+
 function msedclSmartTelephonicSurveyHtml($custUserId, $surveyDone = null)
 {
     $custUserId = (int) $custUserId;
@@ -1534,7 +1688,7 @@ function msedclSmartDashboardCounts()
         'survey_pending' => msedclSmartCount(
             "Status=1 AND CurrentStage='" . MSEDCL_SMART_STAGE_SURVEY_PENDING . "' AND SurveyDone=0"
         ),
-        'survey_done' => msedclSmartCount('Status=1 AND SurveyDone=1'),
+        'survey_done' => msedclSmartCountSurveyDone(),
         'pmsgy_awaiting' => msedclSmartCount("Status=1 AND CurrentStage='" . MSEDCL_SMART_STAGE_PMSGY . "'"),
         'mahadiscom_awaiting' => msedclSmartCount("Status=1 AND CurrentStage='" . MSEDCL_SMART_STAGE_MAHADISCOM . "'"),
         'payment_awaiting_forward' => msedclSmartCount(
@@ -1695,7 +1849,7 @@ function msedclSmartAbstractMetricConditions()
         'pmsgy' => 'PmsgyApplied=1',
         'mahadiscom' => 'MahadiscomApplied=1',
         'payment' => 'PaymentDone=1',
-        'survey' => 'SurveyDone=1',
+        'survey' => msedclSmartSurveyDoneSqlCondition(),
     ];
 }
 

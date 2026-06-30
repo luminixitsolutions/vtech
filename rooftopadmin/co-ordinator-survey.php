@@ -35,7 +35,7 @@ $Page = "Telephonic-Survey";
     <!-- Libs -->
     <link rel="stylesheet" href="<?php echo $SiteUrl;?>/assets/libs/perfect-scrollbar/perfect-scrollbar.css">
     <link rel="stylesheet" href="<?php echo $SiteUrl;?>/assets/libs/datatables/datatables.css">
-    
+    <link rel="stylesheet" href="<?php echo $SiteUrl; ?>css/top-header-bar.css">
   
 </head>
 
@@ -59,7 +59,7 @@ $Page = "Telephonic-Survey";
                 <div class="layout-content">
                     <!-- [ content ] Start -->
                     <div class="container flex-grow-1 container-p-y">
-                        <h5 class="font-weight-bold py-3 mb-0">Co-ordinator Survey Customers  </h5>
+                        <h5 class="font-weight-bold mb-2">Co-ordinator Survey Customers</h5>
                         
  <style>
     .flex-wrap {
@@ -73,7 +73,6 @@ $Page = "Telephonic-Survey";
 
 </style>
 
-<br>
                     <div class="card mb-4" style="padding: 10px;">
                              <div id="accordion2-2" class="collapse show" data-parent="#accordion2">
                                         <div class="" style="padding:5px;">

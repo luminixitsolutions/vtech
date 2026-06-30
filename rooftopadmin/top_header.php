@@ -56,7 +56,7 @@ if (!$topHeaderAssetsLoaded) {
     echo '<link rel="stylesheet" href="' . htmlspecialchars($topHeaderBase . 'css/top-header-bar.css', ENT_QUOTES, 'UTF-8') . '">' . "\n";
 }
 ?>
-<nav class="layout-navbar navbar navbar-expand-lg align-items-lg-center bg-dark container-p-x top-header-bar" id="layout-navbar">
+<nav class="layout-navbar navbar navbar-expand-lg align-items-center bg-dark container-p-x top-header-bar" id="layout-navbar">
     <div class="top-header-toolbar w-100 d-flex flex-wrap align-items-center">
     <div class="layout-sidenav-toggle navbar-nav d-lg-none align-items-lg-center mr-auto">
         <a class="nav-item nav-link px-0 mr-lg-4" href="javascript:void(0)">
@@ -81,7 +81,7 @@ if (!$topHeaderAssetsLoaded) {
             <script type="application/json" id="adminMenuSearchIndex"><?php echo $topHeaderSearchIndexJson; ?></script>
         </div>
 
-        <div class="navbar-nav align-items-lg-center ml-auto">
+        <div class="navbar-nav align-items-center ml-auto">
             <div class="nav-item dropdown top-header-profile" id="topHeaderProfileDropdown">
                 <a class="nav-link dropdown-toggle" href="javascript:void(0)" id="topHeaderProfileToggle" role="button" aria-haspopup="true" aria-expanded="false">
                     <span class="d-inline-flex flex-lg-row-reverse align-items-center align-middle">

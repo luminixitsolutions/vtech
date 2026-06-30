@@ -2,6 +2,8 @@
 session_start();
 include_once 'config.php';
 include_once 'auth.php';
+include_once 'inc-rooftop-survey-schema.php';
+include_once 'inc-rooftop-survey-doc-handlers.php';
 $user_id = $_SESSION['Admin']['id'];
 $MainPage = "Customers";
 $Page = "Rooftop-Customers";
@@ -46,30 +48,31 @@ z-index: 2;
 
 <?php include_once 'top_header.php'; ?>
 <?php 
-$id = $_GET['id'];
-$sql7 = "SELECT * FROM tbl_users WHERE id='$id'";
-$row7 = getRecord($sql7);
+$id = isset($_GET['id']) ? (int) $_GET['id'] : 0;
+$row7 = getRecord("SELECT * FROM tbl_users WHERE id='$id'");
+if (empty($row7['id'])) {
+    $custRow = getRecord("SELECT CustId FROM tbl_rooftop_tel_survey WHERE id='$id' LIMIT 1");
+    if (!empty($custRow['CustId'])) {
+        $id = (int) $custRow['CustId'];
+        $row7 = getRecord("SELECT * FROM tbl_users WHERE id='$id'");
+    }
+}
 
 $sql78 = "SELECT * FROM tbl_rooftop_tel_survey WHERE CustId='$id'";
 $row78 = getRecord($sql78);
+$row7u2 = getRecord("SELECT ConsumerNo FROM tbl_user2 WHERE id='$id'");
+$customerConsumerNo = trim((string) ($row7u2['ConsumerNo'] ?? ''));
+if ($customerConsumerNo === '') {
+    $customerConsumerNo = trim((string) ($row78['ConsumerNo'] ?? ''));
+}
+$applicantCategory = '';
+if (!empty($row7['SchemeId'])) {
+    $schemeRow = getRecord("SELECT Name FROM tbl_rooftop_scheme WHERE id='" . (int) $row7['SchemeId'] . "' LIMIT 1");
+    $applicantCategory = $schemeRow['Name'] ?? '';
+}
 ?>
 
 <?php 
-function uploadPhoto($orgfile,$tempfile){
-  $randno = rand(1,100);
-$src = $tempfile;
-$fnm = substr($orgfile, 0,strrpos($orgfile,'.')); 
-$fnm = str_replace(" ","_",$fnm);
-$ext = substr($orgfile,strpos($orgfile,"."));
-$dest = '../uploads/'. $randno . "_".$fnm . $ext;
-$imagepath =  $randno . "_".$fnm . $ext;
-if(move_uploaded_file($src, $dest))
-{
-$Photo = $imagepath ;
-} 
-return $Photo;
-
-}
   if(isset($_POST['submit'])){
 $SurveyDetails = addslashes(trim($_POST["TelSurveyDetails"]));
 $TelSurveyDate = addslashes(trim($_POST["TelSurveyDate"]));
@@ -89,64 +92,43 @@ $TelComments = addslashes(trim($_POST["TelComments"]));
 $TelEpsLoad = addslashes(trim($_POST["TelEpsLoad"]));
 $TelNetMeter = addslashes(trim($_POST["TelNetMeter"]));
 $ConsumerNo = addslashes(trim($_POST["ConsumerNo"]));
+$TelRoofType = addslashes(trim($_POST['TelRoofType'] ?? ''));
+$TelEarthingDistance = addslashes(trim($_POST['TelEarthingDistance'] ?? ''));
+$TelPhase1ph = addslashes(trim($_POST['TelPhase1ph'] ?? ''));
+$TelOngridKW = addslashes(trim($_POST['TelOngridKW'] ?? ''));
 $CreatedDate = date('Y-m-d');
 $ModifiedDate = date('Y-m-d');
 $CreatedTime = date('h:i a');
 
-if(isset($_FILES['TelSitePhoto']['name'])){
-  $temp1 = $_FILES['TelSitePhoto']['tmp_name'];
-  $orgfile1 = $_FILES['TelSitePhoto']['name'];
-  $TelSitePhoto = uploadPhoto($orgfile1,$temp1);
-}
-else{
-  $TelSitePhoto = $_POST['TelSitePhotoOld'];
-}
+$docFields = rooftopSurveyCollectDocFields('Tel', $_POST, $_FILES);
+$TelSitePhoto = $docFields['TelSitePhoto'];
+$TelPanCard = $docFields['TelPanCard'];
+$TelAadharCard = $docFields['TelAadharCard'];
+$TelAadharCard2 = $docFields['TelAadharCard2'];
+$TelElectricBill = $docFields['TelElectricBill'];
+$docSql = rooftopSurveyDocSqlSet($docFields);
 
-if(isset($_FILES['TelPanCard']['name'])){
-  $temp2 = $_FILES['TelPanCard']['tmp_name'];
-  $orgfile2 = $_FILES['TelPanCard']['name'];
-  $TelPanCard = uploadPhoto($orgfile2,$temp2);
+if(isset($_FILES['TelBankDetails']['name']) && $_FILES['TelBankDetails']['name'] != ''){
+  $TelBankDetails = rooftopSurveyUploadPhoto($_FILES['TelBankDetails']['name'], $_FILES['TelBankDetails']['tmp_name']);
 }
 else{
-  $TelPanCard = $_POST['PanCardOld'];
-}
-
-if(isset($_FILES['TelPanCard']['name'])){
-  $temp3 = $_FILES['TelAadharCard']['tmp_name'];
-  $orgfile3 = $_FILES['TelAadharCard']['name'];
-  $TelAadharCard = uploadPhoto($orgfile3,$temp3);
-}
-else{
-  $TelAadharCard = $_POST['AadharCardOld'];
-}
-
-if(isset($_FILES['TelPanCard']['name'])){
-  $temp4 = $_FILES['TelAadharCard2']['tmp_name'];
-  $orgfile4 = $_FILES['TelAadharCard2']['name'];
-  $TelAadharCard2 = uploadPhoto($orgfile4,$temp4);
-}
-else{
-  $TelAadharCard2 = $_POST['AadharCardOld2'];
-}
-
-if(isset($_FILES['TelPanCard']['name'])){
-  $temp5 = $_FILES['TelElectricBill']['tmp_name'];
-  $orgfile5 = $_FILES['TelElectricBill']['name'];
-  $TelElectricBill = uploadPhoto($orgfile5,$temp5);
-}
-else{
-  $TelElectricBill = $_POST['ElectricBillOld'];
+  $TelBankDetails = $_POST['TelBankDetailsOld'] ?? '';
 }
 
     $sql = "DELETE FROM tbl_rooftop_tel_survey WHERE CustId='$id'";
     $conn->query($sql);
-    $sql = "INSERT INTO tbl_rooftop_tel_survey SET ConsumerNo='$ConsumerNo',CustId='$id',TelSurveyDate='$TelSurveyDate',TelContactNo='$TelContactNo',TelContactPerson='$TelContactPerson',TelSystemType='$TelSystemType',TelCapacity='$TelCapacity',TelShadowArea='$TelShadowArea',TelShadowArea2='$TelShadowArea2',TelOrientation='$TelOrientation',TelDistance='$TelDistance',TelConnectedLoad='$TelConnectedLoad',TelRequiredLoad='$TelRequiredLoad',TelComments='$TelComments',TelEpsLoad='$TelEpsLoad',TelNetMeter='$TelNetMeter',TelSitePhoto='$TelSitePhoto',TelPanCard='$TelPanCard',TelAadharCard='$TelAadharCard',TelAadharCard2='$TelAadharCard2',TelElectricBill='$TelElectricBill',TelSurveyDetails='$SurveyDetails',TelLattitude='$TelLattitude',TelLongitude='$TelLongitude',CreatedBy='$user_id',CreatedDate='$CreatedDate'";
+    $sql = "INSERT INTO tbl_rooftop_tel_survey SET ConsumerNo='$ConsumerNo',CustId='$id',TelSurveyDate='$TelSurveyDate',TelContactNo='$TelContactNo',TelContactPerson='$TelContactPerson',TelSystemType='$TelSystemType',TelCapacity='$TelCapacity',TelShadowArea='$TelShadowArea',TelShadowArea2='$TelShadowArea2',TelOrientation='$TelOrientation',TelDistance='$TelDistance',TelConnectedLoad='$TelConnectedLoad',TelRequiredLoad='$TelRequiredLoad',TelComments='$TelComments',TelEpsLoad='$TelEpsLoad',TelNetMeter='$TelNetMeter',$docSql,TelBankDetails='$TelBankDetails',TelRoofType='$TelRoofType',TelEarthingDistance='$TelEarthingDistance',TelPhase1ph='$TelPhase1ph',TelOngridKW='$TelOngridKW',TelSurveyDetails='$SurveyDetails',TelLattitude='$TelLattitude',TelLongitude='$TelLongitude',CreatedBy='$user_id',CreatedDate='$CreatedDate'";
     $conn->query($sql);
     $RooftopTelSurveyId = mysqli_insert_id($conn);
     $query2 = "UPDATE tbl_users SET RooftopTelSurveyId='$RooftopTelSurveyId',SurveyDetails='$SurveyDetails',TelLattitude='$TelLattitude',TelLongitude='$TelLongitude',TelSurveyBy='$user_id',TelSurveyDate='$CreatedDate' WHERE id = '$id'";
     $conn->query($query2);
     $query2 = "UPDATE tbl_user2 SET ConsumerNo='$ConsumerNo' WHERE id = '$id'";
     $conn->query($query2);
+
+    if (is_file(__DIR__ . '/inc-msedcl-smart-site.php')) {
+        require_once __DIR__ . '/inc-msedcl-smart-site.php';
+        msedclSmartSyncSurveyDoneForUser((int) $id, (int) $user_id);
+    }
   
   if($SurveyDetails=='1') {
   $Steps = "Telephonic Survey Done";
@@ -190,20 +172,20 @@ else{
 </div>
 
 <div class="form-group col-md-3">
-<label class="form-label">Beneficiary ID </label>
-<input type="text" class="form-control" placeholder="" value="<?php echo $row7['BeneficiaryId']; ?>" readonly>
+<label class="form-label">Beneficiary ID / Application Number</label>
+<input type="text" class="form-control" placeholder="" value="<?php echo htmlspecialchars($row7['BeneficiaryId'] ?? '', ENT_QUOTES, 'UTF-8'); ?>" readonly>
  <div class="clearfix"></div>
 </div>
 
 <div class="form-group col-md-6">
-<label class="form-label">Name of Consumer </label>
+<label class="form-label">Beneficiary Name</label>
 <input type="text" class="form-control" placeholder="" value="<?php echo $row7['Fname']; ?>" readonly>
  <div class="clearfix"></div>
 </div>
 
 <div class="form-group col-md-3">
-<label class="form-label">Electricity consumer no. </label>
-<input type="text" class="form-control" placeholder="" name="ConsumerNo" value="<?php echo $row78['ConsumerNo']; ?>">
+<label class="form-label">Consumer No.</label>
+<input type="text" class="form-control" placeholder="" name="ConsumerNo" value="<?php echo htmlspecialchars($customerConsumerNo, ENT_QUOTES, 'UTF-8'); ?>">
  <div class="clearfix"></div>
 </div>
 
@@ -225,6 +207,12 @@ else{
  <div class="clearfix"></div>
 </div>
 
+<?php
+$surveyPrefix = 'Tel';
+$surveySection = 'customer';
+include __DIR__ . '/inc-rooftop-survey-extra-fields.php';
+?>
+
 <div class="form-group col-md-3">
 <label class="form-label">State </label>
 <select class="form-control" readonly>
@@ -242,7 +230,7 @@ else{
 </div>
 
 <div class="form-group col-md-3">
-<label class="form-label">Lattitude </label>
+<label class="form-label">Latitude</label>
 <input type="text" name="TelLattitude" id="TelLattitude" class="form-control" placeholder="" value="<?php echo $row78["TelLattitude"]; ?>">
  <div class="clearfix"></div>
 </div>
@@ -284,13 +272,13 @@ else{
 </div>
 
 <div class="form-group col-md-3">
-<label class="form-label"> Shadow free Area Required (in Sq. feet) </label>
+<label class="form-label">Area Required (in Sq. feet)</label>
 <input type="text" class="form-control" placeholder="" name="TelShadowArea" value="<?php echo $row78["TelShadowArea"]; ?>">
  <div class="clearfix"></div>
 </div>
 
  <div class="form-group col-md-3">
-<label class="form-label">Shadow free area available <span class="text-danger">*</span></label>
+<label class="form-label">Roof available area is shadow free or not <span class="text-danger">*</span></label>
   <select class="form-control" id="TelShadowArea2" name="TelShadowArea2" required="">
     <option value="" selected >Select</option>
 <option value="Yes" <?php if($row78["TelShadowArea2"]=='Yes') {?> selected <?php } ?>>Yes</option>
@@ -309,8 +297,13 @@ else{
 <div class="clearfix"></div>
 </div>
 
+<?php
+$surveySection = 'technical';
+include __DIR__ . '/inc-rooftop-survey-extra-fields.php';
+?>
+
 <div class="form-group col-md-4">
-<label class="form-label">Distance From LT Panel (Ongrid & Hybrid) in meters <span class="text-danger">*</span></label>
+<label class="form-label">Distance from Panel to meter (in meters) <span class="text-danger">*</span></label>
 <input type="text" class="form-control" name="TelDistance" placeholder="" value="<?php echo $row78["TelDistance"]; ?>">
  <div class="clearfix"></div>
 </div>
@@ -345,76 +338,15 @@ else{
  <div class="clearfix"></div>
 </div>
 
-<div class="form-group col-md-6">
-<label class="form-label">Site Photo </label>
-<label class="custom-file">
-<input type="file" class="custom-file-input" name="TelSitePhoto" style="opacity: 1;">
-<input type="hidden" name="TelSitePhotoOld" value="<?php echo $row78['TelSitePhoto'];?>" id="TelSitePhotoOld">
-<span class="custom-file-label"></span>
-</label>
-<?php if($row78['TelSitePhoto']=='') {} else{?>
-  <span id="show_photo3">
-<div class="ui-feed-icon-container float-left pt-2 mr-3 mb-3"><a href="javascript:void(0)" class="ui-icon ui-feed-icon ion ion-md-close bg-secondary text-white" id="delete_photo3"></a><a href="../uploads/<?php echo $row78['TelSitePhoto'];?>" target="_blank"><?php echo $row78['TelSitePhoto'];?></a></div>
-</span>
-<?php } ?>
- <div class="clearfix"></div>
-</div>
+<?php
+$surveyPrefix = 'Tel';
+include __DIR__ . '/inc-rooftop-survey-doc-uploads.php';
+?>
 
-<div class="form-group col-md-6 maindoc">
-  <label class="form-label">Upload Pan Card </label>
-<label class="custom-file">
-<input type="file" class="custom-file-input" name="TelPanCard" style="opacity: 1;">
-<input type="hidden" name="PanCardOld" value="<?php echo $row78['TelPanCard'];?>" id="PanCardOld">
-<span class="custom-file-label"></span>
-</label>
-<?php if($row78['TelPanCard']=='') {} else{?>
-  <span id="show_photo5">
-<div class="ui-feed-icon-container float-left pt-2 mr-3 mb-3"><a href="javascript:void(0)" class="ui-icon ui-feed-icon ion ion-md-close bg-secondary text-white" id="delete_photo5"></a><a href="../uploads/<?php echo $row78['TelPanCard'];?>" target="_blank"><?php echo $row78['TelPanCard'];?></a></div>
-</span>
-<?php } ?>
-</div>
-
-<div class="form-group col-md-6 maindoc">
-  <label class="form-label">Upload Front Aadhar Card </label>
-<label class="custom-file">
-<input type="file" class="custom-file-input" name="TelAadharCard" style="opacity: 1;">
-<input type="hidden" name="AadharCardOld" value="<?php echo $row78['TelAadharCard'];?>" id="AadharCardOld">
-<span class="custom-file-label"></span>
-</label>
-<?php if($row78['TelAadharCard']=='') {} else{?>
-  <span id="show_photo3">
-<div class="ui-feed-icon-container float-left pt-2 mr-3 mb-3"><a href="javascript:void(0)" class="ui-icon ui-feed-icon ion ion-md-close bg-secondary text-white" id="delete_photo3"></a><a href="../uploads/<?php echo $row78['TelAadharCard'];?>" target="_blank"><?php echo $row78['TelAadharCard'];?></a></div>
-</span>
-<?php } ?>
-</div>
-
-<div class="form-group col-md-6 maindoc">
-  <label class="form-label">Upload Back Aadhar Card </label>
-<label class="custom-file">
-<input type="file" class="custom-file-input" name="TelAadharCard2" style="opacity: 1;">
-<input type="hidden" name="AadharCardOld2" value="<?php echo $row78['TelAadharCard2'];?>" id="AadharCardOld2">
-<span class="custom-file-label"></span>
-</label>
-<?php if($row78['TelAadharCard2']=='') {} else{?>
-  <span id="show_photo4">
-<div class="ui-feed-icon-container float-left pt-2 mr-3 mb-3"><a href="javascript:void(0)" class="ui-icon ui-feed-icon ion ion-md-close bg-secondary text-white" id="delete_photo4"></a><a href="../uploads/<?php echo $row78['TelAadharCard2'];?>" target="_blank"><?php echo $row78['TelAadharCard2'];?></a></div>
-</span>
-<?php } ?>
-</div>
-
-<div class="form-group col-md-6 maindoc">
-  <label class="form-label">Electricity Bill(12 Month)</label>
-<label class="custom-file">
-<input type="file" class="custom-file-input" name="TelElectricBill" style="opacity: 1;">
-<input type="hidden" name="ElectricBillOld" value="<?php echo $row78['TelElectricBill'];?>" id="ElectricBillOld">
-<span class="custom-file-label"></span>
-</label>
-<?php if($row78['TelElectricBill']=='') {} else{?>
-  <span id="show_photo6">
-<div class="ui-feed-icon-container float-left pt-2 mr-3 mb-3"><a href="javascript:void(0)" class="ui-icon ui-feed-icon ion ion-md-close bg-secondary text-white" id="delete_photo6"></a><a href="../uploads/<?php echo $row78['TelElectricBill'];?>" target="_blank"><?php echo $row78['TelElectricBill'];?></a></div>
-</span>
-<?php } ?>
-</div>
+<?php
+$surveySection = 'bank';
+include __DIR__ . '/inc-rooftop-survey-extra-fields.php';
+?>
 
 
  <div class="form-group col-md-6">

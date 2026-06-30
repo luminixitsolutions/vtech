@@ -5,6 +5,7 @@ require_once __DIR__ . '/inc-msedcl-smart-site.php';
 function getMsedclSmartDashboardData()
 {
     msedclSmartEnsureTables();
+    msedclSmartSyncAllSurveyDoneStatuses(isset($_SESSION['Admin']['id']) ? (int) $_SESSION['Admin']['id'] : 0);
 
     $counts = msedclSmartDashboardCounts();
     $total = $counts['total'];

@@ -133,10 +133,10 @@ if (!is_array($districtRows)) {
             <th>WORK ORDER<br>DONE</th>
             <th>WORK ORDER<br>PENDING</th>
             <th>JSR<br>PENDING</th>
+            <th>DISPATCH<br>PENDING</th>
             <th>CONTRACTORS<br>NAME</th>
             <th>MATERIAL<br>DISPATCH</th>
             <th>CANCLE SITES<br>OF LOT 3</th>
-            <th>DISPATCH<br>PENDING</th>
             <th>I &amp; C<br>DONE</th>
             <th>I &amp; C<br>PENDING</th>
             <th>DATA UPLOAD<br>DONE</th>
@@ -201,13 +201,11 @@ if (!is_array($districtRows)) {
             <td rowspan="<?php echo $rowCount; ?>"><?php echo contractorAbstractCountLink($workOrderDone, 'work_order_done', $projectId, $subheadId, $dist); ?></td>
             <td rowspan="<?php echo $rowCount; ?>"><?php echo contractorAbstractCountLink($workOrderPending, 'work_order_pending', $projectId, $subheadId, $dist); ?></td>
             <td rowspan="<?php echo $rowCount; ?>" class="pending-col"><?php echo contractorAbstractCountLink($jsrPending, 'jsr_pending', $projectId, $subheadId, $dist); ?></td>
+            <td rowspan="<?php echo $rowCount; ?>" class="pending-col"><?php echo contractorAbstractCountLink($dispatchPending, 'dispatch_pending', $projectId, $subheadId, $dist); ?></td>
             <?php } ?>
             <td class="contractor-name"><?php echo htmlspecialchars($contractorDisplay); ?></td>
             <td><?php echo contractorAbstractCountLink($materialDispatch, 'material_dispatch', $projectId, $subheadId, $dist, $contractorId, $contractorLinkName); ?></td>
             <td><?php echo contractorAbstractCountLink($cancelSites, 'cancel_sites', $projectId, $subheadId, $dist, $contractorId, $contractorLinkName); ?></td>
-            <?php if ($index === 0) { ?>
-            <td rowspan="<?php echo $rowCount; ?>" class="pending-col"><?php echo contractorAbstractCountLink($dispatchPending, 'dispatch_pending', $projectId, $subheadId, $dist); ?></td>
-            <?php } ?>
             <td><?php echo contractorAbstractCountLink($icDone, 'ic_done', $projectId, $subheadId, $dist, $contractorId, $contractorLinkName); ?></td>
             <td class="pending-col"><?php echo contractorAbstractCountLink($icPending, 'ic_pending', $projectId, $subheadId, $dist, $contractorId, $contractorLinkName); ?></td>
             <td><?php echo contractorAbstractCountLink($dataUploadDone, 'data_upload_done', $projectId, $subheadId, $dist, $contractorId, $contractorLinkName); ?></td>

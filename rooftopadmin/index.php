@@ -1,210 +1,153 @@
 <?php include_once 'config.php'; ?>
 <!DOCTYPE html>
-<html lang="en" class="default-style layout-fixed layout-navbar-fixed">
+<html lang="en">
 <head>
 <title><?php echo $Proj_Title; ?> - Login</title>
 <meta charset="utf-8">
 <meta http-equiv="X-UA-Compatible" content="IE=edge" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=0, minimal-ui">
-<meta name="description" content="" />
-<meta name="keywords" content="">
-<meta name="author" content="" />
- <link href="https://fonts.googleapis.com/css?family=Roboto:300,400,500,700" rel="stylesheet">
-
-    <!-- Icon fonts -->
-    <link rel="stylesheet" href="assets/fonts/fontawesome.css">
-    <link rel="stylesheet" href="assets/fonts/ionicons.css">
-    <link rel="stylesheet" href="assets/fonts/linearicons.css">
-    <link rel="stylesheet" href="assets/fonts/open-iconic.css">
-    <link rel="stylesheet" href="assets/fonts/pe-icon-7-stroke.css">
-    <link rel="stylesheet" href="assets/fonts/feather.css">
-    <!-- Core stylesheets -->
-    <link rel="stylesheet" href="assets/css/bootstrap-material.css">
-    <link rel="stylesheet" href="assets/css/shreerang-material.css">
-    <link rel="stylesheet" href="assets/css/uikit.css">
-    <!-- Libs -->
-    <link rel="stylesheet" href="assets/libs/perfect-scrollbar/perfect-scrollbar.css">
-    <!-- Page -->
-    <link rel="stylesheet" href="assets/css/pages/authentication.css">
-    <link rel="stylesheet" href="assets/libs/growl/growl.css">
-    <link rel="stylesheet" href="assets/libs/toastr/toastr.css">
-
+<meta name="description" content="VTECH Rooftop Admin Sign In" />
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/fonts/fontawesome.css">
+<link rel="stylesheet" href="assets/libs/growl/growl.css">
+<link rel="stylesheet" href="css/admin-auth.css">
 </head>
+<body class="admin-auth-page">
 
-<body>
-  
-    <!-- [ Preloader ] End -->
-    <!-- [ content ] Start -->
-    <div class="authentication-wrapper authentication-3">
-        <div class="authentication-inner">
-
-            <!-- [ Side container ] Start -->
-            <!-- Do not display the container on extra small, small and medium screens -->
-            <div class="d-none d-lg-flex col-lg-8 align-items-center ui-bg-cover ui-bg-overlay-container p-5" style="background-image:url(slider_1.jpg);">
-                <div class="ui-bg-overlay bg-dark opacity-50"></div>
-                <!-- [ Text ] Start -->
-                <div class="w-100 text-white px-5">
-                    <div class="w-100 text-white px-5">
-                    <h1 class="display-2 font-weight-bolder mb-4">VTECH SUNSYSTEMS PVT. LTD.</h1>
-                    
-                </div>
-                        
-                </div>
-                <!-- [ Text ] End -->
+<div class="admin-auth-shell">
+    <aside class="admin-auth-hero" aria-hidden="true">
+        <div class="admin-auth-hero-inner">
+            <div class="admin-auth-hero-badge">
+                <i class="fas fa-solar-panel"></i>
+                Rooftop Admin Portal
             </div>
-            <!-- [ Side container ] End -->
+            <h1>VTECH Sunsystems Pvt. Ltd.</h1>
+            <p>Secure access to rooftop solar operations — manage installations, customers, leads, and field teams in one place.</p>
+            <ul class="admin-auth-features">
+                <li><span><i class="fas fa-shield-alt"></i></span> Two-step verification for every sign in</li>
+                <li><span><i class="fas fa-chart-line"></i></span> Real-time project &amp; installation tracking</li>
+                <li><span><i class="fas fa-users"></i></span> Role-based team access control</li>
+            </ul>
+        </div>
+    </aside>
 
-            <!-- [ Form container ] Start -->
-            <div class="d-flex col-lg-4 align-items-center bg-white p-5">
-                <!-- Inner container -->
-                <!-- Have to add `.d-flex` to control width via `.col-*` classes -->
-                <div class="d-flex col-sm-7 col-md-5 col-lg-12 px-0 px-xl-4 mx-auto">
-                    <div class="w-100">
+    <main class="admin-auth-panel">
+        <div class="admin-auth-card">
+            <img src="logo.jpg" alt="VTECH" class="admin-auth-logo" width="200" height="auto">
+            <h2>Welcome back</h2>
+            <p class="admin-auth-subtitle">Sign in to continue to your rooftop admin account</p>
 
-                        <!-- [ Logo ] Start -->
-                        <div class=" justify-content-center align-items-center">
-                            <div>
-                                <div class=" position-relative" align="center">
-                                    <img src="logo.jpg" alt="Brand Logo" width="250px" >
-                                    
-                                </div>
-                            </div>
-                        </div>
-                        <!-- [ Logo ] End -->
-
-                        <h4 class="text-center  font-weight-normal mt-3 mb-0">Sign in to your accounts</h4>
-<br>
-                        <!-- [ Form ] Start -->
-                        <form id="validation-form" method="post">
-<div class="form-group">
-<label class="form-label">Username</label>
-<input type="text" name="Username" class="form-control" required="">
-<div class="clearfix"></div>
-</div>
-<div class="form-group" style="padding-top:10px;">
-<label class="form-label d-flex justify-content-between align-items-end">
-<span>Password</span>
-</label>
-<input type="password" name="Password" class="form-control" required="">
-<div class="clearfix"></div>
-</div>
-
-
-
-<div class="d-flex justify-content-between align-items-center m-0" align="center" style="padding-top:10px;">
-<button type="submit" id="submit" class="btn btn-primary">Sign In</button>
-<!--<a href="emp-login.php" class="btn btn-primary">Employee Login</a>-->
-<!-- <a href="sign-up.php" class="btn btn-success">Sign Up</a> -->
-</div>
-</form>
-                        <!-- [ Form ] End -->
-
-                       <!--  <div class="text-center text-muted">
-                            Don't have an account yet?
-                            <a href="pages_authentication_register-v3.html">Sign Up</a>
-                        </div> -->
-
+            <form id="validation-form" method="post" novalidate>
+                <div class="admin-auth-field">
+                    <label for="Username">Username</label>
+                    <div class="admin-auth-input-wrap">
+                        <i class="fas fa-user field-icon"></i>
+                        <input type="text" id="Username" name="Username" placeholder="Enter username" required autocomplete="username">
                     </div>
                 </div>
-            </div>
-            <!-- [ Form container ] End -->
 
+                <div class="admin-auth-field">
+                    <label for="Password">Password</label>
+                    <div class="admin-auth-input-wrap has-toggle">
+                        <i class="fas fa-lock field-icon"></i>
+                        <input type="password" id="Password" name="Password" placeholder="Enter password" required autocomplete="current-password">
+                        <button type="button" class="admin-auth-toggle-pw" id="togglePassword" aria-label="Show password">
+                            <i class="fas fa-eye"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <button type="submit" id="submit" class="admin-auth-btn">
+                    <span class="btn-spinner" aria-hidden="true"></span>
+                    <span class="btn-label">Sign In</span>
+                </button>
+            </form>
         </div>
-    </div>
-    <!-- [ content ] End -->
-    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.4.1/jquery.min.js"></script>
-    <script src="assets/js/pace.js"></script>
-    <script src="assets/libs/popper/popper.js"></script>
-    <script src="assets/js/bootstrap.js"></script>
-    <script src="assets/js/sidenav.js"></script>
-    <script src="assets/js/layout-helpers.js"></script>
-    <script src="assets/js/material-ripple.js"></script>
-    <!-- Libs -->
-    <script src="assets/libs/perfect-scrollbar/perfect-scrollbar.js"></script>
-    <script src="assets/libs/validate/validate.js"></script>
-    <script src="assets/libs/select2/select2.js"></script>
-     <script src="assets/libs/growl/growl.js"></script>
-    <script src="assets/libs/toastr/toastr.js"></script>
+    </main>
+</div>
 
-    <!-- Demo -->
-    <script src="assets/js/demo.js"></script>
-    <script src="assets/js/analytics.js"></script>
-    <script src="assets/js/pages/forms_validation.js"></script>
-    <script src="assets/js/pages/ui_notifications.js"></script>
-    <script src="assets/js/pages/forms_selects.js"></script>
-
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.4.1/jquery.min.js"></script>
+<script src="assets/libs/growl/growl.js"></script>
 <script type="text/javascript">
 function error_toast(){
     var isRtl = $('body').attr('dir') === 'rtl' || $('html').attr('dir') === 'rtl';
-   $.growl.error({
-      title:    'Error',
-      message:  'Invalid Username / Password',
-      location: isRtl ? 'tl' : 'tr'
+    $.growl.error({
+        title: 'Error',
+        message: 'Invalid Username / Password',
+        location: isRtl ? 'tl' : 'tr'
     });
-  }
-    function otp_sent_toast(){
+}
+function otp_sent_toast(){
     var isRtl = $('body').attr('dir') === 'rtl' || $('html').attr('dir') === 'rtl';
-   $.growl.notice({
-      title:    'OTP sent',
-      message:  'Enter the code on the next screen.',
-      location: isRtl ? 'tl' : 'tr'
+    $.growl.notice({
+        title: 'OTP sent',
+        message: 'Enter the code on the next screen.',
+        location: isRtl ? 'tl' : 'tr'
     });
-  }
-     $(document).ready(function(){
-            $('#validation-form').on('submit', function(e){
-            e.preventDefault();    
-    if ($('#validation-form').valid()){ 
-           $.ajax({  
-                url :"ajax_files/ajax_login.php",  
-                method:"POST",  
-                data:new FormData(this),  
-                contentType:false,  
-                processData:false,  
-                timeout: 60000,
-                 beforeSend:function(){
-     $('#submit').attr('disabled','disabled');
-     $('#submit').text('Please Wait...');
-    },
-                success:function(data){ 
-                  var res;
-                  try {
+}
+
+$(document).ready(function(){
+    $('#togglePassword').on('click', function(){
+        var $pw = $('#Password');
+        var $icon = $(this).find('i');
+        if ($pw.attr('type') === 'password') {
+            $pw.attr('type', 'text');
+            $icon.removeClass('fa-eye').addClass('fa-eye-slash');
+        } else {
+            $pw.attr('type', 'password');
+            $icon.removeClass('fa-eye-slash').addClass('fa-eye');
+        }
+    });
+
+    $('#validation-form').on('submit', function(e){
+        e.preventDefault();
+        var username = $.trim($('#Username').val());
+        var password = $('#Password').val();
+        if (!username || !password) {
+            error_toast();
+            return;
+        }
+        var $btn = $('#submit');
+        $.ajax({
+            url: 'ajax_files/ajax_login.php',
+            method: 'POST',
+            data: new FormData(this),
+            contentType: false,
+            processData: false,
+            timeout: 60000,
+            beforeSend: function(){
+                $btn.prop('disabled', true).addClass('is-loading');
+                $btn.find('.btn-label').text('Please wait...');
+            },
+            success: function(data){
+                var res;
+                try {
                     res = typeof data === 'object' ? data : JSON.parse(data);
-                  } catch (e) {
+                } catch (e) {
                     error_toast();
                     return;
-                  }
-                  var Status = res.Status;
-                     if(Status == 2){
-                         otp_sent_toast();
-                     setTimeout(function(){
-                 window.location.href = 'verify-login-otp.php';
-                    }, 1200);
-                     }
-                     else{
-                    error_toast();
-                     }
-                },
-                error: function () {
-                    error_toast();
-                },
-                complete: function () {
-                      $('#submit').attr('disabled',false);
-                    $('#submit').text('Sign In');
                 }
-           })  
-
-
-
-    }
-else{
-  //$('#Fname').focus();
-    return false;
-}
-  });
-
-       });
+                if (res.Status == 2) {
+                    otp_sent_toast();
+                    setTimeout(function(){
+                        window.location.href = 'verify-login-otp.php';
+                    }, 1200);
+                } else {
+                    error_toast();
+                }
+            },
+            error: function(){
+                error_toast();
+            },
+            complete: function(){
+                $btn.prop('disabled', false).removeClass('is-loading');
+                $btn.find('.btn-label').text('Sign In');
+            }
+        });
+    });
+});
 </script>
-
 </body>
-
 </html>

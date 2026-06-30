@@ -6,6 +6,8 @@ $user_id = $_SESSION['Admin']['id'];
 $sql77 = "SELECT * FROM tbl_users WHERE id='$user_id'";
 $row77 = getRecord($sql77);
 $Options = adminResolveMenuOptionsFromUserRow($row77);
+$canEditStore = in_array('10', $Options, true) || in_array('2', $Options, true);
+$canDeleteStore = in_array('11', $Options, true) || in_array('2', $Options, true);
 if($_POST['action'] == 'Add'){
 $Name = addslashes(trim($_POST["Name"]));
 $Phone = addslashes(trim($_POST["Phone"]));
@@ -117,20 +119,15 @@ if($_POST['action'] == 'deletePhoto'){
     echo "Category Photo Delete Successfully";
 } 
   if($_POST['action']=='view'){?>
-<table id="example" class="table table-striped table-bordered dt-responsive nowrap" style="width:100%">
+<table id="example" class="table table-striped table-bordered" style="width:100%;">
         <thead>
             <tr>
               <th>#</th>
               <th>Store Name</th>
               <th>Phone</th>
               <th>Address</th>
-             
                <th>Status</th>
-               
-                <?php if(in_array("10", $Options) || in_array("11", $Options)) {?>
-               <th>Action</th>
-               <?php } ?>
-             
+               <th class="action-col">Action</th>
             </tr>
         </thead>
         <tbody>
@@ -143,32 +140,21 @@ if($_POST['action'] == 'deletePhoto'){
   ?>
            <tr>
              <td><?php echo $srno; ?></td>
-             
-             <td><?php echo $nx['Name']; ?></td>
-              <td><?php echo $nx['Phone']; ?></td>
-               <td><?php echo $nx['Address']; ?></td>
-           
+             <td><?php echo htmlspecialchars($nx['Name']); ?></td>
+              <td><?php echo htmlspecialchars($nx['Phone']); ?></td>
+               <td><?php echo htmlspecialchars($nx['Address']); ?></td>
              <td><?php if($nx['Status']=='1'){echo "<span style='color:green;'>Active</span>";} else { echo "<span style='color:red;'>Inactive</span>";} ?></td>
-          
-             <?php if(in_array("10", $Options) || in_array("11", $Options)) {?>
-             <td>
-                   <?php if(in_array("10", $Options)){?>
-                 <a data-id="<?php echo $nx['id']; ?>" href='javascript:void(0);' data-toggle="tooltip" data-placement="top" title="Edit" data-original-title="Edit" class="update"><i class="lnr lnr-pencil mr-2"></i></a>&nbsp;&nbsp;
-                  <?php } if(in_array("11", $Options)){?>
-                 <a data-id="<?php echo $nx['id']; ?>" href='javascript:void(0);' data-toggle="tooltip" data-placement="top" title="Delete" data-original-title="Delete" class="delete" id="bootbox-confirm"><i class="lnr lnr-trash text-danger"></i></a>
+             <td class="action-col text-nowrap">
+                   <?php if ($canEditStore) { ?>
+                 <a data-id="<?php echo (int) $nx['id']; ?>" href="javascript:void(0);" data-toggle="tooltip" data-placement="top" title="Edit" data-original-title="Edit" class="update"><i class="lnr lnr-pencil mr-2"></i></a>&nbsp;&nbsp;
+                  <?php } if ($canDeleteStore) { ?>
+                 <a data-id="<?php echo (int) $nx['id']; ?>" href="javascript:void(0);" data-toggle="tooltip" data-placement="top" title="Delete" data-original-title="Delete" class="delete" id="bootbox-confirm"><i class="lnr lnr-trash text-danger"></i></a>
                   <?php } ?>
-             </td><?php } ?>
+             </td>
             </tr>
              <?php $srno++;} ?>
         </tbody>
     </table>
-    <script type="text/javascript">
-      $(document).ready(function() {
-      $('#example').DataTable( {
-        responsive: true
-      });
-      });
-    </script>
  <?php }
 
 

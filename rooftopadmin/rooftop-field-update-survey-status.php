@@ -2,6 +2,8 @@
 session_start();
 include_once 'config.php';
 include_once 'auth.php';
+include_once 'inc-rooftop-survey-schema.php';
+include_once 'inc-rooftop-survey-doc-handlers.php';
 $user_id = $_SESSION['Admin']['id'];
 $MainPage = "Customers";
 $Page = "Rooftop-Customers";
@@ -46,30 +48,31 @@ z-index: 2;
 
 <?php include_once 'top_header.php'; ?>
 <?php 
-$id = $_GET['id'];
-$sql7 = "SELECT * FROM tbl_users WHERE id='$id'";
-$row7 = getRecord($sql7);
+$id = isset($_GET['id']) ? (int) $_GET['id'] : 0;
+$row7 = getRecord("SELECT * FROM tbl_users WHERE id='$id'");
+if (empty($row7['id'])) {
+    $custRow = getRecord("SELECT CustId FROM tbl_rooftop_field_survey WHERE id='$id' LIMIT 1");
+    if (!empty($custRow['CustId'])) {
+        $id = (int) $custRow['CustId'];
+        $row7 = getRecord("SELECT * FROM tbl_users WHERE id='$id'");
+    }
+}
 
 $sql78 = "SELECT * FROM tbl_rooftop_field_survey WHERE CustId='$id'";
 $row78 = getRecord($sql78);
+$row7u2 = getRecord("SELECT ConsumerNo FROM tbl_user2 WHERE id='$id'");
+$customerConsumerNo = trim((string) ($row7u2['ConsumerNo'] ?? ''));
+if ($customerConsumerNo === '') {
+    $customerConsumerNo = trim((string) ($row78['ConsumerNo'] ?? ''));
+}
+$applicantCategory = '';
+if (!empty($row7['SchemeId'])) {
+    $schemeRow = getRecord("SELECT Name FROM tbl_rooftop_scheme WHERE id='" . (int) $row7['SchemeId'] . "' LIMIT 1");
+    $applicantCategory = $schemeRow['Name'] ?? '';
+}
 ?>
 
 <?php 
-function uploadPhoto($orgfile,$tempfile){
-  $randno = rand(1,100);
-$src = $tempfile;
-$fnm = substr($orgfile, 0,strrpos($orgfile,'.')); 
-$fnm = str_replace(" ","_",$fnm);
-$ext = substr($orgfile,strpos($orgfile,"."));
-$dest = '../uploads/'. $randno . "_".$fnm . $ext;
-$imagepath =  $randno . "_".$fnm . $ext;
-if(move_uploaded_file($src, $dest))
-{
-$Photo = $imagepath ;
-} 
-return $Photo;
-
-}
   if(isset($_POST['submit'])){
 $SurveyDetails = addslashes(trim($_POST["FieldSurveyDetails"]));
 $FieldSurveyDate = addslashes(trim($_POST["FieldSurveyDate"]));
@@ -89,64 +92,43 @@ $FieldComments = addslashes(trim($_POST["FieldComments"]));
 $FieldEpsLoad = addslashes(trim($_POST["FieldEpsLoad"]));
 $FieldNetMeter = addslashes(trim($_POST["FieldNetMeter"]));
 $ConsumerNo = addslashes(trim($_POST["ConsumerNo"]));
+$FieldRoofType = addslashes(trim($_POST['FieldRoofType'] ?? ''));
+$FieldEarthingDistance = addslashes(trim($_POST['FieldEarthingDistance'] ?? ''));
+$FieldPhase1ph = addslashes(trim($_POST['FieldPhase1ph'] ?? ''));
+$FieldOngridKW = addslashes(trim($_POST['FieldOngridKW'] ?? ''));
 $CreatedDate = date('Y-m-d');
 $ModifiedDate = date('Y-m-d');
 $CreatedTime = date('h:i a');
 
-if(isset($_FILES['FieldSitePhoto']['name'])){
-  $temp1 = $_FILES['FieldSitePhoto']['tmp_name'];
-  $orgfile1 = $_FILES['FieldSitePhoto']['name'];
-  $FieldSitePhoto = uploadPhoto($orgfile1,$temp1);
-}
-else{
-  $FieldSitePhoto = $_POST['FieldSitePhotoOld'];
-}
+$docFields = rooftopSurveyCollectDocFields('Field', $_POST, $_FILES);
+$FieldSitePhoto = $docFields['FieldSitePhoto'];
+$FieldPanCard = $docFields['FieldPanCard'];
+$FieldAadharCard = $docFields['FieldAadharCard'];
+$FieldAadharCard2 = $docFields['FieldAadharCard2'];
+$FieldElectricBill = $docFields['FieldElectricBill'];
+$docSql = rooftopSurveyDocSqlSet($docFields);
 
-if(isset($_FILES['FieldPanCard']['name'])){
-  $temp2 = $_FILES['FieldPanCard']['tmp_name'];
-  $orgfile2 = $_FILES['FieldPanCard']['name'];
-  $FieldPanCard = uploadPhoto($orgfile2,$temp2);
+if(isset($_FILES['FieldBankDetails']['name']) && $_FILES['FieldBankDetails']['name'] != ''){
+  $FieldBankDetails = rooftopSurveyUploadPhoto($_FILES['FieldBankDetails']['name'], $_FILES['FieldBankDetails']['tmp_name']);
 }
 else{
-  $FieldPanCard = $_POST['PanCardOld'];
-}
-
-if(isset($_FILES['FieldPanCard']['name'])){
-  $temp3 = $_FILES['FieldAadharCard']['tmp_name'];
-  $orgfile3 = $_FILES['FieldAadharCard']['name'];
-  $FieldAadharCard = uploadPhoto($orgfile3,$temp3);
-}
-else{
-  $FieldAadharCard = $_POST['AadharCardOld'];
-}
-
-if(isset($_FILES['FieldPanCard']['name'])){
-  $temp4 = $_FILES['FieldAadharCard2']['tmp_name'];
-  $orgfile4 = $_FILES['FieldAadharCard2']['name'];
-  $FieldAadharCard2 = uploadPhoto($orgfile4,$temp4);
-}
-else{
-  $FieldAadharCard2 = $_POST['AadharCardOld2'];
-}
-
-if(isset($_FILES['FieldPanCard']['name'])){
-  $temp5 = $_FILES['FieldElectricBill']['tmp_name'];
-  $orgfile5 = $_FILES['FieldElectricBill']['name'];
-  $FieldElectricBill = uploadPhoto($orgfile5,$temp5);
-}
-else{
-  $FieldElectricBill = $_POST['ElectricBillOld'];
+  $FieldBankDetails = $_POST['FieldBankDetailsOld'] ?? '';
 }
 
     $sql = "DELETE FROM tbl_rooftop_field_survey WHERE CustId='$id'";
     $conn->query($sql);
-    $sql = "INSERT INTO tbl_rooftop_field_survey SET ConsumerNo='$ConsumerNo',CustId='$id',FieldSurveyDate='$FieldSurveyDate',FieldContactNo='$FieldContactNo',FieldContactPerson='$FieldContactPerson',FieldSystemType='$FieldSystemType',FieldCapacity='$FieldCapacity',FieldShadowArea='$FieldShadowArea',FieldShadowArea2='$FieldShadowArea2',FieldOrientation='$FieldOrientation',FieldDistance='$FieldDistance',FieldConnectedLoad='$FieldConnectedLoad',FieldRequiredLoad='$FieldRequiredLoad',FieldComments='$FieldComments',FieldEpsLoad='$FieldEpsLoad',FieldNetMeter='$FieldNetMeter',FieldSitePhoto='$FieldSitePhoto',FieldPanCard='$FieldPanCard',FieldAadharCard='$FieldAadharCard',FieldAadharCard2='$FieldAadharCard2',FieldElectricBill='$FieldElectricBill',FieldSurveyDetails='$SurveyDetails',FieldLattitude='$FieldLattitude',FieldLongitude='$FieldLongitude',CreatedBy='$user_id',CreatedDate='$CreatedDate'";
+    $sql = "INSERT INTO tbl_rooftop_field_survey SET ConsumerNo='$ConsumerNo',CustId='$id',FieldSurveyDate='$FieldSurveyDate',FieldContactNo='$FieldContactNo',FieldContactPerson='$FieldContactPerson',FieldSystemType='$FieldSystemType',FieldCapacity='$FieldCapacity',FieldShadowArea='$FieldShadowArea',FieldShadowArea2='$FieldShadowArea2',FieldOrientation='$FieldOrientation',FieldDistance='$FieldDistance',FieldConnectedLoad='$FieldConnectedLoad',FieldRequiredLoad='$FieldRequiredLoad',FieldComments='$FieldComments',FieldEpsLoad='$FieldEpsLoad',FieldNetMeter='$FieldNetMeter',$docSql,FieldBankDetails='$FieldBankDetails',FieldRoofType='$FieldRoofType',FieldEarthingDistance='$FieldEarthingDistance',FieldPhase1ph='$FieldPhase1ph',FieldOngridKW='$FieldOngridKW',FieldSurveyDetails='$SurveyDetails',FieldLattitude='$FieldLattitude',FieldLongitude='$FieldLongitude',CreatedBy='$user_id',CreatedDate='$CreatedDate'";
     $conn->query($sql);
     $RooftopFieldSurveyId = mysqli_insert_id($conn);
     $query2 = "UPDATE tbl_users SET RooftopFieldSurveyId='$RooftopFieldSurveyId',FieldSurveyDetails='$SurveyDetails',FieldLattitude='$FieldLattitude',FieldLongitude='$FieldLongitude',FieldSurveyBy='$user_id',FieldSurveyDate='$CreatedDate' WHERE id = '$id'";
     $conn->query($query2);
     $query2 = "UPDATE tbl_user2 SET ConsumerNo='$ConsumerNo' WHERE id = '$id'";
     $conn->query($query2);
+
+    if (is_file(__DIR__ . '/inc-msedcl-smart-site.php')) {
+        require_once __DIR__ . '/inc-msedcl-smart-site.php';
+        msedclSmartSyncSurveyDoneForUser((int) $id, (int) $user_id);
+    }
   
   if($SurveyDetails=='1') {
   $Steps = "Field Survey Done";
@@ -190,20 +172,20 @@ else{
 </div>
 
 <div class="form-group col-md-3">
-<label class="form-label">Beneficiary ID </label>
-<input type="text" class="form-control" placeholder="" value="<?php echo $row7['BeneficiaryId']; ?>" readonly>
+<label class="form-label">Beneficiary ID / Application Number</label>
+<input type="text" class="form-control" placeholder="" value="<?php echo htmlspecialchars($row7['BeneficiaryId'] ?? '', ENT_QUOTES, 'UTF-8'); ?>" readonly>
  <div class="clearfix"></div>
 </div>
 
 <div class="form-group col-md-6">
-<label class="form-label">Name of Consumer </label>
+<label class="form-label">Beneficiary Name</label>
 <input type="text" class="form-control" placeholder="" value="<?php echo $row7['Fname']; ?>" readonly>
  <div class="clearfix"></div>
 </div>
 
 <div class="form-group col-md-3">
-<label class="form-label">Electricity consumer no. </label>
-<input type="text" class="form-control" placeholder="" name="ConsumerNo" value="<?php echo $row78['ConsumerNo']; ?>">
+<label class="form-label">Consumer No.</label>
+<input type="text" class="form-control" placeholder="" name="ConsumerNo" value="<?php echo htmlspecialchars($customerConsumerNo, ENT_QUOTES, 'UTF-8'); ?>">
  <div class="clearfix"></div>
 </div>
 
@@ -225,6 +207,12 @@ else{
  <div class="clearfix"></div>
 </div>
 
+<?php
+$surveyPrefix = 'Field';
+$surveySection = 'customer';
+include __DIR__ . '/inc-rooftop-survey-extra-fields.php';
+?>
+
 <div class="form-group col-md-3">
 <label class="form-label">State </label>
 <select class="form-control" readonly>
@@ -242,7 +230,7 @@ else{
 </div>
 
 <div class="form-group col-md-3">
-<label class="form-label">Lattitude </label>
+<label class="form-label">Latitude</label>
 <input type="text" name="FieldLattitude" id="FieldLattitude" class="form-control" placeholder="" value="<?php echo $row78["FieldLattitude"]; ?>">
  <div class="clearfix"></div>
 </div>
@@ -284,13 +272,13 @@ else{
 </div>
 
 <div class="form-group col-md-3">
-<label class="form-label"> Shadow free Area Required (in Sq. feet) </label>
+<label class="form-label">Area Required (in Sq. feet)</label>
 <input type="text" class="form-control" placeholder="" name="FieldShadowArea" value="<?php echo $row78["FieldShadowArea"]; ?>">
  <div class="clearfix"></div>
 </div>
 
  <div class="form-group col-md-3">
-<label class="form-label">Shadow free area available <span class="text-danger">*</span></label>
+<label class="form-label">Roof available area is shadow free or not <span class="text-danger">*</span></label>
   <select class="form-control" id="FieldShadowArea2" name="FieldShadowArea2" required="">
     <option value="" selected >Select</option>
 <option value="Yes" <?php if($row78["FieldShadowArea2"]=='Yes') {?> selected <?php } ?>>Yes</option>
@@ -309,8 +297,13 @@ else{
 <div class="clearfix"></div>
 </div>
 
+<?php
+$surveySection = 'technical';
+include __DIR__ . '/inc-rooftop-survey-extra-fields.php';
+?>
+
 <div class="form-group col-md-4">
-<label class="form-label">Distance From LT Panel (Ongrid & Hybrid) in meters <span class="text-danger">*</span></label>
+<label class="form-label">Distance from Panel to meter (in meters) <span class="text-danger">*</span></label>
 <input type="text" class="form-control" name="FieldDistance" placeholder="" value="<?php echo $row78["FieldDistance"]; ?>">
  <div class="clearfix"></div>
 </div>
@@ -345,76 +338,15 @@ else{
  <div class="clearfix"></div>
 </div>
 
-<div class="form-group col-md-6">
-<label class="form-label">Site Photo </label>
-<label class="custom-file">
-<input type="file" class="custom-file-input" name="FieldSitePhoto" style="opacity: 1;">
-<input type="hidden" name="FieldSitePhotoOld" value="<?php echo $row78['FieldSitePhoto'];?>" id="FieldSitePhotoOld">
-<span class="custom-file-label"></span>
-</label>
-<?php if($row78['FieldSitePhoto']=='') {} else{?>
-  <span id="show_photo3">
-<div class="ui-feed-icon-container float-left pt-2 mr-3 mb-3"><a href="javascript:void(0)" class="ui-icon ui-feed-icon ion ion-md-close bg-secondary text-white" id="delete_photo3"></a><a href="../uploads/<?php echo $row78['FieldSitePhoto'];?>" target="_blank"><?php echo $row78['FieldSitePhoto'];?></a></div>
-</span>
-<?php } ?>
- <div class="clearfix"></div>
-</div>
+<?php
+$surveyPrefix = 'Field';
+include __DIR__ . '/inc-rooftop-survey-doc-uploads.php';
+?>
 
-<div class="form-group col-md-6 maindoc">
-  <label class="form-label">Upload Pan Card </label>
-<label class="custom-file">
-<input type="file" class="custom-file-input" name="FieldPanCard" style="opacity: 1;">
-<input type="hidden" name="PanCardOld" value="<?php echo $row78['FieldPanCard'];?>" id="PanCardOld">
-<span class="custom-file-label"></span>
-</label>
-<?php if($row78['FieldPanCard']=='') {} else{?>
-  <span id="show_photo5">
-<div class="ui-feed-icon-container float-left pt-2 mr-3 mb-3"><a href="javascript:void(0)" class="ui-icon ui-feed-icon ion ion-md-close bg-secondary text-white" id="delete_photo5"></a><a href="../uploads/<?php echo $row78['FieldPanCard'];?>" target="_blank"><?php echo $row78['FieldPanCard'];?></a></div>
-</span>
-<?php } ?>
-</div>
-
-<div class="form-group col-md-6 maindoc">
-  <label class="form-label">Upload Front Aadhar Card </label>
-<label class="custom-file">
-<input type="file" class="custom-file-input" name="FieldAadharCard" style="opacity: 1;">
-<input type="hidden" name="AadharCardOld" value="<?php echo $row78['FieldAadharCard'];?>" id="AadharCardOld">
-<span class="custom-file-label"></span>
-</label>
-<?php if($row78['FieldAadharCard']=='') {} else{?>
-  <span id="show_photo3">
-<div class="ui-feed-icon-container float-left pt-2 mr-3 mb-3"><a href="javascript:void(0)" class="ui-icon ui-feed-icon ion ion-md-close bg-secondary text-white" id="delete_photo3"></a><a href="../uploads/<?php echo $row78['FieldAadharCard'];?>" target="_blank"><?php echo $row78['FieldAadharCard'];?></a></div>
-</span>
-<?php } ?>
-</div>
-
-<div class="form-group col-md-6 maindoc">
-  <label class="form-label">Upload Back Aadhar Card </label>
-<label class="custom-file">
-<input type="file" class="custom-file-input" name="FieldAadharCard2" style="opacity: 1;">
-<input type="hidden" name="AadharCardOld2" value="<?php echo $row78['FieldAadharCard2'];?>" id="AadharCardOld2">
-<span class="custom-file-label"></span>
-</label>
-<?php if($row78['FieldAadharCard2']=='') {} else{?>
-  <span id="show_photo4">
-<div class="ui-feed-icon-container float-left pt-2 mr-3 mb-3"><a href="javascript:void(0)" class="ui-icon ui-feed-icon ion ion-md-close bg-secondary text-white" id="delete_photo4"></a><a href="../uploads/<?php echo $row78['FieldAadharCard2'];?>" target="_blank"><?php echo $row78['FieldAadharCard2'];?></a></div>
-</span>
-<?php } ?>
-</div>
-
-<div class="form-group col-md-6 maindoc">
-  <label class="form-label">Electricity Bill(12 Month)</label>
-<label class="custom-file">
-<input type="file" class="custom-file-input" name="FieldElectricBill" style="opacity: 1;">
-<input type="hidden" name="ElectricBillOld" value="<?php echo $row78['FieldElectricBill'];?>" id="ElectricBillOld">
-<span class="custom-file-label"></span>
-</label>
-<?php if($row78['FieldElectricBill']=='') {} else{?>
-  <span id="show_photo6">
-<div class="ui-feed-icon-container float-left pt-2 mr-3 mb-3"><a href="javascript:void(0)" class="ui-icon ui-feed-icon ion ion-md-close bg-secondary text-white" id="delete_photo6"></a><a href="../uploads/<?php echo $row78['FieldElectricBill'];?>" target="_blank"><?php echo $row78['FieldElectricBill'];?></a></div>
-</span>
-<?php } ?>
-</div>
+<?php
+$surveySection = 'bank';
+include __DIR__ . '/inc-rooftop-survey-extra-fields.php';
+?>
 
 
  <div class="form-group col-md-6">

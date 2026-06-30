@@ -32,6 +32,14 @@ $Page = "Branch";
     <link rel="stylesheet" href="<?php echo $SiteUrl;?>/assets/libs/datatables/datatables.css">
     <link rel="stylesheet" href="<?php echo $SiteUrl;?>/assets/libs/growl/growl.css">
     <link rel="stylesheet" href="<?php echo $SiteUrl;?>/assets/libs/toastr/toastr.css">
+<style>
+#custresult table { width: 100% !important; }
+#custresult .dataTables_wrapper { width: 100%; overflow-x: auto; }
+#custresult th,
+#custresult td { white-space: nowrap; vertical-align: middle; }
+#custresult td:nth-child(4) { white-space: normal; min-width: 200px; }
+#custresult .action-col { width: 90px; text-align: center; }
+</style>
 </head>
 <body>
 
@@ -132,8 +140,7 @@ $Page = "Branch";
 </div>
 </div>
 <div class="card">
-<div class="card-datatable table-responsive" id="custresult">
-</div>
+<div class="card-datatable" id="custresult" style="width:100%; overflow-x:auto;"></div>
 </div>
 </div>
 
@@ -168,6 +175,27 @@ $Page = "Branch";
     <script src="<?php echo $SiteUrl;?>/assets/js/pages/ui_notifications.js"></script>
     <script src="<?php echo $SiteUrl;?>/assets/js/pages/forms_selects.js"></script>
 <script type="text/javascript">
+function initBranchTable() {
+  var $table = $('#example');
+  if (!$table.length || !$.fn.DataTable) {
+    return;
+  }
+  if ($.fn.DataTable.isDataTable('#example')) {
+    $table.DataTable().destroy();
+  }
+  $table.DataTable({
+    scrollX: true,
+    autoWidth: false,
+    responsive: false,
+    destroy: true,
+    columnDefs: [
+      { targets: 0, width: '40px' },
+      { targets: 3, width: '220px' },
+      { targets: -1, orderable: false, className: 'action-col text-nowrap' }
+    ]
+  });
+}
+
 function product_lists(){
   var action = 'view';
       $.ajax({
@@ -176,6 +204,7 @@ function product_lists(){
    data:{action:action},  
   success: function(data){
       $('#custresult').html(data);
+      initBranchTable();
   }
   });
     }
@@ -207,9 +236,6 @@ function update_toast(){
 
   $(document).ready(function() {
       product_lists();
-    $('#example').DataTable( {
-      
-    } );
 
       $('#add_button').click(function(){  
            $('.modal-title').html("Add <span class='font-weight-light'>Store</span>");  

@@ -1,16 +1,90 @@
-/* Top navbar — search + profile */
+/* Top navbar — search + profile (rooftopadmin) */
 
-.layout-navbar.top-header-bar {
-  min-height: 56px;
-  padding-top: 0.35rem;
-  padding-bottom: 0.35rem;
-  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.12);
+:root {
+  --rooftop-top-header-height: 56px;
+}
+
+/* ——— Bar shell ——— */
+.layout-navbar.top-header-bar.navbar {
+  height: var(--rooftop-top-header-height);
+  min-height: var(--rooftop-top-header-height);
+  max-height: var(--rooftop-top-header-height);
+  padding: 0 !important;
+  margin: 0;
+  align-items: center;
+  flex-wrap: nowrap;
   overflow: visible;
+  box-sizing: border-box;
+  display: flex;
+}
+
+.layout-navbar.top-header-bar .top-header-toolbar {
+  flex: 1 1 auto;
+  width: 100%;
+  min-width: 0;
+  height: 100%;
+  min-height: 0;
+  align-items: center;
+  align-content: center;
+  gap: 0.5rem;
+  padding: 0;
+  margin: 0;
+}
+
+@media (min-width: 992px) {
+  .layout-navbar.top-header-bar .top-header-toolbar {
+    flex-wrap: nowrap;
+  }
+
+  .layout-navbar.top-header-bar .navbar-collapse {
+    display: flex !important;
+    flex: 1 1 auto;
+    align-items: center;
+    min-width: 0;
+    width: auto;
+  }
+
+  .layout-navbar.top-header-bar .navbar-toggler {
+    display: none;
+  }
+
+  /* Fixed navbar: offset content once (padding on container, not margin on content) */
+  html.layout-navbar-fixed.layout-fixed .layout-2 .layout-container,
+  html.layout-fixed.layout-navbar-fixed .layout-2 .layout-container {
+    padding-top: var(--rooftop-top-header-height);
+  }
+
+  html.layout-navbar-fixed.layout-fixed .layout-2 .layout-container > .layout-content,
+  html.layout-fixed.layout-navbar-fixed .layout-2 .layout-container > .layout-content {
+    margin-top: 0 !important;
+    padding-top: 0 !important;
+  }
+
+  html.layout-navbar-fixed.layout-fixed .layout-2 .layout-container > .layout-navbar.top-header-bar,
+  html.layout-fixed.layout-navbar-fixed .layout-2 .layout-container > .layout-navbar.top-header-bar {
+    flex: 0 0 auto;
+    height: var(--rooftop-top-header-height);
+    min-height: var(--rooftop-top-header-height);
+    max-height: var(--rooftop-top-header-height);
+    padding: 0 !important;
+    top: 0;
+  }
+
+  .layout-navbar-fixed.layout-fixed .layout-2 .layout-navbar.top-header-bar,
+  .layout-fixed.layout-navbar-fixed .layout-2 .layout-navbar.top-header-bar {
+    height: var(--rooftop-top-header-height);
+    min-height: var(--rooftop-top-header-height);
+    max-height: var(--rooftop-top-header-height);
+  }
 }
 
 .top-header-bar .navbar-collapse {
   overflow: visible;
   flex-grow: 1;
+  align-items: center;
+  padding: 0 !important;
+  margin: 0 !important;
+  height: 100%;
 }
 
 @media (min-width: 992px) {
@@ -22,31 +96,55 @@
 
   .top-header-bar .navbar-collapse .navbar-nav {
     flex-shrink: 0;
+    align-items: center;
   }
 }
 
+/* ——— Search ——— */
 .top-header-search-wrap {
-  flex: 1;
-  max-width: 420px;
-  margin: 0 1rem 0 0.5rem;
+  flex: 1 1 auto;
+  max-width: 480px;
+  margin: 0 1rem 0 0.25rem;
   position: relative;
   min-width: 0;
+  align-self: center;
 }
 
 .top-header-search-form {
   position: relative;
   margin: 0;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  height: 36px;
+  padding: 0 0.85rem 0 0.7rem;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, 0.22);
+  background: rgba(255, 255, 255, 0.12);
+  box-sizing: border-box;
+}
+
+.top-header-search-form:focus-within {
+  background: rgba(255, 255, 255, 0.18);
+  border-color: rgba(255, 255, 255, 0.4);
+  box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.35);
 }
 
 .top-header-search-form .form-control {
-  border-radius: 999px;
-  padding-left: 2.35rem;
-  padding-right: 1rem;
-  height: 38px;
-  border: 1px solid rgba(255, 255, 255, 0.2);
-  background: rgba(255, 255, 255, 0.12);
+  flex: 1 1 auto;
+  min-width: 0;
+  width: 100%;
+  border: 0 !important;
+  border-radius: 0;
+  padding: 0 !important;
+  margin: 0;
+  height: 34px;
+  line-height: 1.4;
+  box-sizing: border-box;
+  background: transparent !important;
   color: #fff;
   font-size: 0.88rem;
+  box-shadow: none !important;
 }
 
 .top-header-search-form .form-control::placeholder {
@@ -54,31 +152,50 @@
 }
 
 .top-header-search-form .form-control:focus {
-  background: rgba(255, 255, 255, 0.18);
-  border-color: rgba(255, 255, 255, 0.35);
+  background: transparent !important;
+  border-color: transparent !important;
   color: #fff;
-  box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.35);
+  box-shadow: none !important;
+  outline: none;
 }
 
 .top-header-search-icon {
-  position: absolute;
-  left: 0.85rem;
-  top: 50%;
-  transform: translateY(-50%);
+  position: static;
+  flex: 0 0 auto;
+  transform: none;
   color: rgba(255, 255, 255, 0.65);
   font-size: 1rem;
+  line-height: 1;
+  width: 1rem;
   pointer-events: none;
-  z-index: 2;
+  z-index: 1;
 }
 
+/* ——— Profile ——— */
 #topHeaderProfileDropdown {
   position: relative;
 }
 
+.top-header-bar .navbar-nav.align-items-lg-center,
+.top-header-bar .navbar-nav.align-items-center {
+  align-items: center;
+  height: 100%;
+  margin: 0;
+  padding: 0;
+}
+
 .top-header-profile .nav-link {
-  padding: 0.35rem 0.5rem 0.35rem 0.65rem;
+  padding: 0 0.55rem 0 0.65rem;
   border-radius: 999px;
+  display: flex;
+  align-items: center;
+  height: 36px;
   transition: background 0.15s ease;
+}
+
+.top-header-profile .nav-link.dropdown-toggle::after {
+  margin-left: 0.35rem;
+  vertical-align: middle;
 }
 
 .top-header-profile .nav-link:hover,
@@ -90,24 +207,26 @@
   color: #fff;
   font-weight: 600;
   font-size: 0.88rem;
-  max-width: 160px;
+  line-height: 1.3;
+  max-width: 180px;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
 .top-header-avatar {
-  width: 34px;
-  height: 34px;
+  width: 32px;
+  height: 32px;
   border-radius: 50%;
   object-fit: cover;
   border: 2px solid rgba(255, 255, 255, 0.35);
+  flex-shrink: 0;
 }
 
 .top-header-profile .dropdown-menu,
 #topHeaderProfileMenu {
   position: absolute;
-  top: calc(100% + 4px);
+  top: calc(100% + 6px);
   right: 0;
   left: auto;
   min-width: 200px;
@@ -135,6 +254,8 @@
   left: 0;
   right: 0;
   top: calc(100% + 6px);
+  flex: none;
+  width: 100%;
   max-height: 320px;
   overflow-y: auto;
   background: #fff;
@@ -193,15 +314,62 @@
   margin-right: 0.35rem;
 }
 
+/* Page title — compact spacing directly under top header */
+.layout-2 .layout-content > .container.container-p-y > h5.font-weight-bold:first-child,
+.layout-2 .layout-content > .container-fluid.container-p-y > h4.font-weight-bold:first-child,
+.layout-2 .layout-content > .container-fluid.container-p-y > h5.font-weight-bold:first-child {
+  padding-top: 0.35rem !important;
+  padding-bottom: 0.35rem !important;
+  margin-bottom: 0.25rem !important;
+}
+
+.layout-2 .layout-content > .container.container-p-y,
+.layout-2 .layout-content > .container-fluid.container-p-y {
+  padding-top: 0.75rem !important;
+}
+
+/* Pace progress uses .page-loader — keep it below the fixed navbar */
+html.layout-navbar-fixed .pace-running:not(.pace-done) .page-loader {
+  top: var(--rooftop-top-header-height);
+}
+
 @media (max-width: 991.98px) {
+  :root {
+    --rooftop-top-header-height: 52px;
+  }
+
+  .layout-navbar.top-header-bar.navbar {
+    height: auto;
+    min-height: var(--rooftop-top-header-height);
+    max-height: none;
+    padding: 0.25rem 0 !important;
+    flex-wrap: wrap;
+  }
+
+  .layout-navbar.top-header-bar .top-header-toolbar {
+    flex-wrap: wrap;
+    height: auto;
+  }
+
   .top-header-search-wrap {
     max-width: 100%;
-    margin: 0.75rem 0 0.5rem;
+    margin: 0.5rem 0 0.35rem;
     order: 3;
     width: 100%;
   }
 
   .top-header-bar .navbar-collapse {
-    padding-bottom: 0.5rem;
+    padding-bottom: 0.35rem;
+    width: 100%;
+  }
+
+  html.layout-navbar-fixed.layout-fixed .layout-2 .layout-container > .layout-content,
+  html.layout-fixed.layout-navbar-fixed .layout-2 .layout-container > .layout-content {
+    margin-top: 0 !important;
+  }
+
+  html.layout-navbar-fixed.layout-fixed .layout-2 .layout-container,
+  html.layout-fixed.layout-navbar-fixed .layout-2 .layout-container {
+    padding-top: 0;
   }
 }
